@@ -132,7 +132,8 @@ button:disabled{cursor:default}
 .feed{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;padding-block:14px 8px}
 .feed > *{min-width:0}
 .empty{padding:28px 8px;text-align:center;color:var(--muted);font-size:14px}
-.race{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px 10px;display:grid;gap:10px;min-width:0}
+.race{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px 10px;display:grid;grid-template-columns:minmax(0,1fr);gap:10px;min-width:0}
+.race > *, .dbody > *{min-width:0}
 .race.closed{opacity:.85}
 .rhead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:baseline}
 .rname{display:flex;align-items:baseline;gap:8px;min-width:0}
@@ -215,7 +216,7 @@ summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);padding
 summary::-webkit-details-marker{display:none}
 summary::before{content:"";width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
 details[open] summary::before{transform:rotate(45deg)}
-.dbody{display:grid;gap:16px;padding-block:8px 4px;min-width:0}
+.dbody{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;padding-block:8px 4px;min-width:0}
 .dbody h3{margin:0 0 6px;font-size:12.5px}
 .cond{font-size:12.5px;color:var(--muted)}
 .tbl{overflow-x:auto;min-width:0}
@@ -268,6 +269,21 @@ td.tot{font-weight:700}
 .nrow .np{font-family:var(--f-num);font-size:15px;font-weight:600;text-align:right;min-width:9ch;font-variant-numeric:tabular-nums}
 .nrow .np small{color:var(--muted);font-weight:500;font-size:12px;margin-left:4px}
 td.feat{font-family:var(--f-body);font-size:12px;text-align:left}
+td.zr small{display:block;font-family:var(--f-body);font-size:10.5px;color:var(--muted)}
+.kh{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--muted);margin-bottom:4px}
+.krow{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:center;padding-block:3px;border-bottom:1px solid var(--line)}
+.kl{display:flex;flex-wrap:wrap;gap:3px;min-width:0}
+.ks{display:inline-flex;align-items:baseline;gap:1px;min-width:26px;justify-content:center;padding:1px 4px;border-radius:5px;background:var(--track);font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.ks b{font-size:15px}
+.ks small{font-size:10px;color:var(--muted)}
+.ks.w{background:var(--accent-soft);color:var(--accent)}
+.kp{font-size:16px;font-weight:700;min-width:3.4ch;text-align:right}
+.dms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 14px}
+.dm{display:grid;grid-template-columns:14px auto minmax(0,1fr);gap:6px;align-items:center;font-size:12.5px}
+.dm small{color:var(--muted);font-family:var(--f-num)}
+.dm .k{display:flex;gap:2px}
+.dm .k .chipb{width:19px;height:19px;font-size:13px;border-radius:4px}
+.dm b{text-align:right;font-size:15px}
 
 .credit{font-size:12px;color:var(--muted);padding-block:16px 28px;line-height:1.7;border-top:1px solid var(--line);margin-top:8px}
 .credit a{color:inherit}
@@ -418,11 +434,16 @@ const logit = p => { const q = clamp(p, 0.005, 0.995); return Math.log(q / (1 - 
 const shrink = (k, n, base, K) => (k + K * base) / (n + K);
 function prepStats(raw){
   if (!raw || !raw.racers || !raw.stadiums) return null;
-  const nat = [0, 1, 2, 3, 4, 5].map(() => new Array(16).fill(0));
+  const racers = {};
+  for (const [k, v] of Object.entries(raw.racers)) racers[k] = Array.isArray(v) ? {c: v} : v;
+  const nat = [0, 1, 2, 3, 4, 5].map(() => new Array(30).fill(0));
   Object.values(raw.stadiums).forEach(sd => (sd.c || []).forEach((a, i) => { if (Array.isArray(a)) a.forEach((v, k) => { nat[i][k] += v; }); }));
-  return {...raw, nat};
+  return {...raw, racers, nat};
 }
-const cstat = (stats, reg, c) => { const r = stats && reg != null ? stats.racers[reg] : null; return r && Array.isArray(r[c - 1]) ? r[c - 1] : null; };
+const racerOf = (stats, reg) => stats && reg != null ? stats.racers[reg] || null : null;
+const cstat = (stats, reg, c) => { const r = racerOf(stats, reg); return r && r.c && Array.isArray(r.c[c - 1]) ? r.c[c - 1] : null; };
+// 展示ST→本番STのズレ（秒）。件数が少ないうちは0に寄せる
+const zureOf = (stats, reg) => { const r = racerOf(stats, reg); return r && r.z && r.z[0] ? r.z[1] / (r.z[0] + 5) / 100 : 0; };
 const natRate = (stats, c, k, d) => { const a = stats.nat[c - 1]; return a && a[d] ? a[k] / a[d] : 0; };
 const statsURLs = name => {
   const out = [];
@@ -681,13 +702,18 @@ function makeSample(){
 function makeSampleStats(races){
   const rnd = mulberry32(2026);
   const mk = (n, rate, c) => {
-    const a = new Array(16).fill(0);
-    const w = Math.round(n * rate);
-    a[0] = n; a[1] = w; a[2] = Math.round(n * Math.min(.3, rate * .8 + .08)); a[3] = Math.round(n * .17);
+    const a = new Array(30).fill(0);
+    const w = Math.round(n * rate), lost = n - w;
+    a[0] = n; a[1] = w; a[2] = Math.min(lost, Math.round(n * Math.min(.3, rate * .8 + .08))); a[3] = Math.min(lost - a[2], Math.round(n * .17));
     a[4] = Math.round(n * (14 + rnd() * 6)); a[5] = n;
+    a[27] = Math.round(a[4] / 2 * (0.9 + rnd() * 0.2)); a[28] = Math.round(n / 2);
     TECH_FALLBACK[c - 1].forEach((q, i) => { a[6 + i] = Math.round(w * q * (0.7 + rnd() * 0.6)); });
     if (c >= 2){ a[11] = Math.round(n * .55); a[12] = Math.round(a[11] * (.1 + rnd() * .35)); a[13] = Math.min(a[11], Math.round(a[12] * 1.9)); }
-    else { a[14] = Math.round((n - w) * .35); a[15] = Math.round((n - w) * .4); }
+    else { a[14] = Math.round(lost * .35); a[15] = Math.round(lost * .4); }
+    a[16] = Math.round(n * (2 + rnd() * 2.5)); a[17] = n;
+    a[20] = n; a[18] = c === 1 ? 0 : Math.round(n * rnd() * .08); a[19] = Math.round(n * rnd() * .2); a[21] = Math.round(n * (.5 + rnd() * .4));
+    const lb = c === 1 ? [0, .4, .3, .2, .1] : [.55, .12, .15, .12, .06];
+    lb.forEach((q, i) => { a[22 + i] = Math.round(lost * q); });
     return a;
   };
   const stadiums = {}, racers = {};
@@ -700,9 +726,16 @@ function makeSampleStats(races){
     const k = {A1: 1.35, A2: 1.1, B1: .85, B2: .6}[b.cls] || 1;
     const arr = [0, 0, 0, 0, 0, 0];
     arr[c - 1] = mk(12 + Math.floor(rnd() * 45), Math.min(.9, NATL[c - 1] / 100 * k * (.7 + rnd() * .6)), c);
-    racers[b.reg] = arr;
+    const zn = 20 + Math.floor(rnd() * 40);
+    const recent = [];
+    for (let d = 3; d >= 1; d--) for (let t = 0; t < 2; t++) recent.push([d, r.stadium, 1 + Math.floor(rnd() * 12), 1 + Math.floor(rnd() * 6), 1 + Math.floor(rnd() * 6), 8 + Math.floor(rnd() * 12)]);
+    racers[b.reg] = {c: arr, z: [zn, Math.round(zn * (rnd() * 6 - 1.5)), Math.round(zn * (2 + rnd() * 3))], r: recent.sort((x, y) => y[0] - x[0] || x[2] - y[2])};
   }));
-  return prepStats({v: 1, built: jstNowDate(), from: "サンプル", to: "サンプル", races: 1500 * 3, stadiums, racers, sample: true});
+  Object.values(stadiums).forEach(sd => {
+    const combos = ["1-2-3", "1-2-4", "1-3-2", "1-3-4", "1-4-2", "2-1-3", "1-2-5", "1-4-3", "3-1-2", "1-3-5"];
+    sd.deme = combos.map((k, i) => [k, Math.round(sd.races * (0.07 - i * 0.005) * (0.8 + rnd() * 0.4))]).sort((x, y) => y[1] - x[1]);
+  });
+  return prepStats({v: 2, built: jstNowDate(), from: "サンプル", to: shiftDate(jstNowDate(), -1), races: 1500 * 3, stadiums, racers, sample: true});
 }
 
 /* ---------- 判定：スリット ---------- */
@@ -755,7 +788,10 @@ function predict(r, s, alerts, lite, stats = STATS){
   const F = order.map(b => {
     const course = r.hasPreview ? b.course : b.no;
     const cs = stats ? cstat(stats, b.reg, course) : null;
-    const cST = cs && cs[5] >= 8 ? cs[4] / cs[5] / 100 : null;   // そのコースでの平均ST
+    let cST = cs && cs[5] >= 8 ? cs[4] / cs[5] / 100 : null;   // そのコースでの平均ST
+    if (cST != null && cs[28] >= 6) cST = 0.5 * cST + 0.5 * cs[27] / cs[28] / 100;  // 直近3ヶ月を半分混ぜる
+    const zure = stats ? zureOf(stats, b.reg) : 0;
+    const predST = b.exST != null ? (b.exF ? -b.exST : b.exST) + zure : null;  // 本番予想ST
     const stv = cST ?? (b.avgST > 0 ? b.avgST : null);
     let crs = 0;
     if (stats){
@@ -763,12 +799,12 @@ function predict(r, s, alerts, lite, stats = STATS){
       if (base > 0) crs = logit(shrink(cs ? cs[1] : 0, cs ? cs[0] : 0, base, 10)) - logit(base);
     }
     return {
-      b, course, cs, cST,
+      b, course, cs, cST: cST,
       winEff: b.win == null ? 4.5 : (b.local > 0 ? 0.75 * b.win + 0.25 * b.local : b.win),
       st: (stv != null ? (0.16 - stv) / 0.02 : 0) - (b.F > 0 ? 0.8 : 0),
       mo: (b.motor2 > 0 ? (b.motor2 - 35) / 10 : 0) + (b.boat2 > 0 ? (b.boat2 - 35) / 20 : 0),
       ex: b.exTime != null ? -b.exTime / 0.05 : null,
-      es: b.exST != null ? -(b.exF ? -b.exST : b.exST) / 0.05 : null,
+      es: predST != null ? -predST / 0.05 : null, zure, predST,
       crs
     };
   });
@@ -976,7 +1012,7 @@ function updateStatsInfo(){
   const el = $("stats-info");
   if (!el) return;
   el.textContent = STATS
-    ? (STATS.sample ? "サンプル表示中は架空の成績を使っています。" : `集計：${STATS.from}〜${STATS.to}・${STATS.races}レース（毎晩更新）`)
+    ? (STATS.sample ? "サンプル表示中は架空の成績を使っています。" : `集計：${STATS.window === "6m" ? "直近6ヶ月 " : ""}${STATS.from}〜${STATS.to}・${STATS.races}レース（毎晩更新）`)
     : "コース別成績の集計データがまだありません。GitHubの自動集計を一度動かすと使えるようになります。";
 }
 try { const t = localStorage.getItem("slitradar.tab"); if (t) state.tab = t; } catch (e) {}
@@ -1104,23 +1140,86 @@ function nigeHTML(an){
     <p class="note">右の分数は、その選手が今回のコースにいて1コースが逃げたときに2着だった回数／そのレース数です。</p></div>`;
 }
 
+const pctOf = (k, n) => n ? Math.round(k / n * 100) + "%" : "-";
+const stOf = (sum, n) => n ? "." + String(Math.round(sum / n)).padStart(2, "0") : "-";
+const periodLabel = () => STATS.sample ? "架空の成績" : STATS.window === "6m" ? "直近6ヶ月" : `${String(STATS.from || "").slice(0, 7).replace("-", "/")}〜`;
+const NO_STATS = `<p class="note">集計データがまだありません。GitHubの自動集計を一度動かすと表示されます。</p>`;
+const LOSE = ["逃げられ", "差され", "まくられ", "まくり差され", "抜かれ等"];
+
 function courseTableHTML(r, an){
-  if (!STATS) return `<div><h3>コース別成績</h3><p class="note">集計データがまだありません。GitHubの自動集計を一度動かすと表示されます。</p></div>`;
-  const p = (k, n) => n ? Math.round(k / n * 100) + "%" : "-";
+  if (!STATS) return `<div><h3>コース別成績</h3>${NO_STATS}</div>`;
   const rows = an.F.map(f => {
     const a = f.cs, c = f.course;
-    if (!a) return `<tr><td>${c}</td><td>${chip(f.b.no)}</td><td>0</td><td>-</td><td>-</td><td>-</td><td class="feat">このコースの実績なし</td><td>-</td></tr>`;
-    const feat = c === 1 ? `逃げ ${p(a[6], a[0])} · 差され ${p(a[14], a[0])} · まくられ ${p(a[15], a[0])}`
-      : c === 2 ? `差し ${p(a[7], a[0])} · まくり ${p(a[8], a[0])} · 逃し ${p(a[11], a[0])}`
-      : `まくり ${p(a[8], a[0])} · まくり差し ${p(a[9], a[0])} · 差し ${p(a[7], a[0])}`;
-    return `<tr><td>${c}</td><td>${chip(f.b.no)}</td><td>${a[0]}</td><td>${p(a[1], a[0])}</td><td>${p(a[1] + a[2], a[0])}</td><td>${a[5] ? "." + String(Math.round(a[4] / a[5])).padStart(2, "0") : "-"}</td><td class="feat">${feat}</td><td>${c >= 2 ? p(a[12], a[11]) : "-"}</td></tr>`;
+    if (!a) return `<tr><td>${c}</td><td>${chip(f.b.no)}</td><td>0</td><td colspan="6" class="feat">このコースの実績なし</td></tr>`;
+    return `<tr><td>${c}</td><td>${chip(f.b.no)}</td><td>${a[0]}</td><td>${pctOf(a[1], a[0])}</td><td>${pctOf(a[1] + a[2], a[0])}</td><td>${pctOf(a[1] + a[2] + a[3], a[0])}</td><td>${stOf(a[4], a[5])}</td><td>${stOf(a[27], a[28])}</td><td>${a[17] ? (a[16] / a[17]).toFixed(2) : "-"}</td></tr>`;
   }).join("");
   const sd = STATS.stadiums && STATS.stadiums[r.stadium];
-  const trend = sd && sd.races ? `<p class="note">${esc(STADIUMS[r.stadium] || "")}の傾向：イン逃げ ${p(sd.c[0][6], sd.races)} · 万舟率 ${p(sd.manshu, sd.races)}（${sd.races}レース）</p>` : "";
-  return `<div><h3>今回のコースでの成績（${STATS.sample ? "架空" : esc(String(STATS.from || "").slice(0, 7).replace("-", "/")) + "〜"}）</h3><div class="tbl"><table class="lft">
-    <thead><tr><th>進入</th><th>艇</th><th>出走</th><th>1着率</th><th>2連率</th><th>ST</th><th>決まり手の特徴</th><th>逃げ時2着</th></tr></thead>
+  const trend = sd && sd.races ? `<p class="note">${esc(STADIUMS[r.stadium] || "")}の傾向：イン逃げ ${pctOf(sd.c[0][6], sd.races)} · 万舟率 ${pctOf(sd.manshu, sd.races)}（${sd.races}レース）</p>` : "";
+  return `<div><h3>今回の進入コースでの成績（${periodLabel()}）</h3><div class="tbl"><table class="lft">
+    <thead><tr><th>進入</th><th>艇</th><th>出走</th><th>1着率</th><th>2連率</th><th>3連率</th><th>平均ST</th><th>3ヶ月ST</th><th>ST順位</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
-    <p class="note">「逃し」は2コースにいて1コースに逃げられた率、「逃げ時2着」は1コースが逃げたときに2着に入った率です。</p>${trend}</div>`;
+    <p class="note">ST順位はそのレースの6艇の中で何番目に早かったかの平均です（1に近いほど早い）。</p>${trend}</div>`;
+}
+
+function stTableHTML(an){
+  if (!STATS) return "";
+  const sg2 = v => (Math.abs(v) < 0.005 ? "±" : v > 0 ? "+" : "−") + "." + String(Math.round(Math.abs(v) * 100)).padStart(2, "0");
+  const rows = an.F.map(f => {
+    const a = f.cs, R = racerOf(STATS, f.b.reg), z = R && R.z;
+    const zure = z && z[0] ? `${sg2(f.zure)}<small>${f.zure > 0.005 ? "遅れ" : f.zure < -0.005 ? "早い" : "同じ"}・${z[0]}回</small>` : "-";
+    return `<tr><td>${chip(f.b.no)}</td><td>${a ? pctOf(a[21], a[17]) : "-"}</td><td>${a && f.course !== 1 ? pctOf(a[18], a[20]) : "-"}</td><td>${a ? pctOf(a[19], a[20]) : "-"}</td><td>${a && a[29] ? a[29] : "-"}</td><td class="zr">${zure}</td><td>${f.predST != null ? fST(Math.abs(f.predST), f.predST < 0) : "-"}</td></tr>`;
+  }).join("");
+  return `<div><h3>スタートの傾向（今回の進入コース）</h3><div class="tbl"><table class="lft2">
+    <thead><tr><th>艇</th><th>安定率</th><th>抜出率</th><th>出遅率</th><th>F</th><th>展示→本番</th><th>本番予想ST</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>
+    <p class="note">安定率は自分の平均STから±0.03秒以内に収まった率、抜出率・出遅率は両隣より0.05秒以上早い・遅いスタートの率です（スリットレーダー独自の定義）。「展示→本番」は展示STより本番STが平均で何秒ずれるかで、本番予想STは今回の展示STにそのずれを足したものです。期待度の計算にも使っています。</p></div>`;
+}
+
+function kimariteHTML(an){
+  if (!STATS) return "";
+  const top2 = (vals, names, tot) => {
+    if (!tot) return "-";
+    return vals.map((v, i) => [names[i], v]).filter(x => x[1] > 0).sort((x, y) => y[1] - x[1]).slice(0, 2).map(([n, v]) => `${n} ${Math.round(v / tot * 100)}%`).join("・") || "-";
+  };
+  const rows = an.F.map(f => {
+    const a = f.cs;
+    if (!a) return `<tr><td>${chip(f.b.no)}</td><td>${f.course}</td><td class="feat">-</td><td class="feat">-</td></tr>`;
+    const wins = a.slice(6, 11), lost = a.slice(22, 27);
+    return `<tr><td>${chip(f.b.no)}</td><td>${f.course}</td><td class="feat">${top2(wins, TECHS, a[1])}</td><td class="feat">${top2(lost, LOSE, a[0] - a[1])}</td></tr>`;
+  }).join("");
+  return `<div><h3>決まり手（今回の進入コース）</h3><div class="tbl"><table class="lft2">
+    <thead><tr><th>艇</th><th>進入</th><th>勝ったときの決まり手</th><th>負けたときの決まり手</th></tr></thead>
+    <tbody>${rows}</tbody></table></div></div>`;
+}
+
+const PTS = [0, 10, 8, 6, 4, 2, 1];
+function konsetsuHTML(r, an){
+  if (!STATS) return "";
+  const live = state.liveRes || new Map();
+  const from = shiftDate(r.date, -6);
+  const rows = an.F.map(f => {
+    const R = racerOf(STATS, f.b.reg);
+    const list = [];
+    ((R && R.r) || []).forEach(([ago, sd, rno, c, place]) => {
+      const d = shiftDate(STATS.to, -ago);
+      if (sd !== r.stadium || d < from || d > r.date || (d === r.date && rno >= r.no)) return;
+      list.push({d, rno, c, place});
+    });
+    if (r.date > STATS.to) (live.get(f.b.reg) || []).forEach(x => { if (x.stadium === r.stadium && x.rno < r.no) list.push({d: r.date, rno: x.rno, c: x.c, place: x.place}); });
+    list.sort((x, y) => x.d < y.d ? -1 : x.d > y.d ? 1 : x.rno - y.rno);
+    const cells = list.length ? list.map(x => `<span class="ks${x.place === 1 ? " w" : ""}" title="${x.d.slice(5)} ${x.rno}R"><b>${x.place || "×"}</b><small>${x.c}</small></span>`).join("") : `<span class="note">まだなし</span>`;
+    const rate = list.length ? (list.reduce((t, x) => t + (PTS[x.place] || 0), 0) / list.length).toFixed(2) : "-";
+    return `<div class="krow">${chip(f.b.no)}<span class="kl">${cells}</span><span class="kp num">${rate}</span></div>`;
+  }).join("");
+  return `<div><h3>今節成績</h3><div class="kh"><span>大きい数字が着順、小さい数字が進入コース（×は失格・欠場など）</span><span>得点率</span></div>${rows}
+    <p class="note">得点率は 1着10点・2着8点・3着6点・4着4点・5着2点・6着1点の平均です（事故の減点は入っていない目安）。</p></div>`;
+}
+
+function demeHTML(r){
+  const sd = STATS && STATS.stadiums && STATS.stadiums[r.stadium];
+  if (!sd || !sd.deme || !sd.deme.length) return "";
+  const items = sd.deme.slice(0, 8).map(([k, n], i) => `<span class="dm"><small>${i + 1}</small><span class="k">${k.split("-").map(chip).join("")}</span><b class="num">${(n / sd.races * 100).toFixed(1)}%</b></span>`).join("");
+  return `<div><h3>${esc(STADIUMS[r.stadium] || "")}の出目ランク（3連単・${periodLabel()}）</h3><div class="dms">${items}</div></div>`;
 }
 
 function tableHTML(an){
@@ -1201,16 +1300,25 @@ function cardHTML(r, an, now){
     ${probsHTML(r, an)}
     ${tenkaiHTML(an)}
     <details data-key="${esc(r.key)}"${state.open.has(r.key) ? " open" : ""}>
-      <summary>逃げた時の2着・コース別成績・買い目・出走表</summary>
+      <summary>買い目・逃げた時の2着・内訳・出走表</summary>
       <div class="dbody">
         ${cond ? `<div class="cond">${esc(cond)}</div>` : ""}
-        ${nigeHTML(an)}
-        ${courseTableHTML(r, an)}
         ${combosHTML(r, an)}
+        ${nigeHTML(an)}
         ${partsHTML(an)}
         ${r.hasPreview && !showSlitTop ? `<div><h3>スリット予想図</h3><div class="slitbox">${slitSVG(an)}</div></div>` : ""}
         ${!r.hasPreview ? `<p class="note">展示航走のあと（締切のおよそ20分前）に展示タイムとスタートが反映され、スリット図とアラートが出ます。</p>` : ""}
         ${tableHTML(an)}
+      </div>
+    </details>
+    <details data-key="${esc(r.key)}#d"${state.open.has(r.key + "#d") ? " open" : ""}>
+      <summary>選手データ：コース別・スタート・決まり手・今節・出目</summary>
+      <div class="dbody">
+        ${courseTableHTML(r, an)}
+        ${stTableHTML(an)}
+        ${kimariteHTML(an)}
+        ${konsetsuHTML(r, an)}
+        ${demeHTML(r)}
       </div>
     </details>
   </article>`;
@@ -1220,6 +1328,16 @@ function render(){
   const now = new Date();
   const isToday = state.date === jstNowDate();
   const useUpcoming = state.upcoming && isToday;
+  const liveRes = new Map();
+  state.races.forEach(x => {
+    if (!x.result) return;
+    x.boats.forEach(b => {
+      if (b.reg == null) return;
+      const place = x.result.order.indexOf(b.no) + 1;
+      (liveRes.get(b.reg) || liveRes.set(b.reg, []).get(b.reg)).push({stadium: x.stadium, rno: x.no, c: b.course || b.no, place});
+    });
+  });
+  state.liveRes = liveRes;
   const analyzed = state.races.map(r => ({r, an: analyze(r, settings)}));
   const pool = analyzed.filter(x => (!state.stadium || x.r.stadium === state.stadium) && (!useUpcoming || x.r.closedAt > now));
   const pass = {alert: x => x.an.isSlit, honmei: x => x.an.isHonmei, ana: x => x.an.isAna, value: x => x.an.isValue, all: () => true};
