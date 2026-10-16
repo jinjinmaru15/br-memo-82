@@ -129,11 +129,12 @@ button:disabled{cursor:default}
 .sep{flex:none;width:1px;background:var(--line);margin:4px 2px}
 
 /* feed */
-.feed{display:grid;gap:12px;padding-block:14px 8px}
+.feed{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;padding-block:14px 8px}
+.feed > *{min-width:0}
 .empty{padding:28px 8px;text-align:center;color:var(--muted);font-size:14px}
 .race{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px 10px;display:grid;gap:10px;min-width:0}
 .race.closed{opacity:.85}
-.rhead{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline}
+.rhead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:baseline}
 .rname{display:flex;align-items:baseline;gap:8px;min-width:0}
 .std{font-family:var(--f-display);font-size:19px;line-height:1.2}
 .rno{font-family:var(--f-num);font-weight:700;font-size:24px;line-height:1}
@@ -142,7 +143,7 @@ button:disabled{cursor:default}
 .close .t{font-family:var(--f-num);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
 .close .cd{display:block;font-size:12px;color:var(--muted);font-weight:500}
 .close .cd.soon{color:var(--accent);font-weight:700}
-.rmeta{grid-column:1 / -1;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rmeta{grid-column:1 / -1;min-width:0;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .badges{display:flex;flex-wrap:wrap;gap:6px}
 .bdg{display:inline-flex;align-items:center;gap:6px;border-radius:7px;padding:3px 9px;font-size:12.5px;font-weight:700;line-height:1.4;border:1px solid transparent}
 .bdg .num{font-size:14px}
@@ -319,14 +320,18 @@ td.feat{font-family:var(--f-body);font-size:12px;text-align:left}
     <div class="hr"></div>
     <h2>アラートと候補のしきい値</h2>
     <div class="srow">
-      <label for="s-gap">スリットアラート（注意）</label><output id="o-gap"></output>
-      <input type="range" id="s-gap" min="0.03" max="0.10" step="0.01">
-      <p>内側の艇より展示STがこの秒数以上速いと「攻め」、遅いと「凹み」と判定します。</p>
+      <label for="s-exgap">スリットアラート<small>展示タイムの差</small></label><output id="o-exgap"></output>
+      <input type="range" id="s-exgap" min="0.05" max="0.20" step="0.01">
+      <p>一つ内側の艇より展示タイムがこの秒数以上速い艇に出します。内側の全艇より速ければ「強」です。</p>
     </div>
     <div class="srow">
-      <label for="s-strong">スリットアラート（強）</label><output id="o-strong"></output>
+      <label for="s-gap">ST攻め・凹み（注意）<small>展示STの差</small></label><output id="o-gap"></output>
+      <input type="range" id="s-gap" min="0.03" max="0.10" step="0.01">
+      <p>内側の艇より展示STがこの秒数以上速いと「ST攻め」、両隣より遅いと「ST凹み」です。</p>
+    </div>
+    <div class="srow">
+      <label for="s-strong">ST攻め・凹み（強）</label><output id="o-strong"></output>
       <input type="range" id="s-strong" min="0.06" max="0.15" step="0.01">
-      <p>この差を超えるか、攻める艇の展示タイムが2位以内なら「強」になります。</p>
     </div>
     <div class="srow">
       <label for="s-honmei">鉄板<small>本命の1着率がこれ以上</small></label><output id="o-honmei"></output>
@@ -399,7 +404,7 @@ const NATL = [0,1,2,3,4,5].map(i => Object.values(PRIOR).reduce((a, v) => a + v[
 const priorFor = s => (PRIOR[s] || NATL).map((v, i) => 0.7 * v + 0.3 * NATL[i]);
 
 const BASE = {skill: 0.50, avgst: 0.12, exst: 0.06, motor: 0.20, ex: 0.25, course: 0.35};
-const DEFAULTS = {gap: 0.05, strong: 0.08, honmei: 60, ana: 35, ev: 1.2, minP: 2, w: {skill: 1, start: 1, motor: 1, ex: 1, course: 1}};
+const DEFAULTS = {exGap: 0.10, gap: 0.05, strong: 0.08, honmei: 60, ana: 35, ev: 1.2, minP: 2, w: {skill: 1, start: 1, motor: 1, ex: 1, course: 1}};
 const WLABEL = {skill: "実力・腕", start: "スタート力", motor: "モーター", ex: "展示タイム", course: "コース実績"};
 const TECHS = ["逃げ", "差し", "まくり", "まくり差し", "その他"];
 // 集計がないときの決まり手の目安（コース別：逃げ・差し・まくり・まくり差し・その他）
@@ -619,7 +624,7 @@ function makeSample(){
   const specs = [
     {s:2, r:8,  off:-25, sub:"一般戦", w:3, wave:2, wx:2, b:[["A1",null,null,.14,6.78],[null,null,null,.15,6.80],[null,null,null,.13,6.77],[null,null,null,.16,6.81],[null,null,null,.15,6.83],[null,null,null,.18,6.85]]},
     {s:24,r:5,  off:-8,  sub:"予選",   w:2, wave:1, wx:1, b:[["A2",5.9,40,.12,6.74],["B1",null,null,.15,6.79],["A2",null,null,.14,6.76],["B1",null,null,.13,6.80],["A1",6.7,46,.05,6.71],["B2",null,null,.16,6.84]]},
-    {s:2, r:9,  off:6,   sub:"予選",   w:6, wave:4, wx:2, b:[["A2",5.6,31,.21,6.79],["B1",4.9,36,.17,6.78],["A2",5.8,42,.13,6.76],["A1",6.9,47,.06,6.70],["B1",4.4,35,.12,6.81],["B2",3.1,29,.17,6.86]]},
+    {s:2, r:9,  off:6,   sub:"予選",   w:6, wave:4, wx:2, b:[["A2",5.6,31,.21,6.82],["B1",4.9,36,.17,6.80],["A2",5.8,42,.13,6.81],["A1",6.9,47,.06,6.70],["B1",4.4,35,.12,6.81],["B2",3.1,29,.17,6.86]]},
     {s:24,r:6,  off:14,  sub:"予選",   w:1, wave:1, wx:1, b:[["A1",7.62,48,.11,6.68],["B1",4.6,33,.15,6.79],["B1",5.0,37,.14,6.77],["A2",5.7,39,.14,6.75],["B2",3.2,28,.17,6.84],["B1",4.1,31,.16,6.82]]},
     {s:12,r:10, off:19,  sub:"予選",   w:3, wave:2, wx:1, b:[["A1",6.4,41,.14,6.72],["A2",5.5,36,.17,6.78],["A1",6.6,44,.11,6.74],["B1",4.3,52,.15,6.66],["B1",null,null,.16,6.80],["B2",null,null,.18,6.83]]},
     {s:12,r:11, off:38,  sub:"一般戦", b:[["B1",4.7,26],["A1",6.8,43],["A1",7.1,45],[],[],[]]},
@@ -712,13 +717,24 @@ function slitAlerts(r, s){
   const lvl = d => d >= s.strong - 1e-9 ? 2 : 1;
   const ok = d => d >= s.gap - 1e-9;
   const alerts = [];
+  // スリットアラート：一つ内側の艇より展示タイムが exGap 秒以上速い（内側の全艇より速ければ「強」）
+  const ext = order.map(b => b.exTime);
+  for (let i = 1; i < order.length; i++){
+    if (ext[i] == null || ext[i - 1] == null) continue;
+    const d = Math.round((ext[i - 1] - ext[i]) * 100) / 100;
+    if (d >= s.exGap - 1e-9){
+      const inner = ext.slice(0, i).filter(v => v != null);
+      const all = inner.every(v => Math.round((v - ext[i]) * 100) / 100 >= s.exGap - 1e-9);
+      alerts.push({type: "nobi", boat: order[i].no, course: i + 1, diff: d, level: all ? 2 : 1});
+    }
+  }
   if (st.length >= 3){
-    const d = st[0] - Math.min(st[1], st[2]);
+    const d = st[0] - Math.max(st[1], st[2]);
     if (ok(d)) alerts.push({type: "in", boat: order[0].no, course: 1, diff: d, level: lvl(d)});
   }
   for (let i = 1; i < order.length; i++){
     const lead = st[i - 1] - st[i];
-    if (ok(lead) && st[i] <= Math.min(...st.slice(0, i)) + 0.01 + 1e-9){
+    if (ok(lead) && st[i] <= Math.min(...st.slice(0, i)) - 0.02 + 1e-9){
       const rk = exRank(order[i]), nobi = rk != null && rk <= 2;
       alerts.push({type: "attack", boat: order[i].no, course: i + 1, diff: lead, level: nobi ? 2 : lvl(lead), nobi, tactic: TACTIC[i + 1] || "まくり", fHolder: order[i].F > 0});
     }
@@ -877,6 +893,8 @@ function analyze(r, s){
   return {
     ...pr, alerts, value,
     isAlert: alerts.length > 0,
+    isSlit: alerts.some(a => a.type === "nobi"),
+    slitLevel: alerts.filter(a => a.type === "nobi").reduce((m, a) => Math.max(m, a.level), 0),
     isHonmei: pr.top.p1 * 100 >= s.honmei,
     isAna: pr.c1.p1 * 100 <= s.ana,
     isValue: value.length > 0
@@ -971,7 +989,8 @@ function slitSVG(an){
   const xOf = st => clamp(X0 - st * scale, trackL + 30, 334);
   const mark = new Map();
   an.alerts.forEach(a => {
-    if (a.type === "attack" || a.type === "in") mark.set(a.boat, {cls: a.type === "attack" ? "hot" : "dent", a});
+    if (a.type === "nobi") mark.set(a.boat, {cls: "hot", a});
+    else if (a.type === "attack" && !(mark.get(a.boat) || {}).a?.type?.startsWith("nobi")) mark.set(a.boat, {cls: "hot", a});
     else if (!mark.has(a.boat)) mark.set(a.boat, {cls: "dent", a});
   });
   let s = `<svg class="slit" viewBox="0 0 340 ${H}" role="img" aria-label="スリット予想図 ${order.map(b => `${b.course}コース${b.no}号艇 ${fST(b.exST, b.exF)}`).join("、")}">`;
@@ -991,7 +1010,7 @@ function slitSVG(an){
     s += `<text class="stv${b.exF ? " f" : ""}" x="62" y="${y + 4.5}" text-anchor="end">${fST(b.exST, b.exF)}</text>`;
     s += `<polygon class="hull h${b.no}${m ? " " + m.cls : ""}" points="${nx},${y} ${nx - 8},${y - 6.5} ${nx - 32},${y - 6.5} ${nx - 32},${y + 6.5} ${nx - 8},${y + 6.5}"/>`;
     s += `<text class="hn t${b.no}" x="${nx - 18}" y="${y + 4}" text-anchor="middle">${b.no}</text>`;
-    if (m && m.cls === "hot") s += `<text class="tag" x="${Math.min(nx + 5, 318)}" y="${y + 4}">+${f2(m.a.diff).slice(1)}</text>`;
+    if (m && m.cls === "hot") s += `<text class="tag" x="${Math.min(nx + 5, 306)}" y="${y + 4}">${m.a.type === "nobi" ? "展示−" : "+"}${f2(m.a.diff).slice(1)}</text>`;
   });
   return s + `</svg>`;
 }
@@ -999,9 +1018,10 @@ function slitSVG(an){
 function badgeHTML(r, an){
   const out = [];
   const bn = no => `<span class="bn c${no}">${no}</span>`;
-  an.alerts.filter(a => a.type === "in").forEach(a => out.push(`<span class="bdg alert${a.level === 2 ? " strong" : ""}">イン凹み <span class="num">${f2(a.diff)}</span>${a.level === 2 ? " 強" : ""}</span>`));
-  an.alerts.filter(a => a.type === "attack").forEach(a => out.push(`<span class="bdg alert${a.level === 2 ? " strong" : ""}">${bn(a.boat)}${a.tactic} <span class="num">+${f2(a.diff).slice(1)}</span>${a.nobi ? " 伸び◎" : ""}${a.fHolder ? " F持ち" : ""}</span>`));
-  an.alerts.filter(a => a.type === "dent").forEach(a => out.push(`<span class="bdg alert">${bn(a.boat)}凹み → ${bn(a.next)}に展開</span>`));
+  an.alerts.filter(a => a.type === "nobi").forEach(a => out.push(`<span class="bdg alert strong">${bn(a.boat)}スリットアラート <span class="num">−${f2(a.diff).slice(1)}</span>${a.level === 2 ? " 強" : ""}</span>`));
+  an.alerts.filter(a => a.type === "in").forEach(a => out.push(`<span class="bdg alert">ST凹み（イン） <span class="num">${f2(a.diff)}</span></span>`));
+  an.alerts.filter(a => a.type === "attack").forEach(a => out.push(`<span class="bdg alert">${bn(a.boat)}ST攻め・${a.tactic} <span class="num">+${f2(a.diff).slice(1)}</span>${a.fHolder ? " F持ち" : ""}</span>`));
+  an.alerts.filter(a => a.type === "dent").forEach(a => out.push(`<span class="bdg alert">${bn(a.boat)}ST凹み → ${bn(a.next)}に展開</span>`));
   if (an.isValue) out.push(`<span class="bdg val">期待値プラス <span class="num">${an.value.length}</span>点</span>`);
   if (an.isHonmei) out.push(`<span class="bdg solid">鉄板 ${bn(an.top.b.no)}<span class="num">${pct(an.top.p1)}%</span></span>`);
   if (an.isAna) out.push(`<span class="bdg ana">穴 1コース<span class="num">${pct(an.c1.p1)}%</span></span>`);
@@ -1161,7 +1181,7 @@ function cardHTML(r, an, now){
   const c = r.cond;
   const cond = c ? [WEATHER[c.weather] || "", c.wind != null ? `風 ${c.wind}m` : "", c.wave != null ? `波 ${c.wave}cm` : "", c.temp != null ? `気温 ${c.temp}℃` : "", c.water != null ? `水温 ${c.water}℃` : ""].filter(Boolean).join(" · ") : "";
   const meta = [r.grade, r.subtitle, r.title].filter(Boolean).map(esc).join(" · ");
-  const showSlitTop = r.hasPreview && an.isAlert;
+  const showSlitTop = r.hasPreview && an.isSlit;
   return `<article class="race${closed ? " closed" : ""}">
     <div class="rhead">
       <div class="rname"><span class="std">${esc(STADIUMS[r.stadium] || "")}</span><span class="rno">${r.no}<small>R</small></span></div>
@@ -1195,7 +1215,7 @@ function render(){
   const useUpcoming = state.upcoming && isToday;
   const analyzed = state.races.map(r => ({r, an: analyze(r, settings)}));
   const pool = analyzed.filter(x => (!state.stadium || x.r.stadium === state.stadium) && (!useUpcoming || x.r.closedAt > now));
-  const pass = {alert: x => x.an.isAlert, honmei: x => x.an.isHonmei, ana: x => x.an.isAna, value: x => x.an.isValue, all: () => true};
+  const pass = {alert: x => x.an.isSlit, honmei: x => x.an.isHonmei, ana: x => x.an.isAna, value: x => x.an.isValue, all: () => true};
   for (const k in pass) $("n-" + k).textContent = pool.filter(pass[k]).length;
   if (!pass[state.tab]) state.tab = "all";
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === state.tab)));
@@ -1215,7 +1235,7 @@ function render(){
   else if (state.note && !state.races.length) html = `<div class="empty">${esc(state.note)}</div>`;
   else if (!list.length){
     const msg = {
-      alert: "スリットアラートが出ているレースはありません。展示航走が終わったレースから順に判定します。",
+      alert: "スリットアラート（一つ内側の艇より展示タイムが速い艇）が出ているレースはありません。展示航走が終わったレースから順に判定します。",
       honmei: "鉄板のレースはありません。設定で「鉄板」のしきい値を下げると増えます。",
       ana: "穴のレースはありません。設定で「穴」のしきい値を上げると増えます。",
       value: anyOdds
@@ -1406,6 +1426,7 @@ const SL = [
   ["w-course", s => s.w.course, (s, v) => s.w.course = v, v => "×" + v.toFixed(2)],
   ["ev",      s => s.ev,      (s, v) => s.ev = v,      v => v.toFixed(2) + "以上"],
   ["minp",    s => s.minP,    (s, v) => s.minP = v,    v => v.toFixed(1) + "%以上"],
+  ["exgap",   s => s.exGap,   (s, v) => s.exGap = v,   v => v.toFixed(2) + "秒以上速い"],
   ["gap",     s => s.gap,     (s, v) => { s.gap = v; if (s.strong < v) s.strong = v; }, v => v.toFixed(2) + "秒"],
   ["strong",  s => s.strong,  (s, v) => { s.strong = v; if (s.gap > v) s.gap = v; }, v => v.toFixed(2) + "秒"],
   ["honmei",  s => s.honmei,  (s, v) => s.honmei = v, v => v + "%以上"],
