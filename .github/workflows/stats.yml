@@ -1,0 +1,27 @@
+name: build-stats
+on:
+  schedule:
+    - cron: "30 18 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Get repository
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: git clone --depth 1 "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" repo
+      - name: Build stats
+        working-directory: repo
+        run: node build-stats.mjs
+      - name: Save
+        working-directory: repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add stats.json stats-bt.json cache
+          git diff --cached --quiet || git commit -m "Update stats"
+          git push
