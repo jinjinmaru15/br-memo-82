@@ -1010,7 +1010,14 @@ function slitSVG(an){
     s += `<text class="stv${b.exF ? " f" : ""}" x="62" y="${y + 4.5}" text-anchor="end">${fST(b.exST, b.exF)}</text>`;
     s += `<polygon class="hull h${b.no}${m ? " " + m.cls : ""}" points="${nx},${y} ${nx - 8},${y - 6.5} ${nx - 32},${y - 6.5} ${nx - 32},${y + 6.5} ${nx - 8},${y + 6.5}"/>`;
     s += `<text class="hn t${b.no}" x="${nx - 18}" y="${y + 4}" text-anchor="middle">${b.no}</text>`;
-    if (m && m.cls === "hot") s += `<text class="tag" x="${Math.min(nx + 5, 306)}" y="${y + 4}">${m.a.type === "nobi" ? "展示−" : "+"}${f2(m.a.diff).slice(1)}</text>`;
+    if (m && m.cls === "hot"){
+      const label = (m.a.type === "nobi" ? "展示−" : "+") + f2(m.a.diff).slice(1);
+      const w = m.a.type === "nobi" ? 44 : 24;
+      // 右に入りきらないときは艇の後ろ（左側）に出す
+      s += nx + 5 + w <= 338
+        ? `<text class="tag" x="${nx + 5}" y="${y + 4}">${label}</text>`
+        : `<text class="tag" x="${nx - 36}" y="${y + 4}" text-anchor="end">${label}</text>`;
+    }
   });
   return s + `</svg>`;
 }
