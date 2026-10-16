@@ -1,0 +1,21 @@
+name: notify
+on:
+  schedule:
+    - cron: "*/5 23,0-14 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: notify
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Get repository
+        run: git clone --depth 1 "https://github.com/${GITHUB_REPOSITORY}.git" repo
+      - name: Check races and notify
+        working-directory: repo
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: node notify.mjs
