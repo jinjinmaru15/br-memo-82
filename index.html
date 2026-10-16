@@ -11,11 +11,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
 <style>
-/* Layout: one-column race feed under a sticky filter bar; each card = 出走表の帯 + 期待度バー（+ スリット図） */
+/* Layout: one-column race feed under a sticky filter bar; each card = 出走表の帯 + 期待度バー + 期待値（+ スリット図） */
 :root{
   --bg:#EDF2F5; --surface:#FFFFFF; --ink:#0F2233; --muted:#5B6C7B; --line:#D4DEE6;
   --accent:#E2541A; --accent-ink:#FFFFFF; --accent-soft:#FCE6DA;
   --ana:#6A3CC0; --ana-soft:#ECE4FA;
+  --val:#0B7A5C; --val-ink:#FFFFFF; --val-soft:#DDF2EA;
   --solid:#0F2233; --solid-ink:#FFFFFF;
   --bar1:#0F2233; --bar3:#C7D4DF;
   --track:#E4ECF2; --tick:#B9C7D2; --hull-stroke:rgba(15,34,51,.62);
@@ -30,6 +31,7 @@
     --bg:#0A1520; --surface:#112131; --ink:#E6EDF3; --muted:#8EA2B4; --line:#22374A;
     --accent:#FF7436; --accent-ink:#1A0B03; --accent-soft:#3B2215;
     --ana:#B795FF; --ana-soft:#2A2142;
+    --val:#4FD1A5; --val-ink:#062018; --val-soft:#123328;
     --solid:#E6EDF3; --solid-ink:#0A1520;
     --bar1:#E6EDF3; --bar3:#2C4459;
     --track:#16283A; --tick:#2F4A61; --hull-stroke:rgba(230,237,243,.6);
@@ -40,6 +42,7 @@
   --bg:#0A1520; --surface:#112131; --ink:#E6EDF3; --muted:#8EA2B4; --line:#22374A;
   --accent:#FF7436; --accent-ink:#1A0B03; --accent-soft:#3B2215;
   --ana:#B795FF; --ana-soft:#2A2142;
+  --val:#4FD1A5; --val-ink:#062018; --val-soft:#123328;
   --solid:#E6EDF3; --solid-ink:#0A1520;
   --bar1:#E6EDF3; --bar3:#2C4459;
   --track:#16283A; --tick:#2F4A61; --hull-stroke:rgba(230,237,243,.6);
@@ -79,8 +82,9 @@ button:disabled{cursor:default}
 .notice b{color:var(--accent)}
 
 /* panels */
-.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px;margin-bottom:12px;display:grid;gap:14px}
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px;margin-bottom:12px;display:grid;gap:14px;min-width:0}
 .panel h2{margin:0;font-size:14px}
+.panel h3{margin:0 0 4px;font-size:12.5px}
 .panel .lead{margin:-8px 0 0;font-size:12.5px;color:var(--muted)}
 .srow{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center}
 .srow label{font-size:13px;font-weight:500}
@@ -97,19 +101,20 @@ button:disabled{cursor:default}
 .stat span{font-size:12px;color:var(--muted)}
 .stat b{font-family:var(--f-num);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
 .stat small{font-size:11.5px;color:var(--muted)}
-.cal{font-size:12.5px}
 .wnew{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:13px}
 .wnew b{font-family:var(--f-num);font-size:16px}
+.plus{color:var(--val);font-weight:700}
 
 /* sticky filter bar */
 .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
 .bar .gut{padding-block:8px 8px;display:grid;gap:8px}
-.tabs{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
-.tab{border:0;background:none;border-radius:9px;padding:6px 4px;font-size:13px;font-weight:700;display:flex;flex-direction:column;align-items:center;line-height:1.2;color:var(--muted)}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.tab{border:0;background:none;border-radius:9px;padding:6px 2px;font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;line-height:1.2;color:var(--muted);min-width:0}
 .tab .n{font-family:var(--f-num);font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
 .tab[aria-selected="true"]{background:var(--solid);color:var(--solid-ink)}
 .tab[data-tab="alert"][aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
 .tab[data-tab="ana"][aria-selected="true"]{background:var(--ana);color:var(--surface)}
+.tab[data-tab="value"][aria-selected="true"]{background:var(--val);color:var(--val-ink)}
 .filters{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:1px}
 .filters::-webkit-scrollbar{display:none}
 .chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:500;white-space:nowrap}
@@ -121,7 +126,7 @@ button:disabled{cursor:default}
 .feed{display:grid;gap:12px;padding-block:14px 8px}
 .empty{padding:28px 8px;text-align:center;color:var(--muted);font-size:14px}
 .race{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px 10px;display:grid;gap:10px;min-width:0}
-.race.closed{opacity:.8}
+.race.closed{opacity:.85}
 .rhead{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline}
 .rname{display:flex;align-items:baseline;gap:8px;min-width:0}
 .std{font-family:var(--f-display);font-size:19px;line-height:1.2}
@@ -139,13 +144,14 @@ button:disabled{cursor:default}
 .bdg.alert.strong{background:var(--accent);color:var(--accent-ink)}
 .bdg.solid{background:var(--solid);color:var(--solid-ink)}
 .bdg.ana{background:var(--ana-soft);color:var(--ana);border-color:var(--ana)}
+.bdg.val{background:var(--val-soft);color:var(--val);border-color:var(--val)}
 .bdg.mute{background:var(--track);color:var(--muted)}
 .bdg.res{background:none;border-color:var(--line);color:var(--ink)}
 .bdg .bn{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:4px;font-family:var(--f-num);font-size:13px;box-shadow:inset 0 0 0 1px var(--hull-stroke)}
 
 /* 期待度 rows */
 .probs{display:grid;gap:7px;min-width:0}
-.probs-h{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);font-weight:500}
+.probs-h{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--muted);font-weight:500}
 .prow{display:grid;grid-template-columns:12px 22px 16px minmax(0,1fr) auto;column-gap:7px;row-gap:3px;align-items:center}
 .pc{font-size:12px;color:var(--muted);text-align:center}
 .mk{font-size:13px;font-weight:700;text-align:center;color:var(--muted)}
@@ -165,6 +171,17 @@ button:disabled{cursor:default}
 .prow.top .pbar .t1{background:var(--accent)}
 .p3{font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap}
 
+/* 期待値 block */
+.vblock{display:grid;gap:6px;border:1px solid var(--val);background:var(--val-soft);border-radius:10px;padding:9px 11px;min-width:0}
+.vblock .probs-h{color:var(--val)}
+.vrow{display:grid;grid-template-columns:3.4em auto minmax(0,1fr) auto 3em;gap:8px;align-items:center;font-size:12.5px}
+.vt{font-weight:700;color:var(--ink)}
+.k{display:flex;gap:2px}
+.k .chipb{width:19px;height:19px;font-size:13px;border-radius:4px}
+.vp{text-align:right;color:var(--muted);font-size:14px}
+.vo{text-align:right;font-size:15px}
+.ve{text-align:right;font-size:17px;font-weight:700;color:var(--val)}
+
 /* slit figure */
 .slitbox{min-width:0}
 .slit{display:block;width:100%;height:auto;max-width:520px}
@@ -183,7 +200,7 @@ button:disabled{cursor:default}
 .slit .tag{fill:var(--accent);font-family:var(--f-num);font-size:11px;font-weight:700}
 .h1{fill:var(--b1)}.h2{fill:var(--b2)}.h3{fill:var(--b3)}.h4{fill:var(--b4)}.h5{fill:var(--b5)}.h6{fill:var(--b6)}
 .t1,.t5{fill:var(--t-dark)}.t2,.t3,.t4,.t6{fill:var(--t-light)}
-.note{font-size:12px;color:var(--muted)}
+.note{font-size:12px;color:var(--muted);margin:4px 0 0}
 
 /* details */
 details{border-top:1px solid var(--line);padding-top:6px}
@@ -191,15 +208,15 @@ summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);padding
 summary::-webkit-details-marker{display:none}
 summary::before{content:"";width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
 details[open] summary::before{transform:rotate(45deg)}
-.dbody{display:grid;gap:14px;padding-block:8px 4px;min-width:0}
-.dbody h3{margin:0 0 4px;font-size:12.5px}
+.dbody{display:grid;gap:16px;padding-block:8px 4px;min-width:0}
+.dbody h3{margin:0 0 6px;font-size:12.5px}
 .cond{font-size:12.5px;color:var(--muted)}
 .tbl{overflow-x:auto;min-width:0}
 table{border-collapse:collapse;width:100%;font-size:12.5px;white-space:nowrap}
 th{font-weight:500;color:var(--muted);text-align:right;padding:4px 6px;border-bottom:1px solid var(--line);font-size:11.5px}
 td{text-align:right;padding:5px 6px;border-bottom:1px solid var(--line);font-family:var(--f-num);font-size:15px;font-variant-numeric:tabular-nums}
 table.lft th:nth-child(-n+3),table.lft td:nth-child(-n+3){text-align:left}
-table.lft2 th:first-child,table.lft2 td:first-child{text-align:left}
+table.lft2 th:first-child,table.lft2 td:first-child{text-align:left;font-family:var(--f-body);font-size:13px}
 td.nm{font-family:var(--f-body);font-size:13px;font-weight:500}
 td.nm small{display:block;font-size:11px;color:var(--muted);font-weight:400}
 td .best{color:var(--accent);font-weight:700}
@@ -207,18 +224,27 @@ td .neg{color:var(--muted)}
 td.tot{font-weight:700}
 .chipb{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:5px;font-family:var(--f-num);font-weight:700;font-size:15px;box-shadow:inset 0 0 0 1px var(--hull-stroke)}
 .c1{background:var(--b1);color:var(--t-dark)}.c2{background:var(--b2);color:var(--t-light)}.c3{background:var(--b3);color:var(--t-light)}.c4{background:var(--b4);color:var(--t-light)}.c5{background:var(--b5);color:var(--t-dark)}.c6{background:var(--b6);color:var(--t-light)}
-.combos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.combo{display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:baseline;font-size:12.5px}
-.combo .k{display:flex;gap:2px}
-.combo .k .chipb{width:19px;height:19px;font-size:13px;border-radius:4px}
-.combo .pr{font-family:var(--f-num);font-size:15px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
-.combo .od{font-family:var(--f-num);font-size:13px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;min-width:6ch}
+
+.combos{display:grid;gap:6px}
+.cgrp{font-size:11.5px;color:var(--muted);font-weight:700;margin-top:4px}
+.combo,.chead{display:grid;grid-template-columns:62px minmax(0,1fr) 54px 64px 40px;gap:8px;align-items:center;font-size:12.5px}
+.chead{font-size:11px;color:var(--muted)}
+.chead span:not(:first-child){text-align:right}
+.combo .pr,.combo .od,.combo .oval,.combo .evo{font-family:var(--f-num);text-align:right;font-variant-numeric:tabular-nums}
+.combo .pr{font-size:15px;font-weight:600}
+.combo .od{font-size:13px;color:var(--muted)}
+.combo .oval{font-size:15px}
+.combo .evo{font-size:16px;color:var(--muted)}
+.combo .evo.good{color:var(--val);font-weight:700}
+.oin{width:100%;min-width:0;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);font-family:var(--f-num);font-size:16px;text-align:right}
+.oin:focus{outline:2px solid var(--val);outline-offset:0;border-color:var(--val)}
+.links{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px}
+.links a{color:var(--ink)}
 
 .credit{font-size:12px;color:var(--muted);padding-block:16px 28px;line-height:1.7;border-top:1px solid var(--line);margin-top:8px}
 .credit a{color:inherit}
 
 @media (max-width:420px){
-  .combos{grid-template-columns:1fr}
   .brand h1{font-size:23px}
 }
 @media (prefers-reduced-motion:reduce){summary::before{transition:none}}
@@ -251,6 +277,18 @@ td.tot{font-weight:700}
     <div class="srow"><label for="s-w-motor">モーター・ボート<small>2連率</small></label><output id="o-w-motor"></output><input type="range" id="s-w-motor" min="0" max="2.5" step="0.25"></div>
     <div class="srow"><label for="s-w-ex">展示タイム<small>そのレースの中での速さ</small></label><output id="o-w-ex"></output><input type="range" id="s-w-ex" min="0" max="2.5" step="0.25"></div>
     <div class="hr"></div>
+    <h2>期待値プラスの条件</h2>
+    <div class="srow">
+      <label for="s-ev">期待値<small>確率 × オッズ</small></label><output id="o-ev"></output>
+      <input type="range" id="s-ev" min="1" max="2" step="0.05">
+      <p>1.00を超えると、予想の確率どおりなら長い目で見てプラスです。予想の誤差に備えて少し高めにしておくのが安全です。</p>
+    </div>
+    <div class="srow">
+      <label for="s-minp">最低の確率</label><output id="o-minp"></output>
+      <input type="range" id="s-minp" min="0.5" max="10" step="0.5">
+      <p>確率がこれより低い大穴は、期待値が高くても候補に入れません。</p>
+    </div>
+    <div class="hr"></div>
     <h2>アラートと候補のしきい値</h2>
     <div class="srow">
       <label for="s-gap">スリットアラート（注意）</label><output id="o-gap"></output>
@@ -263,11 +301,11 @@ td.tot{font-weight:700}
       <p>この差を超えるか、攻める艇の展示タイムが2位以内なら「強」になります。</p>
     </div>
     <div class="srow">
-      <label for="s-honmei">鉄板候補<small>本命の1着率がこれ以上</small></label><output id="o-honmei"></output>
+      <label for="s-honmei">鉄板<small>本命の1着率がこれ以上</small></label><output id="o-honmei"></output>
       <input type="range" id="s-honmei" min="40" max="85" step="1">
     </div>
     <div class="srow">
-      <label for="s-ana">穴候補<small>1コースの1着率がこれ以下</small></label><output id="o-ana"></output>
+      <label for="s-ana">穴<small>1コースの1着率がこれ以下</small></label><output id="o-ana"></output>
       <input type="range" id="s-ana" min="15" max="50" step="1">
     </div>
     <div class="foot"><button class="ibtn" type="button" id="s-reset">初期値に戻す</button></div>
@@ -275,7 +313,7 @@ td.tot{font-weight:700}
 
   <section class="panel" id="bt" hidden aria-label="精度の検証">
     <h2>過去の結果で精度を検証</h2>
-    <p class="lead">今の重み付けで過去のレースを予想し直し、実際の着順と比べます。</p>
+    <p class="lead">今の重み付けで過去のレースを予想し直し、実際の着順と払戻で答え合わせします。</p>
     <div id="bt-body"></div>
   </section>
 </div>
@@ -284,9 +322,10 @@ td.tot{font-weight:700}
   <div class="gut">
     <div class="tabs" role="tablist" aria-label="表示するレース">
       <button class="tab" role="tab" data-tab="alert" type="button"><span class="n" id="n-alert">0</span>スリット</button>
-      <button class="tab" role="tab" data-tab="honmei" type="button"><span class="n" id="n-honmei">0</span>鉄板候補</button>
-      <button class="tab" role="tab" data-tab="ana" type="button"><span class="n" id="n-ana">0</span>穴候補</button>
-      <button class="tab" role="tab" data-tab="all" type="button"><span class="n" id="n-all">0</span>全レース</button>
+      <button class="tab" role="tab" data-tab="honmei" type="button"><span class="n" id="n-honmei">0</span>鉄板</button>
+      <button class="tab" role="tab" data-tab="ana" type="button"><span class="n" id="n-ana">0</span>穴</button>
+      <button class="tab" role="tab" data-tab="value" type="button"><span class="n" id="n-value">0</span>期待値</button>
+      <button class="tab" role="tab" data-tab="all" type="button"><span class="n" id="n-all">0</span>全て</button>
     </div>
     <div class="filters" id="filters"></div>
   </div>
@@ -295,7 +334,7 @@ td.tot{font-weight:700}
 <main class="gut">
   <div class="feed" id="feed"><div class="empty">出走表を読み込んでいます…</div></div>
   <div class="credit">
-    レースデータ：<a href="https://github.com/BoatraceOpenAPI" target="_blank" rel="noopener">Boatrace Open API</a>（非公式・約30分ごとに更新）。場別コース1着率：<a href="https://www.boatrace.jp/owpc/pc/data/stadium?jcd=01" target="_blank" rel="noopener">BOATRACE公式 場データ</a>（2026年7〜9月）。期待度は統計的な目安で、的中を保証するものではありません。舟券の購入は20歳から、無理のない範囲で。
+    レースデータ：<a href="https://github.com/boatraceopenapi/api" target="_blank" rel="noopener">Boatrace Open API</a>（非公式・約3分ごとに更新）。確定オッズ：<a href="https://github.com/turnmark/api" target="_blank" rel="noopener">turnmark/api</a>（非公式・前日分まで）。場別コース1着率：<a href="https://www.boatrace.jp/owpc/pc/data/stadium?jcd=01" target="_blank" rel="noopener">BOATRACE公式 場データ</a>（2026年7〜9月）。期待度と期待値は統計的な目安で、的中や利益を保証するものではありません。舟券の購入は20歳から、無理のない範囲で。
   </div>
 </main>
 
@@ -305,6 +344,8 @@ td.tot{font-weight:700}
 
 /* ---------- 定数 ---------- */
 const API = "https://boatraceopenapi.github.io";
+const TM = "https://turnmark.github.io";
+const OFFICIAL = "https://www.boatrace.jp/owpc/pc/race";
 const STADIUMS = ["","桐生","戸田","江戸川","平和島","多摩川","浜名湖","蒲郡","常滑","津","三国","びわこ","住之江","尼崎","鳴門","丸亀","児島","宮島","徳山","下関","若松","芦屋","福岡","唐津","大村"];
 const GRADES = {1:"SG",2:"G1",3:"G2",4:"G3",5:"一般"};
 const CLASSES = {1:"A1",2:"A2",3:"B1",4:"B2"};
@@ -312,6 +353,8 @@ const WEATHER = {1:"晴",2:"曇り",3:"雨",4:"雪",5:"台風",6:"霧"};
 const TACTIC = {2:"差し・まくり",3:"まくり",4:"カドまくり",5:"まくり差し",6:"まくり差し"};
 const WD = ["日","月","火","水","木","金","土"];
 const MARKS = ["◎","○","▲","△"];
+const TYPES = {win: "単勝", ex: "2連単", tri: "3連単"};
+const PAYKEY = {win: "win", ex: "exacta", tri: "trifecta"};
 
 // 場別・コース別1着率（%）— BOATRACE公式「最近3ヶ月のデータ」2026/07/01〜09/30
 const PRIOR = {
@@ -325,12 +368,10 @@ const PRIOR = {
   22:[61.8,14.1,14.3,6.3,3.2,0.9], 23:[56.7,12.7,12.9,10.6,6.6,1.5], 24:[58.0,13.7,11.4,9.9,6.1,1.5]
 };
 const NATL = [0,1,2,3,4,5].map(i => Object.values(PRIOR).reduce((a, v) => a + v[i], 0) / 24);
-// 3ヶ月分は場によってブレがあるので全国平均と7:3で混ぜる
 const priorFor = s => (PRIOR[s] || NATL).map((v, i) => 0.7 * v + 0.3 * NATL[i]);
 
-// 各要素の基本の効き（ロジット）。勝率1.0差で0.5、展示タイム0.05秒差で0.25など
 const BASE = {skill: 0.50, avgst: 0.12, exst: 0.06, motor: 0.20, ex: 0.25};
-const DEFAULTS = {gap: 0.05, strong: 0.08, honmei: 60, ana: 35, w: {skill: 1, start: 1, motor: 1, ex: 1}};
+const DEFAULTS = {gap: 0.05, strong: 0.08, honmei: 60, ana: 35, ev: 1.2, minP: 2, w: {skill: 1, start: 1, motor: 1, ex: 1}};
 const WLABEL = {skill: "実力・腕", start: "スタート力", motor: "モーター", ex: "展示タイム"};
 
 /* ---------- 小物 ---------- */
@@ -342,12 +383,16 @@ const f2 = v => v == null ? "-" : v.toFixed(2);
 const pct = (v, d = 0) => (v * 100).toFixed(d);
 const fST = (v, isF) => v == null ? "-" : (isF ? "F" : "") + "." + String(Math.round(Math.abs(v) * 100)).padStart(2, "0");
 const sgn = v => (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v);
+const yen = v => (v >= 0 ? "+" : "−") + Math.abs(Math.round(v)).toLocaleString("ja-JP") + "円";
 const jstNowDate = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 const parseJST = s => s ? new Date(String(s).replace(" ", "T") + "+09:00") : null;
 const shiftDate = (d, n) => { const t = new Date(d + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
 const hhmm = d => { const j = new Date(d.getTime() + 9 * 3600e3); return String(j.getUTCHours()).padStart(2,"0") + ":" + String(j.getUTCMinutes()).padStart(2,"0"); };
 const mdw = d => { const t = new Date(d + "T00:00:00Z"); return `${t.getUTCMonth() + 1}/${t.getUTCDate()}(${WD[t.getUTCDay()]})`; };
 const chip = no => `<span class="chipb c${no}">${no}</span>`;
+const typing = () => { const a = document.activeElement; return !!(a && a.classList && a.classList.contains("oin")); };
+const ymdOf = d => [d.slice(0, 4), d.replace(/-/g, "")];
+const oddsLink = (r, kind) => `${OFFICIAL}/${kind}?rno=${r.no}&jcd=${String(r.stadium).padStart(2, "0")}&hd=${r.date.replace(/-/g, "")}`;
 
 function loadSettings(){
   try {
@@ -359,7 +404,7 @@ function loadSettings(){
 function saveSettings(){ try { localStorage.setItem("slitradar.v2", JSON.stringify(settings)); } catch (e) {} }
 
 /* ---------- データ取得 ---------- */
-async function fetchJSON(url, ms = 12000){
+async function fetchJSON(url, ms = 15000){
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), ms);
   try {
@@ -369,42 +414,86 @@ async function fetchJSON(url, ms = 12000){
   } finally { clearTimeout(t); }
 }
 
-async function loadDay(date){
-  const y = date.slice(0, 4), ymd = date.replace(/-/g, "");
+function normPayouts(p){
+  const out = {};
+  if (!p) return out;
+  for (const k of Object.keys(p)){
+    if (!Array.isArray(p[k])) continue;
+    out[k] = p[k].map(x => ({combination: String(x.combination), amount: num(x.amount ?? x.payout) || 0}));
+  }
+  return out;
+}
+
+// api/v1 形式（Boatrace Open API・turnmark 共通）を読む
+function parseV1(j, date){
+  const out = [];
+  const st = (j && j.programs && j.programs.stadiums) || {};
+  for (const sk of Object.keys(st)){
+    const races = (st[sk] && st[sk].races) || {};
+    for (const rk of Object.keys(races)){
+      try {
+        const R = races[rk] || {};
+        const pv = R.preview || {}, rs = R.result || {};
+        const pvr = pv.racers || {}, rsr = rs.racers || {};
+        const boats = Object.values(R.racers || {}).filter(x => x && num(x.entry_number) > 0).map(x => {
+          const e = num(x.entry_number), q = pvr[e] || pvr[String(e)] || {};
+          const raw = num(q.start_timing);
+          return {
+            no: e,
+            name: String(x.name || "").replace(/[\s　]+/g, " ").trim(),
+            cls: CLASSES[x.rank_number] || "-",
+            win: num(x.national_win_rate), top2: num(x.national_top_2_percent), local: num(x.local_win_rate),
+            avgST: num(x.average_start_timing), F: num(x.flying_count) || 0, L: num(x.late_count) || 0,
+            motor2: num(x.motor_top_2_percent), boat2: num(x.boat_top_2_percent),
+            course: num(q.course_number),
+            exST: raw == null ? null : Math.abs(raw), exF: raw != null && raw < 0,
+            exTime: num(q.exhibition_time) > 0 ? num(q.exhibition_time) : null
+          };
+        }).sort((a, b) => a.no - b.no);
+        if (!boats.length) continue;
+        const hasPreview = boats.length >= 3 && boats.every(b => b.course != null && b.exST != null);
+        const order = Object.values(rsr).filter(x => x && num(x.place_number) > 0).sort((a, b) => a.place_number - b.place_number).map(x => num(x.entry_number));
+        const odds = R.odds && R.odds.win && Object.values(R.odds.win).some(v => num(v) > 0) ? R.odds : null;
+        out.push({
+          key: sk + "-" + rk, stadium: +sk, no: +rk, date: R.date || date,
+          closedAt: parseJST(R.closed_at),
+          grade: GRADES[R.grade_number] || "",
+          title: R.title || "", subtitle: R.subtitle || "",
+          cond: hasPreview ? {wind: num(pv.wind_speed), wave: num(pv.wave_height), weather: pv.weather_number, temp: num(pv.air_temperature), water: num(pv.water_temperature)} : null,
+          boats, hasPreview,
+          result: order.length ? {order, payouts: normPayouts(rs.payouts)} : null,
+          odds, oddsLabel: odds ? "確定オッズ" : ""
+        });
+      } catch (e) {}
+    }
+  }
+  return out.filter(r => r.closedAt);
+}
+
+// 予備：v2 形式（出走表・直前情報・結果が別ファイル）
+async function loadV2(date){
+  const [y, ymd] = ymdOf(date);
   const soft = p => p.catch(e => { if (e.status) return {}; throw e; });
   const [p, v, res] = await Promise.all([
     fetchJSON(`${API}/programs/v2/${y}/${ymd}.json`),
     soft(fetchJSON(`${API}/previews/v2/${y}/${ymd}.json`)),
     soft(fetchJSON(`${API}/results/v2/${y}/${ymd}.json`))
   ]);
-  return merge(p.programs || [], v.previews || [], res.results || []);
-}
-
-function merge(programs, previews, results){
-  const pv = new Map(previews.map(r => [r.race_stadium_number + "-" + r.race_number, r]));
-  const rs = new Map(results.map(r => [r.race_stadium_number + "-" + r.race_number, r]));
-  return programs.map(p => {
+  const pvm = new Map((v.previews || []).map(r => [r.race_stadium_number + "-" + r.race_number, r]));
+  const rsm = new Map((res.results || []).map(r => [r.race_stadium_number + "-" + r.race_number, r]));
+  return (p.programs || []).map(p => {
     const key = p.race_stadium_number + "-" + p.race_number;
-    const v = pv.get(key), x = rs.get(key);
+    const v = pvm.get(key), x = rsm.get(key);
     const vb = new Map(((v && v.boats) || []).map(b => [b.racer_boat_number, b]));
     const boats = (p.boats || []).map(b => {
       const q = vb.get(b.racer_boat_number) || {};
       const raw = num(q.racer_start_timing);
       return {
-        no: b.racer_boat_number,
-        name: String(b.racer_name || "").replace(/[\s　]+/g, " ").trim(),
-        cls: CLASSES[b.racer_class_number] || "-",
-        win: num(b.racer_national_top_1_percent),
-        top2: num(b.racer_national_top_2_percent),
-        local: num(b.racer_local_top_1_percent),
-        avgST: num(b.racer_average_start_timing),
-        F: b.racer_flying_count || 0,
-        L: b.racer_late_count || 0,
-        motor2: num(b.racer_assigned_motor_top_2_percent),
-        boat2: num(b.racer_assigned_boat_top_2_percent),
-        course: num(q.racer_course_number),
-        exST: raw == null ? null : Math.abs(raw),
-        exF: raw != null && raw < 0,
+        no: b.racer_boat_number, name: String(b.racer_name || "").replace(/[\s　]+/g, " ").trim(),
+        cls: CLASSES[b.racer_class_number] || "-", win: num(b.racer_national_top_1_percent), top2: num(b.racer_national_top_2_percent),
+        local: num(b.racer_local_top_1_percent), avgST: num(b.racer_average_start_timing), F: b.racer_flying_count || 0, L: b.racer_late_count || 0,
+        motor2: num(b.racer_assigned_motor_top_2_percent), boat2: num(b.racer_assigned_boat_top_2_percent),
+        course: num(q.racer_course_number), exST: raw == null ? null : Math.abs(raw), exF: raw != null && raw < 0,
         exTime: num(q.racer_exhibition_time) > 0 ? num(q.racer_exhibition_time) : null
       };
     });
@@ -412,17 +501,49 @@ function merge(programs, previews, results){
     let result = null;
     if (x && x.boats){
       const order = x.boats.filter(b => num(b.racer_place_number) > 0).sort((a, b) => a.racer_place_number - b.racer_place_number).map(b => b.racer_boat_number);
-      if (order.length) result = {order, payouts: x.payouts || {}};
+      if (order.length) result = {order, payouts: normPayouts(x.payouts)};
     }
     return {
-      key, stadium: p.race_stadium_number, no: p.race_number,
-      closedAt: parseJST(p.race_closed_at),
-      grade: GRADES[p.race_grade_number] || "",
+      key, stadium: p.race_stadium_number, no: p.race_number, date: p.race_date || date,
+      closedAt: parseJST(p.race_closed_at), grade: GRADES[p.race_grade_number] || "",
       title: p.race_title || "", subtitle: p.race_subtitle || "",
       cond: (v && hasPreview) ? {wind: num(v.race_wind), wave: num(v.race_wave), weather: v.race_weather_number, temp: num(v.race_temperature), water: num(v.race_water_temperature)} : null,
-      boats, hasPreview, result
+      boats, hasPreview, result, odds: null, oddsLabel: ""
     };
   });
+}
+
+// オッズなしの基本データ（3分更新の v1 → だめなら v2）
+async function loadBase(date){
+  const [y, ymd] = ymdOf(date);
+  let j = null;
+  try { j = await fetchJSON(`${API}/api/v1/${y}/${ymd}.json`); }
+  catch (e) { if (!e.status) throw e; }
+  if (j){ const races = parseV1(j, date); if (races.length) return races; }
+  return loadV2(date);
+}
+
+// オッズ付き（turnmark：前日分まで）→ だめなら基本データ
+async function loadWithOdds(date){
+  const [y, ymd] = ymdOf(date);
+  try {
+    const races = parseV1(await fetchJSON(`${TM}/api/v1/${y}/${ymd}.json`, 25000), date);
+    if (races.length) return races;
+  } catch (e) {}
+  return loadBase(date);
+}
+
+async function loadDay(date){
+  if (date < jstNowDate()) return loadWithOdds(date);
+  const [y, ymd] = ymdOf(date);
+  const tmP = fetchJSON(`${TM}/api/v1/${y}/${ymd}.json`, 20000).catch(() => null);
+  const races = await loadBase(date);
+  const tm = await tmP;
+  if (tm){
+    const m = new Map(parseV1(tm, date).filter(r => r.odds).map(r => [r.key, r.odds]));
+    races.forEach(r => { if (!r.odds && m.has(r.key)){ r.odds = m.get(r.key); r.oddsLabel = "オッズ"; } });
+  }
+  return races;
 }
 
 /* ---------- サンプル（架空データ） ---------- */
@@ -448,8 +569,8 @@ function makeSample(){
     {s:24,r:10, off:80,  sub:"一般戦", b:[[],[],[],[],[],[]]},
     {s:2, r:12, off:95,  sub:"選抜",   b:[["A1"],["A2"],["A1"],["A2"],["A1"],["B1"]]}
   ];
-  const now = Date.now();
-  return specs.map(sp => {
+  const now = Date.now(), today = jstNowDate();
+  const races = specs.map(sp => {
     const pv = sp.off <= 22;
     const boats = sp.b.map((b, i) => {
       const cls = b[0] || pick(["A1","A2","B1","B1","B1","B2"]);
@@ -466,13 +587,29 @@ function makeSample(){
       };
     });
     return {
-      key: "s" + sp.s + "-" + sp.r, stadium: sp.s, no: sp.r,
+      key: "s" + sp.s + "-" + sp.r, stadium: sp.s, no: sp.r, date: today,
       closedAt: new Date(Math.round((now + sp.off * 60000) / 60000) * 60000),
       grade: "一般", title: "サンプル開催", subtitle: sp.sub,
       cond: pv ? {wind: sp.w, wave: sp.wave, weather: sp.wx, temp: 22, water: 21} : null,
-      boats, hasPreview: pv, result: null
+      boats, hasPreview: pv, result: null, odds: null, oddsLabel: ""
     };
   });
+  // 架空オッズ：「世間は実力を重く、展示タイムを軽く見ている」と仮定して作る
+  const mkt = {...DEFAULTS, w: {skill: 1.4, start: 0.6, motor: 0.7, ex: 0.3}};
+  const odd = q => Math.max(1.0, Math.round(0.75 / q * (0.9 + rnd() * 0.2) * 10) / 10);
+  races.forEach(r => {
+    if (!r.hasPreview) return;
+    const pr = predict(r, mkt, slitAlerts(r, mkt));
+    const o = {win: {}, exacta: {}, trifecta: {}};
+    pr.F.forEach(f => { o.win[f.b.no] = odd(f.p1); });
+    pr.exAll.forEach(x => { (o.exacta[x.c[0]] = o.exacta[x.c[0]] || {})[x.c[1]] = odd(x.p); });
+    pr.triAll.forEach(x => {
+      const a = o.trifecta[x.c[0]] = o.trifecta[x.c[0]] || {};
+      (a[x.c[1]] = a[x.c[1]] || {})[x.c[2]] = odd(x.p);
+    });
+    r.odds = o; r.oddsLabel = "架空オッズ";
+  });
+  return races;
 }
 
 /* ---------- 判定：スリット ---------- */
@@ -549,25 +686,24 @@ function predict(r, s, alerts, lite){
   const c1 = F.find(f => f.course === 1) || F[0];
   if (lite) return {F, top, c1};
 
-  const exacta = [], tri = [];
+  const exAll = [], triAll = [];
   for (let i = 0; i < n; i++) for (let j = 0; j < n; j++){
     if (j === i) continue;
     const pij = F[i].p1 * F[j].p1 / (1 - F[i].p1);
-    exacta.push({c: [F[i].b.no, F[j].b.no], p: pij});
+    exAll.push({c: [F[i].b.no, F[j].b.no], p: pij});
     F[i].p2 += pij; F[j].p2 += pij;
     for (let k = 0; k < n; k++){
       if (k === i || k === j) continue;
       const pijk = pij * F[k].p1 / Math.max(1e-9, 1 - F[i].p1 - F[j].p1);
-      tri.push({c: [F[i].b.no, F[j].b.no, F[k].b.no], p: pijk});
+      triAll.push({c: [F[i].b.no, F[j].b.no, F[k].b.no], p: pijk});
       F[i].p3 += pijk; F[j].p3 += pijk; F[k].p3 += pijk;
     }
   }
-  exacta.sort((a, b) => b.p - a.p); tri.sort((a, b) => b.p - a.p);
+  exAll.sort((a, b) => b.p - a.p); triAll.sort((a, b) => b.p - a.p);
   ranked.forEach((f, i) => { f.mark = MARKS[i] || ""; f.markIdx = i; });
 
-  // 実力と展示の組み合わせで一言
-  const rankBy = (key, dir) => { const v = F.filter(f => f[key] != null).map(f => f[key]).sort((a, b) => dir * (a - b)); return f => f[key] == null ? null : v.indexOf(f[key]) + 1; };
-  const sr = rankBy("winEff", -1), er = rankBy("ex", -1);
+  const rankBy = key => { const v = F.filter(f => f[key] != null).map(f => f[key]).sort((a, b) => b - a); return f => f[key] == null ? null : v.indexOf(f[key]) + 1; };
+  const sr = rankBy("winEff"), er = rankBy("ex");
   F.forEach(f => {
     f.skillRank = sr(f); f.exRank = er(f);
     f.tag = f.exRank == null ? null
@@ -575,24 +711,55 @@ function predict(r, s, alerts, lite){
       : (f.skillRank >= 4 && f.exRank <= 2) ? {t: "気配で浮上", c: "up"}
       : (f.skillRank <= 2 && f.exRank >= n - 1) ? {t: "気配に不安", c: "down"} : null;
   });
-  return {F, top, c1, exacta: exacta.slice(0, 3), tri: tri.slice(0, 5)};
+  return {F, top, c1, exAll, triAll, exacta: exAll.slice(0, 3), tri: triAll.slice(0, 5)};
+}
+
+/* ---------- 期待値 ---------- */
+function oddsOf(o, t, c){
+  if (!o) return null;
+  let v = t === "win" ? o.win : t === "ex" ? o.exacta : o.trifecta;
+  for (const k of c){ if (v == null) return null; v = v[k] ?? v[String(k)]; }
+  const x = num(v);
+  return x > 0 ? x : null;
+}
+
+function valueBets(r, pr, s){
+  if (!r.odds) return [];
+  const out = [], minP = s.minP / 100;
+  const consider = (t, c, p) => {
+    if (p < minP) return;
+    const od = oddsOf(r.odds, t, c);
+    if (od && p * od >= s.ev - 1e-9) out.push({t, c, p, od, ev: p * od});
+  };
+  pr.F.forEach(f => consider("win", [f.b.no], f.p1));
+  pr.exAll.forEach(x => consider("ex", x.c, x.p));
+  pr.triAll.forEach(x => consider("tri", x.c, x.p));
+  return out.sort((a, b) => b.ev - a.ev);
 }
 
 function analyze(r, s){
   const alerts = slitAlerts(r, s);
   const pr = predict(r, s, alerts);
+  const value = valueBets(r, pr, s);
   return {
-    ...pr, alerts,
+    ...pr, alerts, value,
     isAlert: alerts.length > 0,
     isHonmei: pr.top.p1 * 100 >= s.honmei,
-    isAna: pr.c1.p1 * 100 <= s.ana
+    isAna: pr.c1.p1 * 100 <= s.ana,
+    isValue: value.length > 0
   };
 }
 
 /* ---------- 検証 ---------- */
 function evaluate(data, s){
-  let N = 0, ll = 0, llBase = 0, hit1 = 0, hit3 = 0, winRet = 0, triHit = 0, triRet = 0, c1Win = 0;
+  let N = 0, ll = 0, llBase = 0, hit1 = 0, hit3 = 0, winRet = 0, triHit = 0, triRet = 0, c1Win = 0, oddsN = 0;
   const bins = [0, 1, 2, 3, 4].map(() => ({n: 0, w: 0, p: 0}));
+  const ev = {win: {n: 0, hit: 0, ret: 0}, ex: {n: 0, hit: 0, ret: 0}, tri: {n: 0, hit: 0, ret: 0}};
+  const payOf = (r, t, c) => {
+    const comb = t === "win" ? String(c[0]) : c.join("-");
+    const p = ((r.result.payouts || {})[PAYKEY[t]] || []).find(x => x.combination === comb);
+    return p ? p.amount : 0;
+  };
   for (const r of data){
     const pr = predict(r, s, slitAlerts(r, s));
     const win = r.result.order[0];
@@ -603,19 +770,21 @@ function evaluate(data, s){
     const ps = pr.F.reduce((a, f) => a + f.prior, 0);
     llBase += -Math.log(Math.max(fw.prior / ps, 1e-6));
     if (pr.c1.b.no === win) c1Win++;
-    const pay = r.result.payouts || {};
-    if (pr.top.b.no === win){
-      hit1++;
-      const wp = (pay.win || []).find(x => String(x.combination) === String(win));
-      if (wp) winRet += +wp.payout || 0;
-    }
+    if (pr.top.b.no === win){ hit1++; winRet += payOf(r, "win", [win]); }
     if (r.result.order.slice(0, 3).includes(pr.top.b.no)) hit3++;
-    const t = pr.tri[0].c.join("-");
-    const tp = (pay.trifecta || []).find(x => String(x.combination) === t);
-    if (tp){ triHit++; triRet += +tp.payout || 0; }
+    const tp = payOf(r, "tri", pr.tri[0].c);
+    if (tp){ triHit++; triRet += tp; }
     pr.F.forEach(f => { const bi = Math.min(4, Math.floor(f.p1 * 5)); bins[bi].n++; bins[bi].p += f.p1; if (f.b.no === win) bins[bi].w++; });
+    if (r.odds){
+      oddsN++;
+      for (const v of valueBets(r, pr, s)){
+        const st = ev[v.t]; st.n++;
+        const pay = payOf(r, v.t, v.c);
+        if (pay){ st.hit++; st.ret += pay; }
+      }
+    }
   }
-  return {N, ll: ll / N, llBase: llBase / N, hit1: hit1 / N, hit3: hit3 / N, c1Win: c1Win / N, winROI: winRet / (100 * N), triHit: triHit / N, triROI: triRet / (100 * N), bins};
+  return {N, ll: ll / N, llBase: llBase / N, hit1: hit1 / N, hit3: hit3 / N, c1Win: c1Win / N, winROI: winRet / (100 * N), triHit: triHit / N, triROI: triRet / (100 * N), bins, ev, oddsN};
 }
 
 function loglossOnly(data, s){
@@ -650,7 +819,7 @@ function tune(data, s){
 
 /* ---------- 状態 ---------- */
 const settings = loadSettings();
-const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "alert", stadium: 0, upcoming: true, open: new Set(), note: ""};
+const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "alert", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}};
 const bt = {status: "idle", days: 0, data: [], res: null, tuned: null, prevW: null, msg: ""};
 try { const t = localStorage.getItem("slitradar.tab"); if (t) state.tab = t; } catch (e) {}
 
@@ -693,13 +862,28 @@ function badgeHTML(r, an){
   an.alerts.filter(a => a.type === "in").forEach(a => out.push(`<span class="bdg alert${a.level === 2 ? " strong" : ""}">イン凹み <span class="num">${f2(a.diff)}</span>${a.level === 2 ? " 強" : ""}</span>`));
   an.alerts.filter(a => a.type === "attack").forEach(a => out.push(`<span class="bdg alert${a.level === 2 ? " strong" : ""}">${bn(a.boat)}${a.tactic} <span class="num">+${f2(a.diff).slice(1)}</span>${a.nobi ? " 伸び◎" : ""}${a.fHolder ? " F持ち" : ""}</span>`));
   an.alerts.filter(a => a.type === "dent").forEach(a => out.push(`<span class="bdg alert">${bn(a.boat)}凹み → ${bn(a.next)}に展開</span>`));
-  if (an.isHonmei) out.push(`<span class="bdg solid">鉄板候補 ${bn(an.top.b.no)}<span class="num">${pct(an.top.p1)}%</span></span>`);
-  if (an.isAna) out.push(`<span class="bdg ana">穴候補 1コース<span class="num">${pct(an.c1.p1)}%</span></span>`);
+  if (an.isValue) out.push(`<span class="bdg val">期待値プラス <span class="num">${an.value.length}</span>点</span>`);
+  if (an.isHonmei) out.push(`<span class="bdg solid">鉄板 ${bn(an.top.b.no)}<span class="num">${pct(an.top.p1)}%</span></span>`);
+  if (an.isAna) out.push(`<span class="bdg ana">穴 1コース<span class="num">${pct(an.c1.p1)}%</span></span>`);
   if (r.result){
     const hit = r.result.order[0] === an.top.b.no;
     out.push(`<span class="bdg res">結果 <span class="num">${r.result.order.slice(0, 3).join("-")}</span>${hit ? " ◎的中" : ""}</span>`);
   } else if (!r.hasPreview) out.push(`<span class="bdg mute">展示待ち</span>`);
   return out.length ? `<div class="badges">${out.join("")}</div>` : "";
+}
+
+function valueHTML(r, an){
+  if (!an.value.length) return "";
+  const hitSet = r.result ? {win: String(r.result.order[0]), ex: r.result.order.slice(0, 2).join("-"), tri: r.result.order.slice(0, 3).join("-")} : null;
+  const rows = an.value.slice(0, 5).map(x => {
+    const hit = hitSet && hitSet[x.t] === x.c.join("-");
+    return `<div class="vrow"><span class="vt">${TYPES[x.t]}</span><span class="k">${x.c.map(chip).join("")}</span><span class="vp num">${pct(x.p, 1)}%${hit ? " 的中" : ""}</span><span class="vo num">${x.od.toFixed(1)}倍</span><span class="ve num">${x.ev.toFixed(2)}</span></div>`;
+  }).join("");
+  return `<div class="vblock">
+    <div class="probs-h"><span>期待値プラスの買い目（${esc(r.oddsLabel || "オッズ")}）</span><span>期待値</span></div>
+    ${rows}
+    ${an.value.length > 5 ? `<p class="note">ほか${an.value.length - 5}点</p>` : ""}
+  </div>`;
 }
 
 function probsHTML(r, an){
@@ -719,7 +903,8 @@ function probsHTML(r, an){
 
 function partsHTML(an){
   const v = x => { const p = Math.round(x * 10); return `<span class="${p < 0 ? "neg" : ""}">${sgn(p)}</span>`; };
-  const rows = an.F.map(f => `<tr><td>${chip(f.b.no)}</td><td>${v(f.parts.skill)}</td><td>${v(f.parts.start)}</td><td>${v(f.parts.motor)}</td><td>${v(f.parts.ex)}</td><td class="tot">${v(f.z)}</td><td>${pct(f.prior / an.F.reduce((a, g) => a + g.prior, 0))}%</td></tr>`).join("");
+  const ps = an.F.reduce((a, g) => a + g.prior, 0);
+  const rows = an.F.map(f => `<tr><td>${chip(f.b.no)}</td><td>${v(f.parts.skill)}</td><td>${v(f.parts.start)}</td><td>${v(f.parts.motor)}</td><td>${v(f.parts.ex)}</td><td class="tot">${v(f.z)}</td><td>${pct(f.prior / ps)}%</td></tr>`).join("");
   return `<div><h3>期待度の内訳（0がこのレースの平均）</h3><div class="tbl"><table class="lft2">
     <thead><tr><th>艇</th><th>実力</th><th>スタート</th><th>モーター</th><th>展示</th><th>合計</th><th>コース基本</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
@@ -746,12 +931,42 @@ function tableHTML(an){
     <tbody>${rows}</tbody></table></div></div>`;
 }
 
-function combosHTML(an){
-  const line = x => `<div class="combo"><span class="k">${x.c.map(chip).join("")}</span><span class="pr">${pct(x.p, 1)}%</span><span class="od">${(1 / x.p).toFixed(1)}倍〜</span></div>`;
-  return `<div><h3>買い目の目安</h3><div class="combos">
-    <div><div class="note">2連単</div>${an.exacta.map(line).join("")}</div>
-    <div><div class="note">3連単</div>${an.tri.map(line).join("")}</div>
-  </div><p class="note">右の倍率は「この確率なら損益ゼロになるオッズ」です。実際のオッズがこれより高ければ、予想どおりの確率なら期待値はプラスです。</p></div>`;
+function combosHTML(r, an){
+  const has = !!r.odds;
+  const saved = state.manual[r.key] || {};
+  const groups = [
+    ["win", [...an.F].sort((a, b) => b.p1 - a.p1).slice(0, 2).map(f => ({c: [f.b.no], p: f.p1}))],
+    ["ex", an.exacta],
+    ["tri", an.tri]
+  ];
+  const row = (t, x) => {
+    const cs = x.c.join("-");
+    const od = has ? oddsOf(r.odds, t, x.c) : (saved[t + cs] || null);
+    const ev = od ? x.p * od : null;
+    const id = ("o-" + r.key + "-" + t + "-" + cs).replace(/[^\w-]/g, "_");
+    return `<div class="combo">
+      <span class="k">${x.c.map(chip).join("")}</span>
+      <span class="pr">${pct(x.p, 1)}%</span>
+      <span class="od">${(1 / x.p).toFixed(1)}倍</span>
+      ${has ? `<span class="oval">${od ? od.toFixed(1) : "-"}</span>`
+            : `<input class="oin" id="${id}" type="text" inputmode="decimal" autocomplete="off" placeholder="オッズ" value="${saved[t + cs] ?? ""}" data-key="${esc(r.key)}" data-t="${t}" data-c="${cs}" data-p="${x.p}" aria-label="${TYPES[t]} ${cs} のオッズ">`}
+      <span class="evo${ev != null && ev >= settings.ev - 1e-9 ? " good" : ""}">${ev != null ? ev.toFixed(2) : ""}</span>
+    </div>`;
+  };
+  return `<div><h3>買い目と期待値</h3>
+    <div class="combos">
+      <div class="chead"><span>組み合わせ</span><span>確率</span><span>損益ゼロ</span><span>オッズ</span><span>期待値</span></div>
+      ${groups.map(([t, list]) => `<div class="cgrp">${TYPES[t]}</div>` + list.map(x => row(t, x)).join("")).join("")}
+    </div>
+    <p class="note">${has
+      ? `${esc(r.oddsLabel)}で計算しています。期待値が${settings.ev.toFixed(2)}以上なら緑になります。`
+      : `オッズの欄に実際のオッズを入れると期待値を計算します。${settings.ev.toFixed(2)}以上で緑になります。「損益ゼロ」はこれ以上のオッズなら期待値プラスになる目安です。`}</p>
+    <div class="links note">公式のオッズ：
+      <a href="${oddsLink(r, "oddstf")}" target="_blank" rel="noopener">単勝</a>
+      <a href="${oddsLink(r, "odds2tf")}" target="_blank" rel="noopener">2連単</a>
+      <a href="${oddsLink(r, "odds3t")}" target="_blank" rel="noopener">3連単</a>
+    </div>
+  </div>`;
 }
 
 function cardHTML(r, an, now){
@@ -770,13 +985,14 @@ function cardHTML(r, an, now){
     </div>
     ${badgeHTML(r, an)}
     ${showSlitTop ? `<div class="slitbox">${slitSVG(an)}</div>` : ""}
+    ${valueHTML(r, an)}
     ${probsHTML(r, an)}
     <details data-key="${esc(r.key)}"${state.open.has(r.key) ? " open" : ""}>
-      <summary>内訳・買い目・出走表</summary>
+      <summary>買い目・期待値・内訳・出走表</summary>
       <div class="dbody">
         ${cond ? `<div class="cond">${esc(cond)}</div>` : ""}
+        ${combosHTML(r, an)}
         ${partsHTML(an)}
-        ${combosHTML(an)}
         ${r.hasPreview && !showSlitTop ? `<div><h3>スリット予想図</h3><div class="slitbox">${slitSVG(an)}</div></div>` : ""}
         ${!r.hasPreview ? `<p class="note">展示航走のあと（締切のおよそ20分前）に展示タイムとスタートが反映され、スリット図とアラートが出ます。</p>` : ""}
         ${tableHTML(an)}
@@ -791,13 +1007,9 @@ function render(){
   const useUpcoming = state.upcoming && isToday;
   const analyzed = state.races.map(r => ({r, an: analyze(r, settings)}));
   const pool = analyzed.filter(x => (!state.stadium || x.r.stadium === state.stadium) && (!useUpcoming || x.r.closedAt > now));
-  const counts = {
-    alert: pool.filter(x => x.an.isAlert).length,
-    honmei: pool.filter(x => x.an.isHonmei).length,
-    ana: pool.filter(x => x.an.isAna).length,
-    all: pool.length
-  };
-  for (const k in counts) $("n-" + k).textContent = counts[k];
+  const pass = {alert: x => x.an.isAlert, honmei: x => x.an.isHonmei, ana: x => x.an.isAna, value: x => x.an.isValue, all: () => true};
+  for (const k in pass) $("n-" + k).textContent = pool.filter(pass[k]).length;
+  if (!pass[state.tab]) state.tab = "all";
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === state.tab)));
 
   const stds = [...new Set(state.races.map(r => r.stadium))].sort((a, b) => a - b);
@@ -807,8 +1019,8 @@ function render(){
     `<button class="chip" type="button" data-std="0" aria-pressed="${!state.stadium}">全場</button>` +
     stds.map(s => `<button class="chip" type="button" data-std="${s}" aria-pressed="${state.stadium === s}">${esc(STADIUMS[s] || s)}</button>`).join("");
 
-  const list = pool.filter(x => state.tab === "all" || (state.tab === "alert" ? x.an.isAlert : state.tab === "honmei" ? x.an.isHonmei : x.an.isAna))
-    .sort((a, b) => a.r.closedAt - b.r.closedAt || a.r.stadium - b.r.stadium);
+  const list = pool.filter(pass[state.tab]).sort((a, b) => a.r.closedAt - b.r.closedAt || a.r.stadium - b.r.stadium);
+  const anyOdds = state.races.some(r => r.odds);
 
   let html;
   if (state.mode === "loading") html = `<div class="empty">出走表を読み込んでいます…</div>`;
@@ -816,11 +1028,14 @@ function render(){
   else if (!list.length){
     const msg = {
       alert: "スリットアラートが出ているレースはありません。展示航走が終わったレースから順に判定します。",
-      honmei: "鉄板候補はありません。設定で「鉄板候補」のしきい値を下げると増えます。",
-      ana: "穴候補はありません。設定で「穴候補」のしきい値を上げると増えます。",
+      honmei: "鉄板のレースはありません。設定で「鉄板」のしきい値を下げると増えます。",
+      ana: "穴のレースはありません。設定で「穴」のしきい値を上げると増えます。",
+      value: anyOdds
+        ? "期待値プラスの買い目はありません。設定で期待値の条件をゆるめると増えます。"
+        : "この日のオッズはまだ取得できません（オッズのデータ元は前日分までの提供です）。各レースの「買い目・期待値」を開いてオッズを入力すると、その場で期待値を計算します。‹ で前の日に戻ると、確定オッズで自動判定した結果を見られます。",
       all: "表示できるレースがありません。"
     }[state.tab];
-    html = `<div class="empty">${msg}${useUpcoming ? "<br>「締切前のみ」を外すと締切済みのレースも見られます。" : ""}</div>`;
+    html = `<div class="empty">${msg}${useUpcoming && state.tab !== "value" ? "<br>「締切前のみ」を外すと締切済みのレースも見られます。" : ""}</div>`;
   } else html = list.map(x => cardHTML(x.r, x.an, now)).join("");
   $("feed").innerHTML = html;
 
@@ -828,15 +1043,16 @@ function render(){
   $("d-prev").disabled = state.mode !== "live";
   $("d-next").disabled = state.mode !== "live" || isToday;
   const st = $("src-status");
-  if (state.mode === "live") st.innerHTML = `<span class="dot live"></span>実データ · ${state.updatedAt ? hhmm(state.updatedAt) + " 取得" : ""}`;
+  if (state.mode === "live") st.innerHTML = `<span class="dot live"></span>実データ · ${state.updatedAt ? hhmm(state.updatedAt) + " 取得" : ""}${anyOdds ? " · オッズあり" : ""}`;
   else if (state.mode === "sample") st.innerHTML = `<span class="dot sample"></span>サンプル表示`;
   else st.innerHTML = `<span class="dot"></span>読み込み中`;
 }
+const safeRender = () => { if (!typing()) render(); };
 
 function renderBT(){
   const el = $("bt-body");
   if (state.mode !== "live"){
-    el.innerHTML = `<p class="btmsg">実データで動かしているときに使えます。HTMLを自分のサイト（GitHub Pagesなど）に置いて開くと、過去の着順・払戻と照らし合わせて、◎の的中率や回収率、重みの自動調整ができます。</p>`;
+    el.innerHTML = `<p class="btmsg">実データで動かしているときに使えます。HTMLを自分のサイト（GitHub Pagesなど）に置いて開くと、過去の着順・払戻と照らし合わせて、◎の的中率や回収率、期待値プラスだけ買った場合の成績、重みの自動調整が見られます。</p>`;
     return;
   }
   const busy = bt.status === "loading";
@@ -854,8 +1070,21 @@ function renderBT(){
       <div class="stat"><span>単勝◎の回収率</span><b>${pct(x.winROI)}%</b><small>全レース100円ずつ買った場合</small></div>
       <div class="stat"><span>3連単1点の回収率</span><b>${pct(x.triROI)}%</b><small>的中率 ${pct(x.triHit, 1)}%</small></div>
       <div class="stat"><span>コースだけの予想との差</span><b>${gain >= 0 ? "+" : "−"}${Math.abs(gain).toFixed(1)}%</b><small>確率の当てはまり（対数損失）の改善率</small></div>
-    </div>
-    <div><h3 style="margin:0 0 4px;font-size:12.5px">予想1着率と実際の1着率</h3><div class="tbl"><table class="cal lft2">
+    </div>`;
+    h += `<div><h3>期待値プラスだけ買った場合（期待値${settings.ev.toFixed(2)}以上・確率${settings.minP.toFixed(1)}%以上、各100円）</h3>`;
+    if (x.oddsN){
+      const rows = ["win", "ex", "tri"].map(t => {
+        const e = x.ev[t];
+        const roi = e.n ? e.ret / (100 * e.n) : 0;
+        return `<tr><td>${TYPES[t]}</td><td>${e.n}</td><td>${e.n ? pct(e.hit / e.n, 1) + "%" : "-"}</td><td class="${roi >= 1 ? "plus" : ""}">${e.n ? pct(roi) + "%" : "-"}</td><td class="${roi >= 1 ? "plus" : ""}">${e.n ? yen(e.ret - 100 * e.n) : "-"}</td></tr>`;
+      }).join("");
+      h += `<div class="tbl"><table class="lft2"><thead><tr><th>賭式</th><th>点数</th><th>的中率</th><th>回収率</th><th>収支</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <p class="note">オッズ付きのレース${x.oddsN}件で計算。確定オッズを使っているので、締切前に見るオッズとは少しずれます。実際に買うと、この成績より下がることがあります。設定の「期待値プラスの条件」を動かすと、この表もすぐ計算し直します。</p>`;
+    } else {
+      h += `<p class="btmsg">この期間のオッズが取得できませんでした。</p>`;
+    }
+    h += `</div>`;
+    h += `<div><h3>予想1着率と実際の1着率</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>予想の帯</th><th>艇数</th><th>予想の平均</th><th>実際</th></tr></thead>
       <tbody>${x.bins.map((b, i) => `<tr><td>${i * 20}〜${i * 20 + 20}%</td><td>${b.n}</td><td>${b.n ? pct(b.p / b.n, 1) + "%" : "-"}</td><td>${b.n ? pct(b.w / b.n, 1) + "%" : "-"}</td></tr>`).join("")}</tbody>
     </table></div><p class="note">「予想の平均」と「実際」が近いほど、期待度の数字をそのまま信じてよい状態です。</p></div>
@@ -880,7 +1109,7 @@ function tickCountdowns(){
     el.textContent = closed ? "締切済" : mins < 60 ? `あと${mins}分` : `あと${Math.floor(mins / 60)}時間${mins % 60}分`;
     el.classList.toggle("soon", !closed && mins <= 10);
   });
-  if (crossed) render();
+  if (crossed) safeRender();
 }
 
 /* ---------- 読み込み ---------- */
@@ -896,11 +1125,11 @@ async function load(){
     } else if (first || state.mode === "sample"){
       state.races = makeSample(); state.mode = "sample"; state.note = "";
       const n = $("notice");
-      n.innerHTML = `<b>サンプル表示中</b>　この画面からはレースデータのサイトに接続できないため、動作確認用の<b>架空のレース</b>を表示しています（選手名・数値はすべて架空）。同じHTMLを自分のサイト（GitHub Pagesなど）に置くと、当日の実データで判定します。`;
+      n.innerHTML = `<b>サンプル表示中</b>　この画面からはレースデータのサイトに接続できないため、動作確認用の<b>架空のレースと架空のオッズ</b>を表示しています（選手名・数値はすべて架空）。同じHTMLを自分のサイト（GitHub Pagesなど）に置くと、当日の実データで判定します。`;
       n.hidden = false;
     }
   }
-  render(); renderBT();
+  safeRender(); renderBT();
 }
 
 async function runBacktest(days){
@@ -910,14 +1139,14 @@ async function runBacktest(days){
     const d = shiftDate(today, -i);
     bt.msg = `${mdw(d)} を取得中…（${days - i + 1}/${days}）`; renderBT();
     try {
-      const races = await loadDay(d);
+      const races = await loadWithOdds(d);
       races.forEach(r => { if (r.hasPreview && r.result) bt.data.push(r); });
     } catch (e) {}
   }
   bt.msg = "計算中…"; renderBT();
   await new Promise(res => setTimeout(res, 30));
   bt.res = bt.data.length ? evaluate(bt.data, settings) : null;
-  bt.status = "done"; bt.msg = bt.data.length ? "" : "";
+  bt.status = "done"; bt.msg = "";
   renderBT();
 }
 
@@ -930,7 +1159,7 @@ async function runTune(){
   bt.tuned = true; saveSettings(); syncSettings();
   bt.res = evaluate(bt.data, settings);
   bt.status = "done"; bt.msg = "";
-  render(); renderBT();
+  safeRender(); renderBT();
 }
 
 /* ---------- イベント ---------- */
@@ -949,6 +1178,18 @@ $("feed").addEventListener("toggle", e => {
   if (d.tagName !== "DETAILS") return;
   if (d.open) state.open.add(d.dataset.key); else state.open.delete(d.dataset.key);
 }, true);
+$("feed").addEventListener("input", e => {
+  const el = e.target;
+  if (!el.classList || !el.classList.contains("oin")) return;
+  const v = parseFloat(String(el.value).replace(/[^\d.]/g, ""));
+  const m = state.manual[el.dataset.key] || (state.manual[el.dataset.key] = {});
+  const k = el.dataset.t + el.dataset.c;
+  if (v > 0) m[k] = v; else delete m[k];
+  const out = el.parentElement.querySelector(".evo");
+  const ev = v > 0 ? +el.dataset.p * v : null;
+  out.textContent = ev != null ? ev.toFixed(2) : "";
+  out.classList.toggle("good", ev != null && ev >= settings.ev - 1e-9);
+});
 $("btn-refresh").addEventListener("click", async e => {
   const b = e.currentTarget; b.disabled = true; b.textContent = "更新中…";
   await load();
@@ -965,6 +1206,8 @@ const SL = [
   ["w-start", s => s.w.start, (s, v) => s.w.start = v, v => "×" + v.toFixed(2)],
   ["w-motor", s => s.w.motor, (s, v) => s.w.motor = v, v => "×" + v.toFixed(2)],
   ["w-ex",    s => s.w.ex,    (s, v) => s.w.ex = v,    v => "×" + v.toFixed(2)],
+  ["ev",      s => s.ev,      (s, v) => s.ev = v,      v => v.toFixed(2) + "以上"],
+  ["minp",    s => s.minP,    (s, v) => s.minP = v,    v => v.toFixed(1) + "%以上"],
   ["gap",     s => s.gap,     (s, v) => { s.gap = v; if (s.strong < v) s.strong = v; }, v => v.toFixed(2) + "秒"],
   ["strong",  s => s.strong,  (s, v) => { s.strong = v; if (s.gap > v) s.gap = v; }, v => v.toFixed(2) + "秒"],
   ["honmei",  s => s.honmei,  (s, v) => s.honmei = v, v => v + "%以上"],
@@ -981,11 +1224,16 @@ $("s-reset").addEventListener("click", () => {
   if (bt.data.length){ bt.res = evaluate(bt.data, settings); } renderBT();
 });
 
+const isLiveToday = () => state.mode === "live" && state.date === jstNowDate();
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && isLiveToday() && state.updatedAt && Date.now() - state.updatedAt > 3 * 60000) load();
+});
+
 syncSettings();
 render();
 load();
 setInterval(tickCountdowns, 30000);
-setInterval(() => { if (state.mode === "live" && state.date === jstNowDate()) load(); }, 5 * 60000);
+setInterval(() => { if (isLiveToday() && document.visibilityState === "visible" && !typing()) load(); }, 3 * 60000);
 })();
 </script>
 
