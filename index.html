@@ -247,6 +247,27 @@ td.tot{font-weight:700}
 .links{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px}
 .links a{color:var(--ink)}
 
+/* 展開 */
+.tk{display:grid;gap:5px;min-width:0}
+.tk-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:11.5px;color:var(--muted);font-weight:500}
+.tk-h b{color:var(--ink);font-size:13px}
+.tkbar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--track)}
+.tkbar i{display:block;height:100%}
+.k0{background:var(--bar1)}.k1{background:var(--val)}.k2{background:var(--accent)}.k3{background:var(--ana)}.k4{background:var(--bar3)}
+.tk-l{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:12px;color:var(--muted)}
+.tk-l span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.tk-l i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.tk-l b{font-family:var(--f-num);font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums}
+.tk-t{font-size:12.5px}
+.tk-t b{color:var(--accent)}
+.nige{display:grid;gap:5px}
+.nrow{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:12.5px}
+.nrow .nb{height:6px;border-radius:3px;background:var(--track);overflow:hidden}
+.nrow .nb i{display:block;height:100%;background:var(--val)}
+.nrow .np{font-family:var(--f-num);font-size:15px;font-weight:600;text-align:right;min-width:9ch;font-variant-numeric:tabular-nums}
+.nrow .np small{color:var(--muted);font-weight:500;font-size:12px;margin-left:4px}
+td.feat{font-family:var(--f-body);font-size:12px;text-align:left}
+
 .credit{font-size:12px;color:var(--muted);padding-block:16px 28px;line-height:1.7;border-top:1px solid var(--line);margin-top:8px}
 .credit a{color:inherit}
 
@@ -282,6 +303,7 @@ td.tot{font-weight:700}
     <div class="srow"><label for="s-w-start">スタート力<small>平均ST・F持ち・展示ST</small></label><output id="o-w-start"></output><input type="range" id="s-w-start" min="0" max="2.5" step="0.25"></div>
     <div class="srow"><label for="s-w-motor">モーター・ボート<small>2連率</small></label><output id="o-w-motor"></output><input type="range" id="s-w-motor" min="0" max="2.5" step="0.25"></div>
     <div class="srow"><label for="s-w-ex">展示タイム<small>そのレースの中での速さ</small></label><output id="o-w-ex"></output><input type="range" id="s-w-ex" min="0" max="2.5" step="0.25"></div>
+    <div class="srow"><label for="s-w-course">コース実績<small>その選手がそのコースで勝っている率</small></label><output id="o-w-course"></output><input type="range" id="s-w-course" min="0" max="2.5" step="0.25"><p id="stats-info"></p></div>
     <div class="hr"></div>
     <h2>期待値プラスの条件</h2>
     <div class="srow">
@@ -340,7 +362,7 @@ td.tot{font-weight:700}
 <main class="gut">
   <div class="feed" id="feed"><div class="empty">出走表を読み込んでいます…</div></div>
   <div class="credit">
-    レースデータ：<a href="https://github.com/boatraceopenapi/api" target="_blank" rel="noopener">Boatrace Open API</a>（非公式・約3分ごとに更新）。確定オッズ：<a href="https://github.com/turnmark/api" target="_blank" rel="noopener">turnmark/api</a>（非公式・前日分まで）。場別コース1着率：<a href="https://www.boatrace.jp/owpc/pc/data/stadium?jcd=01" target="_blank" rel="noopener">BOATRACE公式 場データ</a>（2026年7〜9月）。期待度と期待値は統計的な目安で、的中や利益を保証するものではありません。舟券の購入は20歳から、無理のない範囲で。
+    レースデータ：<a href="https://github.com/boatraceopenapi/api" target="_blank" rel="noopener">Boatrace Open API</a>（非公式・約3分ごとに更新）。確定オッズ：<a href="https://github.com/turnmark/api" target="_blank" rel="noopener">turnmark/api</a>（非公式・前日分まで）。場別コース1着率：<a href="https://www.boatrace.jp/owpc/pc/data/stadium?jcd=01" target="_blank" rel="noopener">BOATRACE公式 場データ</a>（2026年7〜9月）。選手のコース別成績・展開・場の傾向は、上記レースデータの2026年1月以降の結果を毎晩自動で集計したものです。期待度と期待値は統計的な目安で、的中や利益を保証するものではありません。舟券の購入は20歳から、無理のない範囲で。
   </div>
 </main>
 
@@ -376,9 +398,41 @@ const PRIOR = {
 const NATL = [0,1,2,3,4,5].map(i => Object.values(PRIOR).reduce((a, v) => a + v[i], 0) / 24);
 const priorFor = s => (PRIOR[s] || NATL).map((v, i) => 0.7 * v + 0.3 * NATL[i]);
 
-const BASE = {skill: 0.50, avgst: 0.12, exst: 0.06, motor: 0.20, ex: 0.25};
-const DEFAULTS = {gap: 0.05, strong: 0.08, honmei: 60, ana: 35, ev: 1.2, minP: 2, w: {skill: 1, start: 1, motor: 1, ex: 1}};
-const WLABEL = {skill: "実力・腕", start: "スタート力", motor: "モーター", ex: "展示タイム"};
+const BASE = {skill: 0.50, avgst: 0.12, exst: 0.06, motor: 0.20, ex: 0.25, course: 0.35};
+const DEFAULTS = {gap: 0.05, strong: 0.08, honmei: 60, ana: 35, ev: 1.2, minP: 2, w: {skill: 1, start: 1, motor: 1, ex: 1, course: 1}};
+const WLABEL = {skill: "実力・腕", start: "スタート力", motor: "モーター", ex: "展示タイム", course: "コース実績"};
+const TECHS = ["逃げ", "差し", "まくり", "まくり差し", "その他"];
+// 集計がないときの決まり手の目安（コース別：逃げ・差し・まくり・まくり差し・その他）
+const TECH_FALLBACK = [[.95,0,0,0,.05],[0,.6,.3,0,.1],[0,.2,.45,.3,.05],[0,.25,.45,.25,.05],[0,.2,.3,.45,.05],[0,.25,.3,.4,.05]];
+
+/* ---------- 集計（コース別成績） ----------
+   各コースの配列：0出走 1一着 2二着 3三着 4ST合計 5ST件数 6逃げ 7差し 8まくり 9まくり差し 10他
+   11 1コースが逃げた回数 12 そのとき2着 13 そのとき2・3着 14 差され負け 15 まくられ負け */
+let STATS = null;
+const logit = p => { const q = clamp(p, 0.005, 0.995); return Math.log(q / (1 - q)); };
+const shrink = (k, n, base, K) => (k + K * base) / (n + K);
+function prepStats(raw){
+  if (!raw || !raw.racers || !raw.stadiums) return null;
+  const nat = [0, 1, 2, 3, 4, 5].map(() => new Array(16).fill(0));
+  Object.values(raw.stadiums).forEach(sd => (sd.c || []).forEach((a, i) => { if (Array.isArray(a)) a.forEach((v, k) => { nat[i][k] += v; }); }));
+  return {...raw, nat};
+}
+const cstat = (stats, reg, c) => { const r = stats && reg != null ? stats.racers[reg] : null; return r && Array.isArray(r[c - 1]) ? r[c - 1] : null; };
+const natRate = (stats, c, k, d) => { const a = stats.nat[c - 1]; return a && a[d] ? a[k] / a[d] : 0; };
+const statsURLs = name => {
+  const out = [];
+  const m = location.hostname.match(/^([\w-]+)\.github\.io$/i);
+  const repo = location.pathname.split("/").filter(Boolean)[0];
+  if (m && repo && !/\.html?$/i.test(repo)) out.push(`https://raw.githubusercontent.com/${m[1]}/${repo}/main/${name}`);
+  out.push(name);
+  return out;
+};
+async function loadStatsFile(name){
+  for (const u of statsURLs(name)){
+    try { const j = await fetchJSON(u + "?t=" + Math.floor(Date.now() / 600000), 20000); const s = prepStats(j); if (s) return s; } catch (e) {}
+  }
+  return null;
+}
 
 /* ---------- 小物 ---------- */
 const $ = id => document.getElementById(id);
@@ -445,7 +499,7 @@ function parseV1(j, date){
           const e = num(x.entry_number), q = pvr[e] || pvr[String(e)] || {};
           const raw = num(q.start_timing);
           return {
-            no: e,
+            no: e, reg: num(x.number),
             name: String(x.name || "").replace(/[\s　]+/g, " ").trim(),
             cls: CLASSES[x.rank_number] || "-",
             win: num(x.national_win_rate), top2: num(x.national_top_2_percent), local: num(x.local_win_rate),
@@ -495,7 +549,7 @@ async function loadV2(date){
       const q = vb.get(b.racer_boat_number) || {};
       const raw = num(q.racer_start_timing);
       return {
-        no: b.racer_boat_number, name: String(b.racer_name || "").replace(/[\s　]+/g, " ").trim(),
+        no: b.racer_boat_number, reg: num(b.racer_number), name: String(b.racer_name || "").replace(/[\s　]+/g, " ").trim(),
         cls: CLASSES[b.racer_class_number] || "-", win: num(b.racer_national_top_1_percent), top2: num(b.racer_national_top_2_percent),
         local: num(b.racer_local_top_1_percent), avgST: num(b.racer_average_start_timing), F: b.racer_flying_count || 0, L: b.racer_late_count || 0,
         motor2: num(b.racer_assigned_motor_top_2_percent), boat2: num(b.racer_assigned_boat_top_2_percent),
@@ -583,7 +637,7 @@ function makeSample(){
       const [lo, hi] = RANGE[cls];
       const win = b[1] != null ? b[1] : r2(lo + rnd() * (hi - lo));
       return {
-        no: i + 1, name: pick(SUR) + " " + pick(GIV), cls, win,
+        no: i + 1, reg: 9000 + sp.s * 100 + sp.r * 6 + i, name: pick(SUR) + " " + pick(GIV), cls, win,
         top2: Math.round(win * 7 - 5 + rnd() * 6), local: r2(win + (rnd() - .5)),
         avgST: r2(.13 + rnd() * .06), F: 0, L: 0,
         motor2: b[2] != null ? b[2] : Math.round(27 + rnd() * 20), boat2: Math.round(25 + rnd() * 18),
@@ -601,11 +655,11 @@ function makeSample(){
     };
   });
   // 架空オッズ：「世間は実力を重く、展示タイムを軽く見ている」と仮定して作る
-  const mkt = {...DEFAULTS, w: {skill: 1.4, start: 0.6, motor: 0.7, ex: 0.3}};
+  const mkt = {...DEFAULTS, w: {skill: 1.4, start: 0.6, motor: 0.7, ex: 0.3, course: 0}};
   const odd = q => Math.max(1.0, Math.round(0.75 / q * (0.9 + rnd() * 0.2) * 10) / 10);
   races.forEach(r => {
     if (!r.hasPreview) return;
-    const pr = predict(r, mkt, slitAlerts(r, mkt));
+    const pr = predict(r, mkt, slitAlerts(r, mkt), false, null);
     const o = {win: {}, exacta: {}, trifecta: {}};
     pr.F.forEach(f => { o.win[f.b.no] = odd(f.p1); });
     pr.exAll.forEach(x => { (o.exacta[x.c[0]] = o.exacta[x.c[0]] || {})[x.c[1]] = odd(x.p); });
@@ -616,6 +670,34 @@ function makeSample(){
     r.odds = o; r.oddsLabel = "架空オッズ";
   });
   return races;
+}
+
+// サンプル用の架空のコース別成績
+function makeSampleStats(races){
+  const rnd = mulberry32(2026);
+  const mk = (n, rate, c) => {
+    const a = new Array(16).fill(0);
+    const w = Math.round(n * rate);
+    a[0] = n; a[1] = w; a[2] = Math.round(n * Math.min(.3, rate * .8 + .08)); a[3] = Math.round(n * .17);
+    a[4] = Math.round(n * (14 + rnd() * 6)); a[5] = n;
+    TECH_FALLBACK[c - 1].forEach((q, i) => { a[6 + i] = Math.round(w * q * (0.7 + rnd() * 0.6)); });
+    if (c >= 2){ a[11] = Math.round(n * .55); a[12] = Math.round(a[11] * (.1 + rnd() * .35)); a[13] = Math.min(a[11], Math.round(a[12] * 1.9)); }
+    else { a[14] = Math.round((n - w) * .35); a[15] = Math.round((n - w) * .4); }
+    return a;
+  };
+  const stadiums = {}, racers = {};
+  [...new Set(races.map(r => r.stadium))].forEach(s => {
+    const p = priorFor(s);
+    stadiums[s] = {races: 1500, manshu: Math.round(1500 * (.1 + (60 - p[0]) / 150)), c: p.map((v, i) => mk(1500, v / 100, i + 1))};
+  });
+  races.forEach(r => r.boats.forEach(b => {
+    const c = b.course || b.no;
+    const k = {A1: 1.35, A2: 1.1, B1: .85, B2: .6}[b.cls] || 1;
+    const arr = [0, 0, 0, 0, 0, 0];
+    arr[c - 1] = mk(12 + Math.floor(rnd() * 45), Math.min(.9, NATL[c - 1] / 100 * k * (.7 + rnd() * .6)), c);
+    racers[b.reg] = arr;
+  }));
+  return prepStats({v: 1, built: jstNowDate(), from: "サンプル", to: "サンプル", races: 1500 * 3, stadiums, racers, sample: true});
 }
 
 /* ---------- 判定：スリット ---------- */
@@ -649,31 +731,44 @@ function slitAlerts(r, s){
 }
 
 /* ---------- 判定：期待度（1着率） ----------
-   場別コース1着率 × exp(実力 + スタート力 + モーター + 展示タイム の偏差)
-   2着・3着は Harville 方式（残った艇で1着率を按分）で計算 */
-function predict(r, s, alerts, lite){
+   場別コース1着率 × exp(実力 + スタート力 + モーター + 展示タイム + コース実績 の偏差)
+   2着・3着は Harville 方式。ただし1コースが勝つときの2着は「逃げ時の2着率」の実績と半々で混ぜる */
+function predict(r, s, alerts, lite, stats = STATS){
   const order = sortOrder(r), w = s.w, n = order.length;
   const pri = priorFor(r.stadium);
-  const F = order.map(b => ({
-    b,
-    course: r.hasPreview ? b.course : b.no,
-    winEff: b.win == null ? 4.5 : (b.local > 0 ? 0.75 * b.win + 0.25 * b.local : b.win),
-    st: (b.avgST > 0 ? (0.16 - b.avgST) / 0.02 : 0) - (b.F > 0 ? 0.8 : 0),
-    mo: (b.motor2 > 0 ? (b.motor2 - 35) / 10 : 0) + (b.boat2 > 0 ? (b.boat2 - 35) / 20 : 0),
-    ex: b.exTime != null ? -b.exTime / 0.05 : null,
-    es: b.exST != null ? -(b.exF ? -b.exST : b.exST) / 0.05 : null
-  }));
+  const F = order.map(b => {
+    const course = r.hasPreview ? b.course : b.no;
+    const cs = stats ? cstat(stats, b.reg, course) : null;
+    const cST = cs && cs[5] >= 8 ? cs[4] / cs[5] / 100 : null;   // そのコースでの平均ST
+    const stv = cST ?? (b.avgST > 0 ? b.avgST : null);
+    let crs = 0;
+    if (stats){
+      const base = natRate(stats, course, 1, 0);
+      if (base > 0) crs = logit(shrink(cs ? cs[1] : 0, cs ? cs[0] : 0, base, 10)) - logit(base);
+    }
+    return {
+      b, course, cs, cST,
+      winEff: b.win == null ? 4.5 : (b.local > 0 ? 0.75 * b.win + 0.25 * b.local : b.win),
+      st: (stv != null ? (0.16 - stv) / 0.02 : 0) - (b.F > 0 ? 0.8 : 0),
+      mo: (b.motor2 > 0 ? (b.motor2 - 35) / 10 : 0) + (b.boat2 > 0 ? (b.boat2 - 35) / 20 : 0),
+      ex: b.exTime != null ? -b.exTime / 0.05 : null,
+      es: b.exST != null ? -(b.exF ? -b.exST : b.exST) / 0.05 : null,
+      crs
+    };
+  });
   const avg = k => { const v = F.map(f => f[k]).filter(x => x != null); return v.length ? v.reduce((a, c) => a + c, 0) / v.length : 0; };
   const M = {winEff: avg("winEff"), st: avg("st"), mo: avg("mo"), ex: avg("ex"), es: avg("es")};
   const wind = r.cond && r.cond.wind;
   const windF = wind >= 5 ? Math.max(0.75, 1 - 0.03 * (wind - 4)) : 1;
+  const wc = w.course ?? 0;
   let S = 0;
   F.forEach(f => {
     const parts = {
       skill: w.skill * BASE.skill * (f.winEff - M.winEff),
       start: w.start * (BASE.avgst * (f.st - M.st) + (f.es == null ? 0 : BASE.exst * clamp(f.es - M.es, -3, 3))),
       motor: w.motor * BASE.motor * (f.mo - M.mo),
-      ex: f.ex == null ? 0 : w.ex * BASE.ex * clamp(f.ex - M.ex, -4, 4)
+      ex: f.ex == null ? 0 : w.ex * BASE.ex * clamp(f.ex - M.ex, -4, 4),
+      course: wc * BASE.course * clamp(f.crs, -2.5, 2.5)
     };
     for (const a of alerts){
       if (a.boat !== f.b.no) continue;
@@ -681,7 +776,7 @@ function predict(r, s, alerts, lite){
       if (a.type === "in") parts.start -= w.start * (a.level === 2 ? 0.30 : 0.18);
     }
     f.parts = parts;
-    f.z = parts.skill + parts.start + parts.motor + parts.ex;
+    f.z = parts.skill + parts.start + parts.motor + parts.ex + parts.course;
     f.prior = (pri[f.course - 1] ?? 1) * (f.course === 1 ? windF : 1);
     f.raw = f.prior * Math.exp(f.z);
     S += f.raw;
@@ -692,10 +787,26 @@ function predict(r, s, alerts, lite){
   const c1 = F.find(f => f.course === 1) || F[0];
   if (lite) return {F, top, c1};
 
+  // 1コースが勝つ（逃げる）ときの2着の分布：Harville と「逃げ時2着率」の実績を半々
+  const i1 = F.indexOf(c1);
+  let q = null;
+  if (stats){
+    const hist = F.map((f, j) => {
+      if (j === i1) return 0;
+      const base = natRate(stats, f.course, 12, 11) || 0.2;
+      f.nige2 = shrink(f.cs ? f.cs[12] : 0, f.cs ? f.cs[11] : 0, base, 8);
+      f.nige3 = shrink(f.cs ? f.cs[13] : 0, f.cs ? f.cs[11] : 0, natRate(stats, f.course, 13, 11) || 0.4, 8);
+      return f.nige2;
+    });
+    const hs = hist.reduce((a, b) => a + b, 0);
+    if (hs > 0) q = F.map((f, j) => j === i1 ? 0 : 0.5 * f.p1 / (1 - c1.p1) + 0.5 * hist[j] / hs);
+  }
+  F.forEach((f, j) => { f.after = j === i1 ? 0 : (q ? q[j] : f.p1 / (1 - c1.p1)); });
+
   const exAll = [], triAll = [];
   for (let i = 0; i < n; i++) for (let j = 0; j < n; j++){
     if (j === i) continue;
-    const pij = F[i].p1 * F[j].p1 / (1 - F[i].p1);
+    const pij = (i === i1 && q) ? F[i].p1 * q[j] : F[i].p1 * F[j].p1 / (1 - F[i].p1);
     exAll.push({c: [F[i].b.no, F[j].b.no], p: pij});
     F[i].p2 += pij; F[j].p2 += pij;
     for (let k = 0; k < n; k++){
@@ -717,7 +828,23 @@ function predict(r, s, alerts, lite){
       : (f.skillRank >= 4 && f.exRank <= 2) ? {t: "気配で浮上", c: "up"}
       : (f.skillRank <= 2 && f.exRank >= n - 1) ? {t: "気配に不安", c: "down"} : null;
   });
-  return {F, top, c1, exAll, triAll, exacta: exAll.slice(0, 3), tri: triAll.slice(0, 5)};
+  // 展開：勝つ艇の確率 × その艇の決まり手の傾向（選手の実績を場の傾向に寄せて使う）
+  const sd = stats && stats.stadiums ? stats.stadiums[r.stadium] : null;
+  const T = [0, 0, 0, 0, 0], pairs = [];
+  F.forEach(f => {
+    const c = f.course;
+    let base = TECH_FALLBACK[c - 1] || TECH_FALLBACK[5];
+    const sa = sd && Array.isArray(sd.c[c - 1]) ? sd.c[c - 1] : (stats ? stats.nat[c - 1] : null);
+    if (sa && sa[1] > 0) base = [6, 7, 8, 9, 10].map(k => sa[k] / sa[1]);
+    const own = f.cs && f.cs[1] > 0 ? [6, 7, 8, 9, 10].map(k => f.cs[k]) : [0, 0, 0, 0, 0];
+    const tot = own.reduce((a, b) => a + b, 0);
+    const dist = base.map((v, i) => (own[i] + 4 * v) / (tot + 4));
+    dist.forEach((v, i) => { T[i] += f.p1 * v; pairs.push({f, i, p: f.p1 * v}); });
+  });
+  const threat = pairs.filter(x => !(x.f === c1 && x.i === 0) && x.i < 4).sort((a, b) => b.p - a.p)[0] || null;
+  const tenkai = {T, threat};
+
+  return {F, top, c1, exAll, triAll, exacta: exAll.slice(0, 3), tri: triAll.slice(0, 5), tenkai};
 }
 
 /* ---------- 期待値 ---------- */
@@ -757,7 +884,7 @@ function analyze(r, s){
 }
 
 /* ---------- 検証 ---------- */
-function evaluate(data, s){
+function evaluate(data, s, stats){
   let N = 0, ll = 0, llBase = 0, hit1 = 0, hit3 = 0, winRet = 0, triHit = 0, triRet = 0, c1Win = 0, oddsN = 0;
   const bins = [0, 1, 2, 3, 4].map(() => ({n: 0, w: 0, p: 0}));
   const ev = {win: {n: 0, hit: 0, ret: 0}, ex: {n: 0, hit: 0, ret: 0}, tri: {n: 0, hit: 0, ret: 0}};
@@ -767,7 +894,7 @@ function evaluate(data, s){
     return p ? p.amount : 0;
   };
   for (const r of data){
-    const pr = predict(r, s, slitAlerts(r, s));
+    const pr = predict(r, s, slitAlerts(r, s), false, stats);
     const win = r.result.order[0];
     const fw = pr.F.find(f => f.b.no === win);
     if (!fw) continue;
@@ -793,10 +920,10 @@ function evaluate(data, s){
   return {N, ll: ll / N, llBase: llBase / N, hit1: hit1 / N, hit3: hit3 / N, c1Win: c1Win / N, winROI: winRet / (100 * N), triHit: triHit / N, triROI: triRet / (100 * N), bins, ev, oddsN};
 }
 
-function loglossOnly(data, s){
+function loglossOnly(data, s, stats){
   let ll = 0, N = 0;
   for (const r of data){
-    const pr = predict(r, s, slitAlerts(r, s), true);
+    const pr = predict(r, s, slitAlerts(r, s), true, stats);
     const fw = pr.F.find(f => f.b.no === r.result.order[0]);
     if (!fw) continue;
     N++; ll += -Math.log(Math.max(fw.p1, 1e-6));
@@ -804,17 +931,17 @@ function loglossOnly(data, s){
   return ll / N;
 }
 
-function tune(data, s){
+function tune(data, s, stats){
   const grid = [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5];
   const w = {...s.w};
-  let best = loglossOnly(data, {...s, w});
+  let best = loglossOnly(data, {...s, w}, stats);
   for (let pass = 0; pass < 3; pass++){
     let moved = false;
     for (const k of Object.keys(w)){
       for (const g of grid){
         if (g === w[k]) continue;
         const cand = {...w, [k]: g};
-        const v = loglossOnly(data, {...s, w: cand});
+        const v = loglossOnly(data, {...s, w: cand}, stats);
         if (v < best - 1e-6){ best = v; w[k] = g; moved = true; }
       }
     }
@@ -826,7 +953,14 @@ function tune(data, s){
 /* ---------- 状態 ---------- */
 const settings = loadSettings();
 const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "alert", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}};
-const bt = {status: "idle", days: 0, data: [], res: null, tuned: null, prevW: null, msg: ""};
+const bt = {status: "idle", days: 0, data: [], res: null, tuned: null, prevW: null, msg: "", stats: null};
+function updateStatsInfo(){
+  const el = $("stats-info");
+  if (!el) return;
+  el.textContent = STATS
+    ? (STATS.sample ? "サンプル表示中は架空の成績を使っています。" : `集計：${STATS.from}〜${STATS.to}・${STATS.races}レース（毎晩更新）`)
+    : "コース別成績の集計データがまだありません。GitHubの自動集計を一度動かすと使えるようになります。";
+}
 try { const t = localStorage.getItem("slitradar.tab"); if (t) state.tab = t; } catch (e) {}
 
 /* ---------- 描画 ---------- */
@@ -910,11 +1044,56 @@ function probsHTML(r, an){
 function partsHTML(an){
   const v = x => { const p = Math.round(x * 10); return `<span class="${p < 0 ? "neg" : ""}">${sgn(p)}</span>`; };
   const ps = an.F.reduce((a, g) => a + g.prior, 0);
-  const rows = an.F.map(f => `<tr><td>${chip(f.b.no)}</td><td>${v(f.parts.skill)}</td><td>${v(f.parts.start)}</td><td>${v(f.parts.motor)}</td><td>${v(f.parts.ex)}</td><td class="tot">${v(f.z)}</td><td>${pct(f.prior / ps)}%</td></tr>`).join("");
+  const rows = an.F.map(f => `<tr><td>${chip(f.b.no)}</td><td>${v(f.parts.skill)}</td><td>${v(f.parts.start)}</td><td>${v(f.parts.motor)}</td><td>${v(f.parts.ex)}</td><td>${v(f.parts.course)}</td><td class="tot">${v(f.z)}</td><td>${pct(f.prior / ps)}%</td></tr>`).join("");
   return `<div><h3>期待度の内訳（0がこのレースの平均）</h3><div class="tbl"><table class="lft2">
-    <thead><tr><th>艇</th><th>実力</th><th>スタート</th><th>モーター</th><th>展示</th><th>合計</th><th>コース基本</th></tr></thead>
+    <thead><tr><th>艇</th><th>実力</th><th>スタート</th><th>モーター</th><th>展示</th><th>コース</th><th>合計</th><th>コース基本</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
     <p class="note">合計が+7ならコースの基本確率のおよそ2倍、−7ならおよそ半分になります。</p></div>`;
+}
+
+function tenkaiHTML(an){
+  const T = an.tenkai.T, tot = T.reduce((a, b) => a + b, 0) || 1;
+  const t = T.map(v => v / tot);
+  const head = t[0] >= 0.6 ? "イン逃げ濃厚" : t[0] >= 0.45 ? "イン有利だが波乱含み" : "イン苦戦・波乱模様";
+  const th = an.tenkai.threat;
+  const legend = TECHS.map((name, i) => `<span><i class="k${i}"></i>${name}<b>${pct(t[i])}%</b></span>`).join("");
+  return `<div class="tk">
+    <div class="tk-h"><span><b>展開</b>　${head}</span><span>${STATS && STATS.sample ? "架空の成績" : STATS ? "" : "成績データなし"}</span></div>
+    <div class="tkbar" role="img" aria-label="展開予想 ${TECHS.map((n, i) => `${n}${pct(t[i])}%`).join("、")}">${t.map((v, i) => `<i class="k${i}" style="width:${(v * 100).toFixed(1)}%"></i>`).join("")}</div>
+    <div class="tk-l">${legend}</div>
+    ${th ? `<div class="tk-t">崩すなら：${chip(th.f.b.no)} の<b>${TECHS[th.i]}</b>（${pct(th.p)}%）</div>` : ""}
+  </div>`;
+}
+
+function nigeHTML(an){
+  const c1 = an.c1;
+  const list = an.F.filter(f => f !== c1).sort((a, b) => b.after - a.after);
+  const max = Math.max(...list.map(f => f.after), 0.01);
+  const rows = list.map(f => {
+    const raw = f.cs && f.cs[11] ? `${f.cs[12]}/${f.cs[11]}` : "実績なし";
+    return `<div class="nrow">${chip(f.b.no)}<span class="nb"><i style="width:${(f.after / max * 100).toFixed(0)}%"></i></span><span class="np">${pct(f.after)}%<small>${raw}</small></span></div>`;
+  }).join("");
+  return `<div><h3>${chip(c1.b.no)} が逃げたときの2着</h3><div class="nige">${rows}</div>
+    <p class="note">右の分数は、その選手が今回のコースにいて1コースが逃げたときに2着だった回数／そのレース数です。</p></div>`;
+}
+
+function courseTableHTML(r, an){
+  if (!STATS) return `<div><h3>コース別成績</h3><p class="note">集計データがまだありません。GitHubの自動集計を一度動かすと表示されます。</p></div>`;
+  const p = (k, n) => n ? Math.round(k / n * 100) + "%" : "-";
+  const rows = an.F.map(f => {
+    const a = f.cs, c = f.course;
+    if (!a) return `<tr><td>${c}</td><td>${chip(f.b.no)}</td><td>0</td><td>-</td><td>-</td><td>-</td><td class="feat">このコースの実績なし</td><td>-</td></tr>`;
+    const feat = c === 1 ? `逃げ ${p(a[6], a[0])} · 差され ${p(a[14], a[0])} · まくられ ${p(a[15], a[0])}`
+      : c === 2 ? `差し ${p(a[7], a[0])} · まくり ${p(a[8], a[0])} · 逃し ${p(a[11], a[0])}`
+      : `まくり ${p(a[8], a[0])} · まくり差し ${p(a[9], a[0])} · 差し ${p(a[7], a[0])}`;
+    return `<tr><td>${c}</td><td>${chip(f.b.no)}</td><td>${a[0]}</td><td>${p(a[1], a[0])}</td><td>${p(a[1] + a[2], a[0])}</td><td>${a[5] ? "." + String(Math.round(a[4] / a[5])).padStart(2, "0") : "-"}</td><td class="feat">${feat}</td><td>${c >= 2 ? p(a[12], a[11]) : "-"}</td></tr>`;
+  }).join("");
+  const sd = STATS.stadiums && STATS.stadiums[r.stadium];
+  const trend = sd && sd.races ? `<p class="note">${esc(STADIUMS[r.stadium] || "")}の傾向：イン逃げ ${p(sd.c[0][6], sd.races)} · 万舟率 ${p(sd.manshu, sd.races)}（${sd.races}レース）</p>` : "";
+  return `<div><h3>今回のコースでの成績（${STATS.sample ? "架空" : esc(String(STATS.from || "").slice(0, 7).replace("-", "/")) + "〜"}）</h3><div class="tbl"><table class="lft">
+    <thead><tr><th>進入</th><th>艇</th><th>出走</th><th>1着率</th><th>2連率</th><th>ST</th><th>決まり手の特徴</th><th>逃げ時2着</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>
+    <p class="note">「逃し」は2コースにいて1コースに逃げられた率、「逃げ時2着」は1コースが逃げたときに2着に入った率です。</p>${trend}</div>`;
 }
 
 function tableHTML(an){
@@ -993,10 +1172,13 @@ function cardHTML(r, an, now){
     ${showSlitTop ? `<div class="slitbox">${slitSVG(an)}</div>` : ""}
     ${valueHTML(r, an)}
     ${probsHTML(r, an)}
+    ${tenkaiHTML(an)}
     <details data-key="${esc(r.key)}"${state.open.has(r.key) ? " open" : ""}>
-      <summary>買い目・期待値・内訳・出走表</summary>
+      <summary>逃げた時の2着・コース別成績・買い目・出走表</summary>
       <div class="dbody">
         ${cond ? `<div class="cond">${esc(cond)}</div>` : ""}
+        ${nigeHTML(an)}
+        ${courseTableHTML(r, an)}
         ${combosHTML(r, an)}
         ${partsHTML(an)}
         ${r.hasPreview && !showSlitTop ? `<div><h3>スリット予想図</h3><div class="slitbox">${slitSVG(an)}</div></div>` : ""}
@@ -1076,7 +1258,8 @@ function renderBT(){
       <div class="stat"><span>単勝◎の回収率</span><b>${pct(x.winROI)}%</b><small>全レース100円ずつ買った場合</small></div>
       <div class="stat"><span>3連単1点の回収率</span><b>${pct(x.triROI)}%</b><small>的中率 ${pct(x.triHit, 1)}%</small></div>
       <div class="stat"><span>コースだけの予想との差</span><b>${gain >= 0 ? "+" : "−"}${Math.abs(gain).toFixed(1)}%</b><small>確率の当てはまり（対数損失）の改善率</small></div>
-    </div>`;
+    </div>
+    <p class="note">${bt.stats ? `コース別成績は${esc(bt.stats.to || "")}までの集計を使っています（検証する期間より前のデータだけなので、答えを先に見ていません）。` : "コース別成績の集計がまだないので、コース実績なしで検証しています。"}</p>`;
     h += `<div><h3>期待値プラスだけ買った場合（期待値${settings.ev.toFixed(2)}以上・確率${settings.minP.toFixed(1)}%以上、各100円）</h3>`;
     if (x.oddsN){
       const rows = ["win", "ex", "tri"].map(t => {
@@ -1125,11 +1308,16 @@ async function load(){
     const races = await loadDay(state.date);
     state.races = races; state.mode = "live"; state.updatedAt = new Date(); state.note = races.length ? "" : "この日の出走表はありません。";
     $("notice").hidden = true;
+    if (!state.statsTried || (STATS && STATS.built < jstNowDate() && Date.now() - state.statsTried > 3600e3)){
+      state.statsTried = Date.now();
+      loadStatsFile("stats.json").then(st => { if (st){ STATS = st; } updateStatsInfo(); safeRender(); });
+    }
   } catch (e) {
     if (e.status && state.mode === "live"){
       state.races = []; state.note = "この日の出走表はまだ公開されていないか、取得できませんでした。";
     } else if (first || state.mode === "sample"){
       state.races = makeSample(); state.mode = "sample"; state.note = "";
+      STATS = makeSampleStats(state.races); updateStatsInfo();
       const n = $("notice");
       n.innerHTML = `<b>サンプル表示中</b>　この画面からはレースデータのサイトに接続できないため、動作確認用の<b>架空のレースと架空のオッズ</b>を表示しています（選手名・数値はすべて架空）。同じHTMLを自分のサイト（GitHub Pagesなど）に置くと、当日の実データで判定します。`;
       n.hidden = false;
@@ -1141,6 +1329,9 @@ async function load(){
 async function runBacktest(days){
   bt.status = "loading"; bt.days = days; bt.data = []; bt.res = null; bt.tuned = null;
   const today = jstNowDate();
+  bt.msg = "コース別成績の集計を取得中…"; renderBT();
+  bt.stats = await loadStatsFile("stats-bt.json");
+  if (bt.stats && bt.stats.to && bt.stats.to >= shiftDate(today, -days)) bt.stats = null;
   for (let i = days; i >= 1; i--){
     const d = shiftDate(today, -i);
     bt.msg = `${mdw(d)} を取得中…（${days - i + 1}/${days}）`; renderBT();
@@ -1151,7 +1342,7 @@ async function runBacktest(days){
   }
   bt.msg = "計算中…"; renderBT();
   await new Promise(res => setTimeout(res, 30));
-  bt.res = bt.data.length ? evaluate(bt.data, settings) : null;
+  bt.res = bt.data.length ? evaluate(bt.data, settings, bt.stats) : null;
   bt.status = "done"; bt.msg = "";
   renderBT();
 }
@@ -1161,9 +1352,9 @@ async function runTune(){
   bt.status = "loading"; bt.msg = "最適な重みを探しています…"; renderBT();
   await new Promise(res => setTimeout(res, 30));
   bt.prevW = {...settings.w};
-  settings.w = tune(bt.data, settings);
+  settings.w = tune(bt.data, settings, bt.stats);
   bt.tuned = true; saveSettings(); syncSettings();
-  bt.res = evaluate(bt.data, settings);
+  bt.res = evaluate(bt.data, settings, bt.stats);
   bt.status = "done"; bt.msg = "";
   safeRender(); renderBT();
 }
@@ -1212,6 +1403,7 @@ const SL = [
   ["w-start", s => s.w.start, (s, v) => s.w.start = v, v => "×" + v.toFixed(2)],
   ["w-motor", s => s.w.motor, (s, v) => s.w.motor = v, v => "×" + v.toFixed(2)],
   ["w-ex",    s => s.w.ex,    (s, v) => s.w.ex = v,    v => "×" + v.toFixed(2)],
+  ["w-course", s => s.w.course, (s, v) => s.w.course = v, v => "×" + v.toFixed(2)],
   ["ev",      s => s.ev,      (s, v) => s.ev = v,      v => v.toFixed(2) + "以上"],
   ["minp",    s => s.minP,    (s, v) => s.minP = v,    v => v.toFixed(1) + "%以上"],
   ["gap",     s => s.gap,     (s, v) => { s.gap = v; if (s.strong < v) s.strong = v; }, v => v.toFixed(2) + "秒"],
@@ -1222,12 +1414,12 @@ const SL = [
 function syncSettings(){ SL.forEach(([id, get, , fmt]) => { $("s-" + id).value = get(settings); $("o-" + id).textContent = fmt(get(settings)); }); }
 SL.forEach(([id, , set]) => $("s-" + id).addEventListener("input", e => {
   set(settings, +e.target.value); syncSettings(); saveSettings(); render();
-  if (bt.data.length && bt.status !== "loading"){ bt.res = evaluate(bt.data, settings); renderBT(); }
+  if (bt.data.length && bt.status !== "loading"){ bt.res = evaluate(bt.data, settings, bt.stats); renderBT(); }
 }));
 $("s-reset").addEventListener("click", () => {
   Object.assign(settings, {...DEFAULTS, w: {...DEFAULTS.w}});
   bt.tuned = null; syncSettings(); saveSettings(); render();
-  if (bt.data.length){ bt.res = evaluate(bt.data, settings); } renderBT();
+  if (bt.data.length){ bt.res = evaluate(bt.data, settings, bt.stats); } renderBT();
 });
 
 const isLiveToday = () => state.mode === "live" && state.date === jstNowDate();
@@ -1236,6 +1428,7 @@ document.addEventListener("visibilitychange", () => {
 });
 
 syncSettings();
+updateStatsInfo();
 render();
 load();
 setInterval(tickCountdowns, 30000);
