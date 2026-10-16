@@ -88,7 +88,10 @@ button:disabled{cursor:default}
 .notice b{color:var(--accent)}
 
 /* panels */
-.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px;margin-bottom:12px;display:grid;gap:14px;min-width:0}
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:14px;margin-bottom:12px;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;min-width:0}
+.panel > *, #bt-body > *{min-width:0}
+#bt-body{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;min-width:0}
+#bt-body h2{margin:0;font-size:14px}
 .panel h2{margin:0;font-size:14px}
 .panel h3{margin:0 0 4px;font-size:12.5px}
 .panel .lead{margin:-8px 0 0;font-size:12.5px;color:var(--muted)}
@@ -453,6 +456,12 @@ const statsURLs = name => {
   out.push(name);
   return out;
 };
+async function loadJSONFile(name){
+  for (const u of statsURLs(name)){
+    try { return await fetchJSON(u + "?t=" + Math.floor(Date.now() / 600000), 20000); } catch (e) {}
+  }
+  return null;
+}
 async function loadStatsFile(name){
   for (const u of statsURLs(name)){
     try { const j = await fetchJSON(u + "?t=" + Math.floor(Date.now() / 600000), 20000); const s = prepStats(j); if (s) return s; } catch (e) {}
@@ -1007,7 +1016,7 @@ function tune(data, s, stats){
 /* ---------- 状態 ---------- */
 const settings = loadSettings();
 const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "alert", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}};
-const bt = {status: "idle", days: 0, data: [], res: null, tuned: null, prevW: null, msg: "", stats: null};
+const bt = {status: "idle", days: 0, data: [], res: null, tuned: null, prevW: null, msg: "", stats: null, long: null, longTried: false};
 function updateStatsInfo(){
   const el = $("stats-info");
   if (!el) return;
@@ -1382,14 +1391,54 @@ function render(){
 }
 const safeRender = () => { if (!typing()) render(); };
 
+function longHTML(L){
+  const head = `<h2>長期検証（毎晩GitHubで計算）</h2>`;
+  if (!L) return `${head}<p class="btmsg">${bt.longTried && !bt.long ? "まだ計算されていません。" : "読み込み中…"}GitHubのアクションで「backtest」を一度動かすと、2026年1月からの全レースで検証した結果がここに出ます。</p>`;
+  const P = v => Math.round(v * 100) + "%";
+  const rng = a => a.n ? `${P(Math.max(0, a.lo))}〜${P(a.hi)}` : "-";
+  const good = a => a.n && a.lo > 1 ? "plus" : "";
+  const hitR = a => a.n ? (a.hit / a.n * 100).toFixed(1) + "%" : "-";
+  const w = L.main.win, al = L.alert.ev, aa = L.alert.all;
+  const verdict = !w.n ? "" : w.lo > 1 ? "95%の範囲も100%を超えていて、偶然だけでは説明しにくいプラスです。"
+    : w.hi < 1 ? "95%の範囲がすべて100%未満なので、この条件ではマイナスと考えたほうがよさそうです。"
+    : "95%の範囲が100%をまたいでいるので、プラスかどうかはまだ言い切れません。";
+  const grid = L.grid.map(g => `<tr><td>${g.ev.toFixed(2)}以上</td><td>${Math.round(g.minP * 100)}%以上</td><td>${g.win.n}</td><td class="${good(g.win)}">${g.win.n ? P(g.win.roi) : "-"}</td><td>${rng(g.win)}</td><td>${g.ex.n ? P(g.ex.roi) : "-"}</td><td>${g.tri.n ? P(g.tri.roi) : "-"}</td></tr>`).join("");
+  const months = L.monthly.filter(m => m.races).map(m => `<tr><td>${+m.m.slice(5)}月${m.statsRaces ? "" : "＊"}</td><td>${m.odds}</td><td>${m.n}</td><td>${hitR(m)}</td><td class="${m.roi >= 1 && m.n ? "plus" : ""}">${m.n ? P(m.roi) : "-"}</td><td>${m.n ? yen(m.ret - 100 * m.n) : "-"}</td></tr>`).join("");
+  const bands = L.bands.map(b => `<tr><td>${b.to > 1e8 ? b.from + "倍以上" : b.from + "〜" + b.to + "倍"}</td><td>${b.n}</td><td>${hitR(b)}</td><td class="${good(b)}">${b.n ? P(b.roi) : "-"}</td><td>${rng(b)}</td></tr>`).join("");
+  return `${head}
+    <p class="lead">${esc(L.from)}〜${esc(L.to)}の${L.races}レース（オッズあり ${L.oddsRaces}）を、アプリと同じ計算で予想し直した結果です。重みは初期値（すべて×1.00）で計算しています。</p>
+    <div class="stats">
+      <div class="stat"><span>単勝・期待値${L.main.ev.toFixed(2)}以上・確率${Math.round(L.main.minP * 100)}%以上</span><b class="${good(w)}">${w.n ? P(w.roi) : "-"}</b><small>95%の範囲 ${rng(w)}・${w.n}点・的中${hitR(w)}</small></div>
+      <div class="stat"><span>その収支（各100円）</span><b class="${w.ret - 100 * w.n >= 0 && w.n ? "plus" : ""}">${w.n ? yen(w.ret - 100 * w.n) : "-"}</b><small>1日あたり約${Math.round(w.n / Math.max(1, L.monthly.filter(m => m.races).length) / 30)}点</small></div>
+      <div class="stat"><span>通知どおり（アラート強×期待値${L.main.ev.toFixed(2)}以上）</span><b class="${good(al)}">${al.n ? P(al.roi) : "-"}</b><small>95%の範囲 ${rng(al)}・${al.n}点</small></div>
+      <div class="stat"><span>◎の1着率</span><b>${(L.base.hit1 * 100).toFixed(1)}%</b><small>1コースが勝った率 ${(L.base.c1Win * 100).toFixed(1)}%</small></div>
+    </div>
+    <p class="note">${verdict}スリットアラート強の艇を期待値を見ずに全部買うと、回収率は${aa.n ? P(aa.roi) : "-"}（${aa.n}点）でした。</p>
+    <div><h3>条件ごとの回収率</h3><div class="tbl"><table class="lft2">
+      <thead><tr><th>期待値</th><th>確率</th><th>単勝の点数</th><th>単勝</th><th>95%の範囲</th><th>2連単</th><th>3連単</th></tr></thead>
+      <tbody>${grid}</tbody></table></div></div>
+    <div><h3>月ごとの成績（単勝・期待値${L.main.ev.toFixed(2)}以上・確率${Math.round(L.main.minP * 100)}%以上）</h3><div class="tbl"><table class="lft2">
+      <thead><tr><th>月</th><th>レース</th><th>点数</th><th>的中率</th><th>回収率</th><th>収支</th></tr></thead>
+      <tbody>${months}</tbody></table></div>
+      <p class="note">月ごとに大きくぶれるのは普通です。プラスの月が多いか、マイナスの月が深すぎないかを見てください。＊の月はそれより前のデータがないので、コース実績を使わずに予想しています。</p></div>
+    <div><h3>単勝オッズの帯ごとの成績（同じ条件）</h3><div class="tbl"><table class="lft2">
+      <thead><tr><th>単勝オッズ</th><th>点数</th><th>的中率</th><th>回収率</th><th>95%の範囲</th></tr></thead>
+      <tbody>${bands}</tbody></table></div></div>
+    <p class="note">コース別成績は、検証する月より前のデータだけで作っています。買う艇は確定オッズで選んでいるので、締切前のオッズを見て買う実際の場面より少し有利な結果になります。「95%の範囲」は、偶然のブレを考えると本当の回収率がだいたいこの間にある、という目安です。</p>`;
+}
+
 function renderBT(){
   const el = $("bt-body");
   if (state.mode !== "live"){
     el.innerHTML = `<p class="btmsg">実データで動かしているときに使えます。HTMLを自分のサイト（GitHub Pagesなど）に置いて開くと、過去の着順・払戻と照らし合わせて、◎の的中率や回収率、期待値プラスだけ買った場合の成績、重みの自動調整が見られます。</p>`;
     return;
   }
+  if (!bt.longTried){
+    bt.longTried = true;
+    loadJSONFile("backtest.json").then(j => { bt.long = j && j.v && j.main ? j : null; renderBT(); });
+  }
   const busy = bt.status === "loading";
-  let h = `<div class="btrow">
+  let h = longHTML(bt.long) + `<div class="hr"></div><h2>直近の数日で検証</h2><p class="lead">今の重み付けと設定のしきい値で、その場で計算し直します。</p><div class="btrow">
     <button class="ibtn" type="button" data-bt="3"${busy ? " disabled" : ""}>過去3日</button>
     <button class="ibtn" type="button" data-bt="7"${busy ? " disabled" : ""}>過去7日</button>
     <button class="ibtn" type="button" data-bt="14"${busy ? " disabled" : ""}>過去14日</button>
