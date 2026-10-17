@@ -13,7 +13,7 @@ const CACHE = "btcache";
 const PREFIX = "b1-";
 const GRID_EV = [1.2, 1.3, 1.5, 2.0];
 const GRID_P = [0.02, 0.05, 0.10];
-const MAIN = {ev: 1.5, minP: 0.05};
+const MAIN = {ev: 2.0, minP: 0.10};
 const BANDS = [[1, 3], [3, 6], [6, 10], [10, 20], [20, 1e9]];
 
 const html = fs.readFileSync("index.html", "utf8");
@@ -146,7 +146,7 @@ export async function main(fetcher = fetch){
           if (!f || !od) continue;
           const x = {p: f.p1, od, pay: payOf("win", [a.boat])};
           alertAll.push(x);
-          if (f.p1 * od >= MAIN.ev) alertEV.push(x);
+          if (f.p1 * od >= MAIN.ev && f.p1 >= MAIN.minP) alertEV.push(x);
         }
       }
     }

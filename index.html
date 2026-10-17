@@ -198,6 +198,9 @@ button:disabled{cursor:default}
 .bline .note{margin:0}
 .cond-l{margin:0;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 10px}
 .cond-l span{color:var(--val);font-weight:700}
+.odds-l{margin:0;font-size:12px;color:var(--muted)}
+.odds-l.ok{color:var(--val);font-weight:700}
+.odds-l.ng{color:var(--accent);font-weight:700}
 .vt{font-weight:700;color:var(--ink)}
 .k{display:flex;gap:2px}
 .k .chipb{width:19px;height:19px;font-size:13px;border-radius:4px}
@@ -663,19 +666,21 @@ async function loadWithOdds(date){
 async function loadLiveOdds(date){
   const topic = loadTopic();
   const out = new Map();
+  out.status = topic ? "ng" : "none";
   if (!topic) return out;
   try {
     const ac = new AbortController(); const t = setTimeout(() => ac.abort(), 10000);
     const res = await fetch(`https://ntfy.sh/${encodeURIComponent(topic + "-odds")}/json?poll=1&since=12h`, {signal: ac.signal, cache: "no-store"});
     clearTimeout(t);
     if (!res.ok) return out;
+    out.status = "ok";
     for (const line of (await res.text()).split("\n")){
       try {
         const m = JSON.parse(line);
         if (m.event !== "message") continue;
         const d = JSON.parse(m.message);
         if (d.d !== date) continue;
-        for (const e of d.r || []) out.set(e.k, {win: e.w, at: d.at});
+        for (const e of d.r || []) out.set(e.k, {win: e.w, at: e.t || d.at});
       } catch (e) {}
     }
   } catch (e) {}
@@ -695,7 +700,7 @@ async function loadDay(date){
   }
   const live = await liveP;
   races.forEach(r => { const x = live.get(r.key); if (!r.odds && x){ r.odds = {win: x.win}; r.oddsLabel = `${x.at}時点のオッズ`; } });
-  state.liveOdds = live.size;
+  state.liveOdds = {date, status: live.status, n: live.size, at: [...live.values()].reduce((m, x) => x.at > m ? x.at : m, "")};
   return races;
 }
 
@@ -1443,6 +1448,15 @@ function condHTML(){
   const g = L && L.grid ? L.grid.find(x => Math.abs(x.ev - settings.ev) < 1e-6 && Math.abs(x.minP * 100 - settings.minP) < 1e-6) : null;
   return `<p class="cond-l">条件：単勝・1着率${settings.minP}%以上・期待値${settings.ev.toFixed(1)}以上${g && g.win.n ? `<span>長期検証 回収率${Math.round(g.win.roi * 100)}%（${Math.round(Math.max(0, g.win.lo) * 100)}〜${Math.round(g.win.hi * 100)}%）</span>` : ""}</p>`;
 }
+// 締切前のオッズが通知の仕組みから届いているか（今日だけ）
+function oddsStatusHTML(){
+  const L = state.liveOdds;
+  if (!L || L.date !== state.date || state.date !== jstNowDate() || state.mode === "sample") return "";
+  const [cls, t] = L.status === "none" ? ["", "設定で通知の合言葉を入れると、締切7分前ごろからオッズが入ります"]
+    : L.status === "ng" ? ["ng", "読み込めませんでした（通知は届きます。買いラインと見比べてください）"]
+    : L.n ? ["ok", `${L.n}レース分（最新 ${L.at}）`] : ["", "まだ届いていません（締切7分前ごろから入ります）"];
+  return `<p class="odds-l${cls ? " " + cls : ""}">締切前のオッズ：${esc(t)}</p>`;
+}
 function ensureLong(){
   if (bt.longTried) return;
   bt.longTried = true;
@@ -1491,13 +1505,13 @@ function render(){
       value: anyOdds
         ? "今のオッズでは、条件を満たす買い候補はありません。オッズは締切が近づくにつれて届きます。"
         : (loadTopic()
-          ? "今日のオッズはまだ届いていません。締切の15分前ごろから、通知の仕組みが見に行ったオッズが届き始めます。それまでは「全て」のタブで各レースの買いラインを見てください。"
+          ? "今日のオッズはまだ届いていません。締切の7分前ごろから、通知の仕組みが見に行ったオッズが届き始めます。それまでは「全て」のタブで各レースの買いラインを見てください。"
           : "今日のオッズがありません。設定の「通知の合言葉」にntfyのトピック名を入れると、締切前のオッズが届いて買い候補が出ます。それまでは「全て」のタブで各レースの買いラインを見てください。"),
       all: "表示できるレースがありません。"
     }[state.tab];
     html = `<div class="empty">${msg}${useUpcoming && state.tab !== "value" ? "<br>「締切前のみ」を外すと締切済みのレースも見られます。" : ""}</div>`;
   } else html = list.map(x => cardHTML(x.r, x.an, now)).join("");
-  if (state.tab === "value" && state.mode !== "loading") html = condHTML() + html;
+  if (state.tab === "value" && state.mode !== "loading") html = condHTML() + oddsStatusHTML() + html;
   $("feed").innerHTML = html;
 
   $("d-label").textContent = mdw(state.date);
