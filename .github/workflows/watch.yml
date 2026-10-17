@@ -1,0 +1,23 @@
+name: watch
+on:
+  schedule:
+    - cron: "*/10 23,0-14 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: watch
+  cancel-in-progress: false
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 62
+    steps:
+      - name: Get repository
+        run: git clone --depth 1 "https://github.com/${GITHUB_REPOSITORY}.git" repo
+      - name: Watch races for 55 minutes
+        working-directory: repo
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          LOOP_MINUTES: "55"
+        run: node notify.mjs
