@@ -286,6 +286,15 @@ td.tot{font-weight:700}
 .nrow .nb i{display:block;height:100%;background:var(--val)}
 .nrow .np{font-family:var(--f-num);font-size:15px;font-weight:600;text-align:right;min-width:9ch;font-variant-numeric:tabular-nums}
 .nrow .np small{color:var(--muted);font-weight:500;font-size:12px;margin-left:4px}
+.n3h{margin-top:12px!important}
+.n3{display:grid;gap:7px}
+.n3row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 8px;align-items:center;font-size:12px}
+.n3row .lbl{display:inline-flex;align-items:center;gap:3px;white-space:nowrap;color:var(--muted)}
+.n3row .lst{display:flex;flex-wrap:wrap;gap:4px 10px;min-width:0}
+.n3row .lst > span{display:inline-flex;align-items:center;gap:3px}
+.n3row .lst .chipb{width:19px;height:19px;font-size:13px;border-radius:4px}
+.n3row .lst b{font-family:var(--f-num);font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted)}
+.n3row .lst > .top b{color:var(--val);font-weight:700}
 td.feat{font-family:var(--f-body);font-size:12px;text-align:left}
 td.zr small{display:block;font-family:var(--f-body);font-size:10.5px;color:var(--muted)}
 table.tk-t2 th,table.tk-t2 td{text-align:center;padding:5px 2px}
@@ -864,7 +873,7 @@ function slitAlerts(r, s){
 
 /* ---------- 判定：期待度（1着率） ----------
    場別コース1着率 × exp(実力 + スタート力 + モーター + 展示タイム + コース実績 の偏差)
-   2着・3着は Harville 方式。ただし1コースが勝つときの2着は「逃げ時の2着率」の実績と半々で混ぜる */
+   2着・3着は Harville 方式。ただし1コースが勝つときの2着・3着は「逃げ時の2着率・3着率」の実績と半々で混ぜる */
 function predict(r, s, alerts, lite, stats = STATS){
   const order = sortOrder(r), w = s.w, n = order.length;
   const pri = priorFor(r.stadium);
@@ -940,6 +949,20 @@ function predict(r, s, alerts, lite, stats = STATS){
   }
   F.forEach((f, j) => { f.after = j === i1 ? 0 : (q ? q[j] : f.p1 / (1 - c1.p1)); });
 
+  // 1コースが逃げて j が2着のときの3着の分布：Harville と「逃げ時3着率」の実績を半々
+  const h3 = stats ? F.map((f, k) => {
+    if (k === i1) return 0;
+    const base = Math.max(0.03, (natRate(stats, f.course, 13, 11) || 0.4) - (natRate(stats, f.course, 12, 11) || 0.2));
+    return shrink(f.cs ? f.cs[13] - f.cs[12] : 0, f.cs ? f.cs[11] : 0, base, 8);
+  }) : null;
+  F.forEach((f, j) => {
+    if (j === i1){ f.third = null; return; }
+    const out = (k => k === i1 || k === j);
+    const rs = F.reduce((a, g, k) => a + (out(k) ? 0 : g.p1), 0);
+    const hs = h3 ? h3.reduce((a, v, k) => a + (out(k) ? 0 : v), 0) : 0;
+    f.third = F.map((g, k) => out(k) ? 0 : (hs > 0 ? 0.5 * g.p1 / rs + 0.5 * h3[k] / hs : g.p1 / rs));
+  });
+
   const exAll = [], triAll = [];
   for (let i = 0; i < n; i++) for (let j = 0; j < n; j++){
     if (j === i) continue;
@@ -948,7 +971,7 @@ function predict(r, s, alerts, lite, stats = STATS){
     F[i].p2 += pij; F[j].p2 += pij;
     for (let k = 0; k < n; k++){
       if (k === i || k === j) continue;
-      const pijk = pij * F[k].p1 / Math.max(1e-9, 1 - F[i].p1 - F[j].p1);
+      const pijk = (i === i1 && F[j].third) ? pij * F[j].third[k] : pij * F[k].p1 / Math.max(1e-9, 1 - F[i].p1 - F[j].p1);
       triAll.push({c: [F[i].b.no, F[j].b.no, F[k].b.no], p: pijk});
       F[i].p3 += pijk; F[j].p3 += pijk; F[k].p3 += pijk;
     }
@@ -1226,8 +1249,16 @@ function nigeHTML(an){
     const raw = f.cs && f.cs[11] ? `${f.cs[12]}/${f.cs[11]}` : "実績なし";
     return `<div class="nrow">${chip(f.b.no)}<span class="nb"><i style="width:${(f.after / max * 100).toFixed(0)}%"></i></span><span class="np">${pct(f.after)}%<small>${raw}</small></span></div>`;
   }).join("");
+  // 2着がこの艇なら、3着は…
+  const third = list.filter(f => f.third).map(f => {
+    const cand = an.F.map((g, k) => ({g, p: f.third[k]})).filter(x => x.p > 0).sort((a, b) => b.p - a.p);
+    const items = cand.map((x, i) => `<span${i === 0 ? ' class="top"' : ""}>${chip(x.g.b.no)}<b>${pct(x.p)}%</b></span>`).join("");
+    return `<div class="n3row"><span class="lbl">${chip(f.b.no)}が2着なら</span><span class="lst">${items}</span></div>`;
+  }).join("");
   return `<div><h3>${chip(c1.b.no)} が逃げたときの2着</h3><div class="nige">${rows}</div>
-    <p class="note">右の分数は、その選手が今回のコースにいて1コースが逃げたときに2着だった回数／そのレース数です。</p></div>`;
+    <p class="note">右の分数は、その選手が今回のコースにいて1コースが逃げたときに2着だった回数／そのレース数です。</p>
+    ${third ? `<h3 class="n3h">${chip(c1.b.no)} が逃げて、2着がこの艇なら3着は</h3><div class="n3">${third}</div>
+    <p class="note">残りの艇が3着になる確率です。各選手の強さと、1コースが逃げたときに3着だった実績を半々で混ぜています。3連単の確率は「逃げる確率 × 2着の確率 × この確率」です。</p>` : ""}</div>`;
 }
 
 const pctOf = (k, n) => n ? Math.round(k / n * 100) + "%" : "-";
@@ -1418,7 +1449,7 @@ function cardHTML(r, an, now){
     ${probsHTML(r, an)}
     ${tenkaiHTML(an)}
     <details data-key="${esc(r.key)}"${state.open.has(r.key) ? " open" : ""}>
-      <summary>買い目・逃げた時の2着・内訳・出走表</summary>
+      <summary>買い目・逃げた時の2着と3着・内訳・出走表</summary>
       <div class="dbody">
         ${cond ? `<div class="cond">${esc(cond)}</div>` : ""}
         ${combosHTML(r, an)}
