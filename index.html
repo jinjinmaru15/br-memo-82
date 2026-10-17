@@ -101,6 +101,7 @@ button:disabled{cursor:default}
 .srow output{font-family:var(--f-num);font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
 .srow input{grid-column:1 / -1;width:100%;accent-color:var(--accent)}
 .srow p{grid-column:1 / -1;margin:0;font-size:12px;color:var(--muted)}
+.tin{grid-column:1 / -1;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-family:var(--f-num);font-size:16px}
 .panel .foot{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .hr{height:1px;background:var(--line)}
 .btrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -185,7 +186,18 @@ button:disabled{cursor:default}
 /* 期待値 block */
 .vblock{display:grid;gap:6px;border:1px solid var(--val);background:var(--val-soft);border-radius:10px;padding:9px 11px;min-width:0}
 .vblock .probs-h{color:var(--val)}
-.vrow{display:grid;grid-template-columns:3.4em auto minmax(0,1fr) auto 3em;gap:8px;align-items:center;font-size:12.5px}
+.vrow{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto 3em;gap:8px;align-items:center;font-size:12.5px}
+.vline{font-size:12px;color:var(--ink);margin:-2px 0 4px}
+.vline b{color:var(--val);font-family:var(--f-num);font-size:15px}
+.bline{display:grid;gap:4px;border:1px dashed var(--line);border-radius:10px;padding:8px 11px;min-width:0}
+.bl-h{font-size:11.5px;color:var(--muted);font-weight:700}
+.bl-l{display:flex;flex-wrap:wrap;gap:4px 14px}
+.bl-l > span{display:inline-flex;align-items:center;gap:5px;font-size:12px}
+.bl-l .chipb{width:20px;height:20px;font-size:13px}
+.bl-l b{font-size:17px}
+.bline .note{margin:0}
+.cond-l{margin:0;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 10px}
+.cond-l span{color:var(--val);font-weight:700}
 .vt{font-weight:700;color:var(--ink)}
 .k{display:flex;gap:2px}
 .k .chipb{width:19px;height:19px;font-size:13px;border-radius:4px}
@@ -273,6 +285,15 @@ td.tot{font-weight:700}
 .nrow .np small{color:var(--muted);font-weight:500;font-size:12px;margin-left:4px}
 td.feat{font-family:var(--f-body);font-size:12px;text-align:left}
 td.zr small{display:block;font-family:var(--f-body);font-size:10.5px;color:var(--muted)}
+table.tk-t2 th,table.tk-t2 td{text-align:center;padding:5px 2px}
+table.tk-t2 thead th{font-size:11px;line-height:1.5}
+table.tk-t2 thead .chipb{width:20px;height:20px;font-size:13px;margin-top:2px}
+table.tk-t2 th.tl{text-align:left;font-family:var(--f-body);font-size:11px;font-weight:700;color:var(--ink);white-space:nowrap;padding-right:4px}
+table.tk-t2 th.tl span{display:block;font-size:10.5px;font-weight:500;color:var(--muted)}
+table.tk-t2 td{font-size:15px;min-width:38px}
+table.tk-t2 td small{display:block;font-size:10.5px;color:var(--muted);line-height:1.2}
+table.tk-t2 td.hi{color:var(--accent);font-weight:700}
+table.tk-t2 td.tot small{display:inline;font-size:12px}
 .kh{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--muted);margin-bottom:4px}
 .krow{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:center;padding-block:3px;border-bottom:1px solid var(--line)}
 .kl{display:flex;flex-wrap:wrap;gap:3px;min-width:0}
@@ -325,16 +346,21 @@ td.zr small{display:block;font-family:var(--f-body);font-size:10.5px;color:var(-
     <div class="srow"><label for="s-w-ex">展示タイム<small>そのレースの中での速さ</small></label><output id="o-w-ex"></output><input type="range" id="s-w-ex" min="0" max="2.5" step="0.25"></div>
     <div class="srow"><label for="s-w-course">コース実績<small>その選手がそのコースで勝っている率</small></label><output id="o-w-course"></output><input type="range" id="s-w-course" min="0" max="2.5" step="0.25"><p id="stats-info"></p></div>
     <div class="hr"></div>
-    <h2>期待値プラスの条件</h2>
+    <h2>買い候補の条件（単勝）</h2>
     <div class="srow">
-      <label for="s-ev">期待値<small>確率 × オッズ</small></label><output id="o-ev"></output>
-      <input type="range" id="s-ev" min="1" max="2" step="0.05">
-      <p>1.00を超えると、予想の確率どおりなら長い目で見てプラスです。予想の誤差に備えて少し高めにしておくのが安全です。</p>
+      <label for="s-ev">期待値<small>1着率 × オッズ</small></label><output id="o-ev"></output>
+      <input type="range" id="s-ev" min="1" max="3" step="0.1">
+      <p>1.00を超えると、予想の確率どおりなら長い目で見てプラスです。締切までにオッズが下がることに備えて、2.0がおすすめです。</p>
     </div>
     <div class="srow">
-      <label for="s-minp">最低の確率</label><output id="o-minp"></output>
-      <input type="range" id="s-minp" min="0.5" max="10" step="0.5">
-      <p>確率がこれより低い大穴は、期待値が高くても候補に入れません。</p>
+      <label for="s-minp">1着率</label><output id="o-minp"></output>
+      <input type="range" id="s-minp" min="1" max="30" step="1">
+      <p>1着率がこれより低い大穴は、期待値が高くても候補に入れません。おすすめは10%です。</p>
+    </div>
+    <div class="srow">
+      <label for="s-topic">通知の合言葉<small>ntfyのトピック名</small></label>
+      <input type="text" id="s-topic" class="tin" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="例：srad-xxxxxxxxxx">
+      <p>入れておくと、通知の仕組みが締切前に見に行った単勝オッズがアプリにも届き、今日のレースの買い候補が出ます。ホーム画面のアプリとSafariでは別々に入れてください。</p>
     </div>
     <div class="hr"></div>
     <h2>アラートと候補のしきい値</h2>
@@ -373,10 +399,10 @@ td.zr small{display:block;font-family:var(--f-body);font-size:10.5px;color:var(-
 <div class="bar">
   <div class="gut">
     <div class="tabs" role="tablist" aria-label="表示するレース">
+      <button class="tab" role="tab" data-tab="value" type="button"><span class="n" id="n-value">0</span>買い候補</button>
       <button class="tab" role="tab" data-tab="alert" type="button"><span class="n" id="n-alert">0</span>スリット</button>
       <button class="tab" role="tab" data-tab="honmei" type="button"><span class="n" id="n-honmei">0</span>鉄板</button>
       <button class="tab" role="tab" data-tab="ana" type="button"><span class="n" id="n-ana">0</span>穴</button>
-      <button class="tab" role="tab" data-tab="value" type="button"><span class="n" id="n-value">0</span>期待値</button>
       <button class="tab" role="tab" data-tab="all" type="button"><span class="n" id="n-all">0</span>全て</button>
     </div>
     <div class="filters" id="filters"></div>
@@ -423,7 +449,7 @@ const NATL = [0,1,2,3,4,5].map(i => Object.values(PRIOR).reduce((a, v) => a + v[
 const priorFor = s => (PRIOR[s] || NATL).map((v, i) => 0.7 * v + 0.3 * NATL[i]);
 
 const BASE = {skill: 0.50, avgst: 0.12, exst: 0.06, motor: 0.20, ex: 0.25, course: 0.35};
-const DEFAULTS = {exGap: 0.10, gap: 0.05, strong: 0.08, honmei: 60, ana: 35, ev: 1.2, minP: 2, w: {skill: 1, start: 1, motor: 1, ex: 1, course: 1}};
+const DEFAULTS = {exGap: 0.10, gap: 0.05, strong: 0.08, honmei: 60, ana: 35, ev: 2.0, minP: 10, w: {skill: 1, start: 1, motor: 1, ex: 1, course: 1}};
 const WLABEL = {skill: "実力・腕", start: "スタート力", motor: "モーター", ex: "展示タイム", course: "コース実績"};
 const TECHS = ["逃げ", "差し", "まくり", "まくり差し", "その他"];
 // 集計がないときの決まり手の目安（コース別：逃げ・差し・まくり・まくり差し・その他）
@@ -491,12 +517,17 @@ const oddsLink = (r, kind) => `${OFFICIAL}/${kind}?rno=${r.no}&jcd=${String(r.st
 
 function loadSettings(){
   try {
-    const s = JSON.parse(localStorage.getItem("slitradar.v2") || "null");
+    const s = JSON.parse(localStorage.getItem("slitradar.v3") || "null");
     if (s) return {...DEFAULTS, ...s, w: {...DEFAULTS.w, ...(s.w || {})}};
+    // 前の版の設定は引き継ぐ。買い候補の条件だけ新しいおすすめ値にする
+    const o = JSON.parse(localStorage.getItem("slitradar.v2") || "null");
+    if (o) return {...DEFAULTS, ...o, ev: DEFAULTS.ev, minP: DEFAULTS.minP, w: {...DEFAULTS.w, ...(o.w || {})}};
   } catch (e) {}
   return {...DEFAULTS, w: {...DEFAULTS.w}};
 }
-function saveSettings(){ try { localStorage.setItem("slitradar.v2", JSON.stringify(settings)); } catch (e) {} }
+function saveSettings(){ try { localStorage.setItem("slitradar.v3", JSON.stringify(settings)); } catch (e) {} }
+function loadTopic(){ try { return (localStorage.getItem("slitradar.topic") || "").trim(); } catch (e) { return ""; } }
+function saveTopic(v){ try { localStorage.setItem("slitradar.topic", v); } catch (e) {} }
 
 /* ---------- データ取得 ---------- */
 async function fetchJSON(url, ms = 15000){
@@ -628,8 +659,32 @@ async function loadWithOdds(date){
   return loadBase(date);
 }
 
+// 通知の仕組みが締切前に取ってきた単勝オッズ（ntfy の「合言葉-odds」に届く）
+async function loadLiveOdds(date){
+  const topic = loadTopic();
+  const out = new Map();
+  if (!topic) return out;
+  try {
+    const ac = new AbortController(); const t = setTimeout(() => ac.abort(), 10000);
+    const res = await fetch(`https://ntfy.sh/${encodeURIComponent(topic + "-odds")}/json?poll=1&since=12h`, {signal: ac.signal, cache: "no-store"});
+    clearTimeout(t);
+    if (!res.ok) return out;
+    for (const line of (await res.text()).split("\n")){
+      try {
+        const m = JSON.parse(line);
+        if (m.event !== "message") continue;
+        const d = JSON.parse(m.message);
+        if (d.d !== date) continue;
+        for (const e of d.r || []) out.set(e.k, {win: e.w, at: d.at});
+      } catch (e) {}
+    }
+  } catch (e) {}
+  return out;
+}
+
 async function loadDay(date){
   if (date < jstNowDate()) return loadWithOdds(date);
+  const liveP = loadLiveOdds(date);
   const [y, ymd] = ymdOf(date);
   const tmP = fetchJSON(`${TM}/api/v1/${y}/${ymd}.json`, 20000).catch(() => null);
   const races = await loadBase(date);
@@ -638,6 +693,9 @@ async function loadDay(date){
     const m = new Map(parseV1(tm, date).filter(r => r.odds).map(r => [r.key, r.odds]));
     races.forEach(r => { if (!r.odds && m.has(r.key)){ r.odds = m.get(r.key); r.oddsLabel = "オッズ"; } });
   }
+  const live = await liveP;
+  races.forEach(r => { const x = live.get(r.key); if (!r.odds && x){ r.odds = {win: x.win}; r.oddsLabel = `${x.at}時点のオッズ`; } });
+  state.liveOdds = live.size;
   return races;
 }
 
@@ -755,7 +813,8 @@ function slitAlerts(r, s){
   const order = sortOrder(r);
   const times = order.map(b => b.exTime).filter(t => t != null).sort((a, b) => a - b);
   const exRank = b => b.exTime == null ? null : times.indexOf(b.exTime) + 1;
-  const st = order.map(b => b.exF ? -b.exST : b.exST);
+  // 展示でフライング（F）した艇は、本番の早さの手がかりにならないので展示STを使わない
+  const st = order.map(b => b.exF || b.exST == null ? null : b.exST);
   const lvl = d => d >= s.strong - 1e-9 ? 2 : 1;
   const ok = d => d >= s.gap - 1e-9;
   const alerts = [];
@@ -770,19 +829,29 @@ function slitAlerts(r, s){
       alerts.push({type: "nobi", boat: order[i].no, course: i + 1, diff: d, level: all ? 2 : 1});
     }
   }
-  if (st.length >= 3){
-    const d = st[0] - Math.max(st[1], st[2]);
-    if (ok(d)) alerts.push({type: "in", boat: order[0].no, course: 1, diff: d, level: lvl(d)});
+  order.forEach((b, i) => { if (b.exF) alerts.push({type: "exf", boat: b.no, course: i + 1, diff: b.exST, level: 0}); });
+  if (st.length >= 3 && st[0] != null){
+    const nb = [st[1], st[2]].filter(v => v != null);
+    if (nb.length){
+      const d = st[0] - Math.max(...nb);
+      if (ok(d)) alerts.push({type: "in", boat: order[0].no, course: 1, diff: d, level: lvl(d)});
+    }
   }
   for (let i = 1; i < order.length; i++){
-    const lead = st[i - 1] - st[i];
-    if (ok(lead) && st[i] <= Math.min(...st.slice(0, i)) - 0.02 + 1e-9){
+    if (st[i] == null) continue;
+    const inner = st.slice(0, i).filter(v => v != null);
+    if (!inner.length) continue;
+    const lead = inner[inner.length - 1] - st[i];
+    if (ok(lead) && st[i] <= Math.min(...inner) - 0.02 + 1e-9){
       const rk = exRank(order[i]), nobi = rk != null && rk <= 2;
       alerts.push({type: "attack", boat: order[i].no, course: i + 1, diff: lead, level: nobi ? 2 : lvl(lead), nobi, tactic: TACTIC[i + 1] || "まくり", fHolder: order[i].F > 0});
     }
   }
   for (let i = 1; i < order.length - 1; i++){
-    const d = Math.min(st[i] - st[i - 1], st[i] - st[i + 1]);
+    if (st[i] == null) continue;
+    const nb = [st[i - 1], st[i + 1]].filter(v => v != null);
+    if (!nb.length) continue;
+    const d = Math.min(...nb.map(v => st[i] - v));
     if (ok(d)) alerts.push({type: "dent", boat: order[i].no, course: i + 1, diff: d, level: lvl(d), next: order[i + 1].no});
   }
   return alerts;
@@ -800,7 +869,9 @@ function predict(r, s, alerts, lite, stats = STATS){
     let cST = cs && cs[5] >= 8 ? cs[4] / cs[5] / 100 : null;   // そのコースでの平均ST
     if (cST != null && cs[28] >= 6) cST = 0.5 * cST + 0.5 * cs[27] / cs[28] / 100;  // 直近3ヶ月を半分混ぜる
     const zure = stats ? zureOf(stats, b.reg) : 0;
-    const predST = b.exST != null ? (b.exF ? -b.exST : b.exST) + zure : null;  // 本番予想ST
+    // 本番予想ST：展示ST＋ずれ。展示でFのときは展示STを使わず、そのコースでのいつものSTにする
+    const usual = cST ?? (b.avgST > 0 ? b.avgST : null);
+    const predST = b.exST == null ? null : b.exF ? usual : b.exST + zure;
     const stv = cST ?? (b.avgST > 0 ? b.avgST : null);
     let crs = 0;
     if (stats){
@@ -925,9 +996,8 @@ function valueBets(r, pr, s){
     const od = oddsOf(r.odds, t, c);
     if (od && p * od >= s.ev - 1e-9) out.push({t, c, p, od, ev: p * od});
   };
+  // 買い候補は単勝だけ（長期検証で2連単・3連単はどの条件でもマイナスだったため）
   pr.F.forEach(f => consider("win", [f.b.no], f.p1));
-  pr.exAll.forEach(x => consider("ex", x.c, x.p));
-  pr.triAll.forEach(x => consider("tri", x.c, x.p));
   return out.sort((a, b) => b.ev - a.ev);
 }
 
@@ -937,7 +1007,7 @@ function analyze(r, s){
   const value = valueBets(r, pr, s);
   return {
     ...pr, alerts, value,
-    isAlert: alerts.length > 0,
+    isAlert: alerts.some(a => a.type !== "exf"),
     isSlit: alerts.some(a => a.type === "nobi"),
     slitLevel: alerts.filter(a => a.type === "nobi").reduce((m, a) => Math.max(m, a.level), 0),
     isHonmei: pr.top.p1 * 100 >= s.honmei,
@@ -1015,7 +1085,7 @@ function tune(data, s, stats){
 
 /* ---------- 状態 ---------- */
 const settings = loadSettings();
-const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "alert", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}};
+const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "value", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}};
 const bt = {status: "idle", days: 0, data: [], res: null, tuned: null, prevW: null, msg: "", stats: null, long: null, longTried: false};
 function updateStatsInfo(){
   const el = $("stats-info");
@@ -1024,7 +1094,7 @@ function updateStatsInfo(){
     ? (STATS.sample ? "サンプル表示中は架空の成績を使っています。" : `集計：${STATS.window === "6m" ? "直近6ヶ月 " : ""}${STATS.from}〜${STATS.to}・${STATS.races}レース（毎晩更新）`)
     : "コース別成績の集計データがまだありません。GitHubの自動集計を一度動かすと使えるようになります。";
 }
-try { const t = localStorage.getItem("slitradar.tab"); if (t) state.tab = t; } catch (e) {}
+try { const t = localStorage.getItem("slitradar.tab2"); if (t) state.tab = t; } catch (e) {}
 
 /* ---------- 描画 ---------- */
 function slitSVG(an){
@@ -1074,7 +1144,8 @@ function badgeHTML(r, an){
   an.alerts.filter(a => a.type === "in").forEach(a => out.push(`<span class="bdg alert">ST凹み（イン） <span class="num">${f2(a.diff)}</span></span>`));
   an.alerts.filter(a => a.type === "attack").forEach(a => out.push(`<span class="bdg alert">${bn(a.boat)}ST攻め・${a.tactic} <span class="num">+${f2(a.diff).slice(1)}</span>${a.fHolder ? " F持ち" : ""}</span>`));
   an.alerts.filter(a => a.type === "dent").forEach(a => out.push(`<span class="bdg alert">${bn(a.boat)}ST凹み → ${bn(a.next)}に展開</span>`));
-  if (an.isValue) out.push(`<span class="bdg val">期待値プラス <span class="num">${an.value.length}</span>点</span>`);
+  an.alerts.filter(a => a.type === "exf").forEach(a => out.push(`<span class="bdg mute">${bn(a.boat)}展示F<span class="num">.${String(Math.round(a.diff * 100)).padStart(2, "0")}</span>（点数に入れない）</span>`));
+  if (an.isValue) out.push(`<span class="bdg val">買い候補 ${an.value.map(x => bn(x.c[0])).join("")}単勝</span>`);
   if (an.isHonmei) out.push(`<span class="bdg solid">鉄板 ${bn(an.top.b.no)}<span class="num">${pct(an.top.p1)}%</span></span>`);
   if (an.isAna) out.push(`<span class="bdg ana">穴 1コース<span class="num">${pct(an.c1.p1)}%</span></span>`);
   if (r.result){
@@ -1084,18 +1155,23 @@ function badgeHTML(r, an){
   return out.length ? `<div class="badges">${out.join("")}</div>` : "";
 }
 
+const lineOf = p => Math.ceil(settings.ev / p * 10) / 10;
 function valueHTML(r, an){
-  if (!an.value.length) return "";
-  const hitSet = r.result ? {win: String(r.result.order[0]), ex: r.result.order.slice(0, 2).join("-"), tri: r.result.order.slice(0, 3).join("-")} : null;
-  const rows = an.value.slice(0, 5).map(x => {
-    const hit = hitSet && hitSet[x.t] === x.c.join("-");
-    return `<div class="vrow"><span class="vt">${TYPES[x.t]}</span><span class="k">${x.c.map(chip).join("")}</span><span class="vp num">${pct(x.p, 1)}%${hit ? " 的中" : ""}</span><span class="vo num">${x.od.toFixed(1)}倍</span><span class="ve num">${x.ev.toFixed(2)}</span></div>`;
-  }).join("");
+  if (!an.value.length) return buyLineHTML(r, an);
+  const won = r.result ? r.result.order[0] : null;
+  const rows = an.value.map(x => `<div class="vrow"><span class="k">${chip(x.c[0])}</span><span class="vt">単勝${won != null ? (won === x.c[0] ? " 的中" : " ハズレ") : ""}</span><span class="vp num">1着率 ${pct(x.p)}%</span><span class="vo num">${x.od.toFixed(1)}倍</span><span class="ve num">${x.ev.toFixed(2)}</span></div>
+      <div class="vline">買いライン <b>${lineOf(x.p).toFixed(1)}倍以上</b></div>`).join("");
   return `<div class="vblock">
-    <div class="probs-h"><span>期待値プラスの買い目（${esc(r.oddsLabel || "オッズ")}）</span><span>期待値</span></div>
+    <div class="probs-h"><span>買い候補（${esc(r.oddsLabel || "オッズ")}）</span><span>期待値</span></div>
     ${rows}
-    ${an.value.length > 5 ? `<p class="note">ほか${an.value.length - 5}点</p>` : ""}
   </div>`;
+}
+function buyLineHTML(r, an){
+  if (!r.hasPreview && !r.odds) return "";
+  const list = [...an.F].filter(f => f.p1 * 100 >= settings.minP).sort((a, b) => b.p1 - a.p1);
+  if (!list.length) return "";
+  const msg = r.odds ? `${esc(r.oddsLabel || "オッズ")}では条件を満たす艇はありません。` : "オッズを見て、この倍率以上なら単勝の買い候補です。";
+  return `<div class="bline"><span class="bl-h">単勝の買いライン</span><span class="bl-l">${list.map(f => `<span>${chip(f.b.no)}<b class="num">${lineOf(f.p1).toFixed(1)}</b>倍〜</span>`).join("")}</span><span class="note">${msg}</span></div>`;
 }
 
 function probsHTML(r, an){
@@ -1170,13 +1246,41 @@ function courseTableHTML(r, an){
     <p class="note">ST順位はそのレースの6艇の中で何番目に早かったかの平均です（1に近いほど早い）。</p>${trend}</div>`;
 }
 
+// 展開データ：1コースは「逃げ・差され・まくられ…」、2〜6コースは「逃げられ・差し・まくり…」の回数
+function tenkaiTableHTML(an){
+  if (!STATS) return "";
+  const F = [...an.F].sort((x, y) => x.course - y.course);
+  const ROWS = [
+    ["逃げ", "逃げられ", 6, 11],
+    ["差され", "差し", 23, 7],
+    ["まくられ", "まくり", 24, 8],
+    ["まくり差され", "まくり差し", 25, 9],
+    ["その他", "その他", 26, 10]
+  ];
+  const cell = (f, k, max) => {
+    const a = f.cs;
+    if (!a || !a[0]) return `<td>-</td>`;
+    const v = a[k] || 0;
+    return `<td class="${max && v === max && v > 0 ? "hi" : ""}">${v}<small>${Math.round(v / a[0] * 100)}%</small></td>`;
+  };
+  const body = ROWS.map(([l1, l2, k1, k2]) => {
+    const max = Math.max(...F.filter(f => f.course !== 1 && f.cs).map(f => f.cs[k2] || 0), 0);
+    return `<tr><th class="tl">${l1}<span>${l2}</span></th>${F.map(f => f.course === 1 ? cell(f, k1, 0) : cell(f, k2, max)).join("")}</tr>`;
+  }).join("");
+  const first = F.map(f => `<td class="tot">${f.cs ? `${f.cs[1]}<small>/${f.cs[0]}</small>` : "-"}</td>`).join("");
+  return `<div><h3>展開データ（${periodLabel()}・今回の進入コース）</h3><div class="tbl"><table class="tk-t2">
+    <thead><tr><th class="tl">進入</th>${F.map(f => `<th>${f.course}<br>${chip(f.b.no)}</th>`).join("")}</tr></thead>
+    <tbody><tr><th class="tl">1着<span>出走</span></th>${first}</tr>${body}</tbody></table></div>
+    <p class="note">左の見出しの上の段は1コース、下の段は2〜6コースの数え方です。1コースは「逃げて勝った・差されて負けた…」の回数、2〜6コースは「差し・まくりなどで勝った」回数と、1コースに逃げられた回数です。小さい数字は出走数に対する割合です。日和の「抵抗」「絞り」は1マークの位置取りのデータが必要なので出していません。</p></div>`;
+}
+
 function stTableHTML(an){
   if (!STATS) return "";
   const sg2 = v => (Math.abs(v) < 0.005 ? "±" : v > 0 ? "+" : "−") + "." + String(Math.round(Math.abs(v) * 100)).padStart(2, "0");
   const rows = an.F.map(f => {
     const a = f.cs, R = racerOf(STATS, f.b.reg), z = R && R.z;
     const zure = z && z[0] ? `${sg2(f.zure)}<small>${f.zure > 0.005 ? "遅れ" : f.zure < -0.005 ? "早い" : "同じ"}・${z[0]}回</small>` : "-";
-    return `<tr><td>${chip(f.b.no)}</td><td>${a ? pctOf(a[21], a[17]) : "-"}</td><td>${a && f.course !== 1 ? pctOf(a[18], a[20]) : "-"}</td><td>${a ? pctOf(a[19], a[20]) : "-"}</td><td>${a && a[29] ? a[29] : "-"}</td><td class="zr">${zure}</td><td>${f.predST != null ? fST(Math.abs(f.predST), f.predST < 0) : "-"}</td></tr>`;
+    return `<tr><td>${chip(f.b.no)}</td><td>${a ? pctOf(a[21], a[17]) : "-"}</td><td>${a && f.course !== 1 ? pctOf(a[18], a[20]) : "-"}</td><td>${a ? pctOf(a[19], a[20]) : "-"}</td><td>${a && a[29] ? a[29] : "-"}</td><td class="zr">${zure}</td><td class="zr">${f.predST != null ? fST(Math.abs(f.predST), f.predST < 0) + (f.b.exF ? `<small>展示F→いつものST</small>` : "") : "-"}</td></tr>`;
   }).join("");
   return `<div><h3>スタートの傾向（今回の進入コース）</h3><div class="tbl"><table class="lft2">
     <thead><tr><th>艇</th><th>安定率</th><th>抜出率</th><th>出遅率</th><th>F</th><th>展示→本番</th><th>本番予想ST</th></tr></thead>
@@ -1279,7 +1383,7 @@ function combosHTML(r, an){
       ${groups.map(([t, list]) => `<div class="cgrp">${TYPES[t]}</div>` + list.map(x => row(t, x)).join("")).join("")}
     </div>
     <p class="note">${has
-      ? `${esc(r.oddsLabel)}で計算しています。期待値が${settings.ev.toFixed(2)}以上なら緑になります。`
+      ? `${esc(r.oddsLabel)}で計算しています。期待値が${settings.ev.toFixed(2)}以上なら緑になります。2連単・3連単は長期検証でマイナスだったので、買い候補には入れていません。`
       : `オッズの欄に実際のオッズを入れると期待値を計算します。${settings.ev.toFixed(2)}以上で緑になります。「損益ゼロ」はこれ以上のオッズなら期待値プラスになる目安です。`}</p>
     <div class="links note">公式のオッズ：
       <a href="${oddsLink(r, "oddstf")}" target="_blank" rel="noopener">単勝</a>
@@ -1321,8 +1425,9 @@ function cardHTML(r, an, now){
       </div>
     </details>
     <details data-key="${esc(r.key)}#d"${state.open.has(r.key + "#d") ? " open" : ""}>
-      <summary>選手データ：コース別・スタート・決まり手・今節・出目</summary>
+      <summary>選手データ：展開・コース別・スタート・決まり手・今節・出目</summary>
       <div class="dbody">
+        ${tenkaiTableHTML(an)}
         ${courseTableHTML(r, an)}
         ${stTableHTML(an)}
         ${kimariteHTML(an)}
@@ -1331,6 +1436,17 @@ function cardHTML(r, an, now){
       </div>
     </details>
   </article>`;
+}
+
+function condHTML(){
+  const L = bt.long;
+  const g = L && L.grid ? L.grid.find(x => Math.abs(x.ev - settings.ev) < 1e-6 && Math.abs(x.minP * 100 - settings.minP) < 1e-6) : null;
+  return `<p class="cond-l">条件：単勝・1着率${settings.minP}%以上・期待値${settings.ev.toFixed(1)}以上${g && g.win.n ? `<span>長期検証 回収率${Math.round(g.win.roi * 100)}%（${Math.round(Math.max(0, g.win.lo) * 100)}〜${Math.round(g.win.hi * 100)}%）</span>` : ""}</p>`;
+}
+function ensureLong(){
+  if (bt.longTried) return;
+  bt.longTried = true;
+  loadJSONFile("backtest.json").then(j => { bt.long = j && j.v && j.main ? j : null; renderBT(); safeRender(); });
 }
 
 function render(){
@@ -1373,12 +1489,15 @@ function render(){
       honmei: "鉄板のレースはありません。設定で「鉄板」のしきい値を下げると増えます。",
       ana: "穴のレースはありません。設定で「穴」のしきい値を上げると増えます。",
       value: anyOdds
-        ? "期待値プラスの買い目はありません。設定で期待値の条件をゆるめると増えます。"
-        : "この日のオッズはまだ取得できません（オッズのデータ元は前日分までの提供です）。各レースの「買い目・期待値」を開いてオッズを入力すると、その場で期待値を計算します。‹ で前の日に戻ると、確定オッズで自動判定した結果を見られます。",
+        ? "今のオッズでは、条件を満たす買い候補はありません。オッズは締切が近づくにつれて届きます。"
+        : (loadTopic()
+          ? "今日のオッズはまだ届いていません。締切の15分前ごろから、通知の仕組みが見に行ったオッズが届き始めます。それまでは「全て」のタブで各レースの買いラインを見てください。"
+          : "今日のオッズがありません。設定の「通知の合言葉」にntfyのトピック名を入れると、締切前のオッズが届いて買い候補が出ます。それまでは「全て」のタブで各レースの買いラインを見てください。"),
       all: "表示できるレースがありません。"
     }[state.tab];
     html = `<div class="empty">${msg}${useUpcoming && state.tab !== "value" ? "<br>「締切前のみ」を外すと締切済みのレースも見られます。" : ""}</div>`;
   } else html = list.map(x => cardHTML(x.r, x.an, now)).join("");
+  if (state.tab === "value" && state.mode !== "loading") html = condHTML() + html;
   $("feed").innerHTML = html;
 
   $("d-label").textContent = mdw(state.date);
@@ -1433,10 +1552,7 @@ function renderBT(){
     el.innerHTML = `<p class="btmsg">実データで動かしているときに使えます。HTMLを自分のサイト（GitHub Pagesなど）に置いて開くと、過去の着順・払戻と照らし合わせて、◎の的中率や回収率、期待値プラスだけ買った場合の成績、重みの自動調整が見られます。</p>`;
     return;
   }
-  if (!bt.longTried){
-    bt.longTried = true;
-    loadJSONFile("backtest.json").then(j => { bt.long = j && j.v && j.main ? j : null; renderBT(); });
-  }
+  ensureLong();
   const busy = bt.status === "loading";
   let h = longHTML(bt.long) + `<div class="hr"></div><h2>直近の数日で検証</h2><p class="lead">今の重み付けと設定のしきい値で、その場で計算し直します。</p><div class="btrow">
     <button class="ibtn" type="button" data-bt="3"${busy ? " disabled" : ""}>過去3日</button>
@@ -1454,15 +1570,15 @@ function renderBT(){
       <div class="stat"><span>コースだけの予想との差</span><b>${gain >= 0 ? "+" : "−"}${Math.abs(gain).toFixed(1)}%</b><small>確率の当てはまり（対数損失）の改善率</small></div>
     </div>
     <p class="note">${bt.stats ? `コース別成績は${esc(bt.stats.to || "")}までの集計を使っています（検証する期間より前のデータだけなので、答えを先に見ていません）。` : "コース別成績の集計がまだないので、コース実績なしで検証しています。"}</p>`;
-    h += `<div><h3>期待値プラスだけ買った場合（期待値${settings.ev.toFixed(2)}以上・確率${settings.minP.toFixed(1)}%以上、各100円）</h3>`;
+    h += `<div><h3>買い候補の条件で単勝を買った場合（期待値${settings.ev.toFixed(1)}以上・1着率${settings.minP}%以上、各100円）</h3>`;
     if (x.oddsN){
-      const rows = ["win", "ex", "tri"].map(t => {
+      const rows = ["win"].map(t => {
         const e = x.ev[t];
         const roi = e.n ? e.ret / (100 * e.n) : 0;
         return `<tr><td>${TYPES[t]}</td><td>${e.n}</td><td>${e.n ? pct(e.hit / e.n, 1) + "%" : "-"}</td><td class="${roi >= 1 ? "plus" : ""}">${e.n ? pct(roi) + "%" : "-"}</td><td class="${roi >= 1 ? "plus" : ""}">${e.n ? yen(e.ret - 100 * e.n) : "-"}</td></tr>`;
       }).join("");
       h += `<div class="tbl"><table class="lft2"><thead><tr><th>賭式</th><th>点数</th><th>的中率</th><th>回収率</th><th>収支</th></tr></thead><tbody>${rows}</tbody></table></div>
-        <p class="note">オッズ付きのレース${x.oddsN}件で計算。確定オッズを使っているので、締切前に見るオッズとは少しずれます。実際に買うと、この成績より下がることがあります。設定の「期待値プラスの条件」を動かすと、この表もすぐ計算し直します。</p>`;
+        <p class="note">オッズ付きのレース${x.oddsN}件で計算。確定オッズを使っているので、締切前に見るオッズとは少しずれます。実際に買うと、この成績より下がることがあります。設定の「買い候補の条件」を動かすと、この表もすぐ計算し直します。</p>`;
     } else {
       h += `<p class="btmsg">この期間のオッズが取得できませんでした。</p>`;
     }
@@ -1502,6 +1618,7 @@ async function load(){
     const races = await loadDay(state.date);
     state.races = races; state.mode = "live"; state.updatedAt = new Date(); state.note = races.length ? "" : "この日の出走表はありません。";
     $("notice").hidden = true;
+    ensureLong();
     if (!state.statsTried || (STATS && STATS.built < jstNowDate() && Date.now() - state.statsTried > 3600e3)){
       state.statsTried = Date.now();
       loadStatsFile("stats.json").then(st => { if (st){ STATS = st; } updateStatsInfo(); safeRender(); });
@@ -1556,7 +1673,7 @@ async function runTune(){
 /* ---------- イベント ---------- */
 document.addEventListener("click", e => {
   const tab = e.target.closest(".tab");
-  if (tab){ state.tab = tab.dataset.tab; try { localStorage.setItem("slitradar.tab", state.tab); } catch (_) {} render(); return; }
+  if (tab){ state.tab = tab.dataset.tab; try { localStorage.setItem("slitradar.tab2", state.tab); } catch (_) {} render(); return; }
   const std = e.target.closest("[data-std]");
   if (std){ state.stadium = +std.dataset.std; render(); return; }
   if (e.target.closest("[data-upcoming]")){ state.upcoming = !state.upcoming; render(); return; }
@@ -1598,8 +1715,8 @@ const SL = [
   ["w-motor", s => s.w.motor, (s, v) => s.w.motor = v, v => "×" + v.toFixed(2)],
   ["w-ex",    s => s.w.ex,    (s, v) => s.w.ex = v,    v => "×" + v.toFixed(2)],
   ["w-course", s => s.w.course, (s, v) => s.w.course = v, v => "×" + v.toFixed(2)],
-  ["ev",      s => s.ev,      (s, v) => s.ev = v,      v => v.toFixed(2) + "以上"],
-  ["minp",    s => s.minP,    (s, v) => s.minP = v,    v => v.toFixed(1) + "%以上"],
+  ["ev",      s => s.ev,      (s, v) => s.ev = v,      v => v.toFixed(1) + "以上"],
+  ["minp",    s => s.minP,    (s, v) => s.minP = v,    v => v + "%以上"],
   ["exgap",   s => s.exGap,   (s, v) => s.exGap = v,   v => v.toFixed(2) + "秒以上速い"],
   ["gap",     s => s.gap,     (s, v) => { s.gap = v; if (s.strong < v) s.strong = v; }, v => v.toFixed(2) + "秒"],
   ["strong",  s => s.strong,  (s, v) => { s.strong = v; if (s.gap > v) s.gap = v; }, v => v.toFixed(2) + "秒"],
@@ -1623,6 +1740,8 @@ document.addEventListener("visibilitychange", () => {
 });
 
 syncSettings();
+$("s-topic").value = loadTopic();
+$("s-topic").addEventListener("change", e => { saveTopic(String(e.target.value).trim()); if (state.mode === "live") load(); });
 updateStatsInfo();
 render();
 load();
