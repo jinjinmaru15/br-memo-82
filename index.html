@@ -1788,8 +1788,17 @@ async function load(){
       loadStatsFile("stats.json").then(st => { if (st){ STATS = st; } updateStatsInfo(); safeRender(); });
     }
   } catch (e) {
-    if (e.status && state.mode === "live"){
-      state.races = []; state.note = "この日の出走表はまだ公開されていないか、取得できませんでした。";
+    if (e.status && first && state.date === jstNowDate() && new Date(Date.now() + 9 * 3600e3).getUTCHours() < 10){
+      // 夜中〜朝で今日の出走表がまだないときは、昨日のレースを見せる
+      state.date = shiftDate(state.date, -1);
+      return load();
+    }
+    if (e.status){
+      // サイトにはつながるが、この日のデータがまだない（サンプルにはしない）
+      state.races = []; state.mode = "live"; state.updatedAt = new Date();
+      state.note = state.date === jstNowDate() ? "今日の出走表はまだ公開されていません（朝のうちに出ます）。左の「‹」で前の日を見られます。" : "この日の出走表は取得できませんでした。";
+      $("notice").hidden = true;
+      ensureLong();
     } else if (first || state.mode === "sample"){
       state.races = makeSample(); state.mode = "sample"; state.note = "";
       STATS = makeSampleStats(state.races); updateStatsInfo();
