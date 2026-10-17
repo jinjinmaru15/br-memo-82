@@ -198,6 +198,7 @@ button:disabled{cursor:default}
 .bline .note{margin:0}
 .cond-l{margin:0;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 10px}
 .cond-l span{color:var(--val);font-weight:700}
+.cond-l span.neg{color:var(--accent)}
 .odds-l{margin:0;font-size:12px;color:var(--muted)}
 .odds-l.ok{color:var(--val);font-weight:700}
 .odds-l.ng{color:var(--accent);font-weight:700}
@@ -287,6 +288,12 @@ td.tot{font-weight:700}
 .nrow .np{font-family:var(--f-num);font-size:15px;font-weight:600;text-align:right;min-width:9ch;font-variant-numeric:tabular-nums}
 .nrow .np small{color:var(--muted);font-weight:500;font-size:12px;margin-left:4px}
 .n3h{margin-top:12px!important}
+.place h3 small{font-weight:400;color:var(--muted);margin-left:4px}
+.wpicks{display:flex;flex-wrap:wrap;gap:6px}
+.wpk{display:inline-flex;flex-direction:column;align-items:center;gap:2px;padding:5px 6px 3px;min-width:44px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.wpk small{font-family:var(--f-num);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.wpk[aria-pressed="true"]{border-color:var(--val);background:var(--val-soft);box-shadow:inset 0 0 0 1px var(--val)}
+.wpk[aria-pressed="true"] small{color:var(--val);font-weight:700}
 .n3{display:grid;gap:7px}
 .n3row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 8px;align-items:center;font-size:12px}
 .n3row .lbl{display:inline-flex;align-items:center;gap:3px;white-space:nowrap;color:var(--muted)}
@@ -357,6 +364,7 @@ table.tk-t2 td.tot small{display:inline;font-size:12px}
     <div class="srow"><label for="s-w-motor">モーター・ボート<small>2連率</small></label><output id="o-w-motor"></output><input type="range" id="s-w-motor" min="0" max="2.5" step="0.25"></div>
     <div class="srow"><label for="s-w-ex">展示タイム<small>そのレースの中での速さ</small></label><output id="o-w-ex"></output><input type="range" id="s-w-ex" min="0" max="2.5" step="0.25"></div>
     <div class="srow"><label for="s-w-course">コース実績<small>その選手がそのコースで勝っている率</small></label><output id="o-w-course"></output><input type="range" id="s-w-course" min="0" max="2.5" step="0.25"><p id="stats-info"></p></div>
+    <div class="srow"><label for="s-w-seibi">整備・チルト<small>チルト角度・部品交換</small></label><output id="o-w-seibi"></output><input type="range" id="s-w-seibi" min="0" max="2.5" step="0.25"></div>
     <div class="hr"></div>
     <h2>買い候補の条件（単勝）</h2>
     <div class="srow">
@@ -461,7 +469,11 @@ const NATL = [0,1,2,3,4,5].map(i => Object.values(PRIOR).reduce((a, v) => a + v[
 const priorFor = s => (PRIOR[s] || NATL).map((v, i) => 0.7 * v + 0.3 * NATL[i]);
 
 const BASE = {skill: 0.50, avgst: 0.12, exst: 0.06, motor: 0.20, ex: 0.25, course: 0.35};
-const DEFAULTS = {exGap: 0.10, gap: 0.05, strong: 0.08, honmei: 60, ana: 35, ev: 2.0, minP: 10, w: {skill: 1, start: 1, motor: 1, ex: 1, course: 1}};
+// 整備・チルト：2026年1〜6月のレースで当てはめ、7〜10月で効くことを確かめた係数
+// チルト1度あたり（1・2コース／3コースより外）、部品交換したとき（リング・キャブ・大きい部品・電気系）
+const SEIBI = {tiltIn: 0.12, tiltOut: 0.23, ring: -0.06, carb: -0.18, major: -0.13, elec: -0.18};
+const MAJOR_PARTS = ["ピストン", "シリンダ", "シャフト", "キャリボ", "ギヤ", "クランク"];
+const DEFAULTS = {exGap: 0.10, gap: 0.05, strong: 0.08, honmei: 60, ana: 35, ev: 2.0, minP: 10, w: {skill: 1, start: 1, motor: 1, ex: 1, course: 1, seibi: 1}};
 const WLABEL = {skill: "実力・腕", start: "スタート力", motor: "モーター", ex: "展示タイム", course: "コース実績"};
 const TECHS = ["逃げ", "差し", "まくり", "まくり差し", "その他"];
 // 集計がないときの決まり手の目安（コース別：逃げ・差し・まくり・まくり差し・その他）
@@ -479,13 +491,32 @@ function prepStats(raw){
   for (const [k, v] of Object.entries(raw.racers)) racers[k] = Array.isArray(v) ? {c: v} : v;
   const nat = [0, 1, 2, 3, 4, 5].map(() => new Array(30).fill(0));
   Object.values(raw.stadiums).forEach(sd => (sd.c || []).forEach((a, i) => { if (Array.isArray(a)) a.forEach((v, k) => { nat[i][k] += v; }); }));
-  return {...raw, racers, nat};
+  // 1着・2着・3着のコースの並び（全国）。古い集計にはないので、そのときは null
+  let cc = null;
+  Object.values(raw.stadiums).forEach(sd => { if (Array.isArray(sd.cc)){ cc = cc || new Array(216).fill(0); sd.cc.forEach((v, i) => { cc[i] += v; }); } });
+  return {...raw, racers, nat, cc};
 }
 const racerOf = (stats, reg) => stats && reg != null ? stats.racers[reg] || null : null;
 const cstat = (stats, reg, c) => { const r = racerOf(stats, reg); return r && r.c && Array.isArray(r.c[c - 1]) ? r.c[c - 1] : null; };
 // 展示ST→本番STのズレ（秒）。件数が少ないうちは0に寄せる
 const zureOf = (stats, reg) => { const r = racerOf(stats, reg); return r && r.z && r.z[0] ? r.z[1] / (r.z[0] + 5) / 100 : 0; };
 const natRate = (stats, c, k, d) => { const a = stats.nat[c - 1]; return a && a[d] ? a[k] / a[d] : 0; };
+// コースの並びの実績から「1着がコースc1のとき、2着がコースc」の割合（c2 を渡すと3着の割合）。場の実績を全国に寄せる
+function ccRates(stats, stadium, c1, c2){
+  if (!stats || !stats.cc) return null;
+  const sd = stats.stadiums && stats.stadiums[stadium];
+  const v = sd && Array.isArray(sd.cc) ? sd.cc : null;
+  const cnt = (a, c) => {
+    if (!a) return 0;
+    if (c2) return a[(c1 - 1) * 36 + (c2 - 1) * 6 + c - 1];
+    let t = 0; for (let k = 0; k < 6; k++) t += a[(c1 - 1) * 36 + (c - 1) * 6 + k];
+    return t;
+  };
+  const n = [1, 2, 3, 4, 5, 6].map(c => cnt(stats.cc, c)), w = [1, 2, 3, 4, 5, 6].map(c => cnt(v, c));
+  const tn = n.reduce((a, b) => a + b, 0), tw = w.reduce((a, b) => a + b, 0);
+  if (!tn) return null;
+  return [0, ...n.map((x, i) => (w[i] + 50 * x / tn) / (tw + 50))];
+}
 const statsURLs = name => {
   const out = [];
   const m = location.hostname.match(/^([\w-]+)\.github\.io$/i);
@@ -585,7 +616,10 @@ function parseV1(j, date){
             motor2: num(x.motor_top_2_percent), boat2: num(x.boat_top_2_percent),
             course: num(q.course_number),
             exST: raw == null ? null : Math.abs(raw), exF: raw != null && raw < 0,
-            exTime: num(q.exhibition_time) > 0 ? num(q.exhibition_time) : null
+            exTime: num(q.exhibition_time) > 0 ? num(q.exhibition_time) : null,
+            tilt: num(q.tilt_adjustment), prop: q.propeller ? String(q.propeller) : "",
+            parts: Array.isArray(q.parts) ? q.parts.map(x => String((x && x.number_source) || "")).filter(Boolean) : [],
+            wt: num(q.weight), wtAdj: num(q.weight_adjustment)
           };
         }).sort((a, b) => a.no - b.no);
         if (!boats.length) continue;
@@ -597,7 +631,7 @@ function parseV1(j, date){
           closedAt: parseJST(R.closed_at),
           grade: GRADES[R.grade_number] || "",
           title: R.title || "", subtitle: R.subtitle || "",
-          cond: hasPreview ? {wind: num(pv.wind_speed), wave: num(pv.wave_height), weather: pv.weather_number, temp: num(pv.air_temperature), water: num(pv.water_temperature)} : null,
+          cond: hasPreview ? {wind: num(pv.wind_speed), wd: num(pv.wind_direction_number), wave: num(pv.wave_height), weather: pv.weather_number, temp: num(pv.air_temperature), water: num(pv.water_temperature)} : null,
           boats, hasPreview,
           result: order.length ? {order, payouts: normPayouts(rs.payouts)} : null,
           odds, oddsLabel: odds ? "確定オッズ" : ""
@@ -871,9 +905,21 @@ function slitAlerts(r, s){
   return alerts;
 }
 
+// 整備・チルトの点（展示前やデータがないときは0）
+function seibiOf(b, course){
+  let v = 0;
+  if (b.tilt != null) v += clamp(b.tilt, -0.5, 3) * (course <= 2 ? SEIBI.tiltIn : SEIBI.tiltOut);
+  const p = b.parts || [];
+  if (p.includes("リング")) v += SEIBI.ring;
+  if (p.includes("キャブ")) v += SEIBI.carb;
+  if (p.some(x => MAJOR_PARTS.includes(x))) v += SEIBI.major;
+  if (p.includes("電気")) v += SEIBI.elec;
+  return v;
+}
+
 /* ---------- 判定：期待度（1着率） ----------
    場別コース1着率 × exp(実力 + スタート力 + モーター + 展示タイム + コース実績 の偏差)
-   2着・3着は Harville 方式。ただし1コースが勝つときの2着・3着は「逃げ時の2着率・3着率」の実績と半々で混ぜる */
+   2着・3着は Harville 方式に実績を混ぜる。1コースが勝つときは「逃げ時の2着率・3着率」、それ以外は「コースの並び」の実績 */
 function predict(r, s, alerts, lite, stats = STATS){
   const order = sortOrder(r), w = s.w, n = order.length;
   const pri = priorFor(r.stadium);
@@ -899,11 +945,11 @@ function predict(r, s, alerts, lite, stats = STATS){
       mo: (b.motor2 > 0 ? (b.motor2 - 35) / 10 : 0) + (b.boat2 > 0 ? (b.boat2 - 35) / 20 : 0),
       ex: b.exTime != null ? -b.exTime / 0.05 : null,
       es: predST != null ? -predST / 0.05 : null, zure, predST,
-      crs
+      crs, sb: seibiOf(b, course)
     };
   });
   const avg = k => { const v = F.map(f => f[k]).filter(x => x != null); return v.length ? v.reduce((a, c) => a + c, 0) / v.length : 0; };
-  const M = {winEff: avg("winEff"), st: avg("st"), mo: avg("mo"), ex: avg("ex"), es: avg("es")};
+  const M = {winEff: avg("winEff"), st: avg("st"), mo: avg("mo"), ex: avg("ex"), es: avg("es"), sb: avg("sb")};
   const wind = r.cond && r.cond.wind;
   const windF = wind >= 5 ? Math.max(0.75, 1 - 0.03 * (wind - 4)) : 1;
   const wc = w.course ?? 0;
@@ -914,7 +960,8 @@ function predict(r, s, alerts, lite, stats = STATS){
       start: w.start * (BASE.avgst * (f.st - M.st) + (f.es == null ? 0 : BASE.exst * clamp(f.es - M.es, -3, 3))),
       motor: w.motor * BASE.motor * (f.mo - M.mo),
       ex: f.ex == null ? 0 : w.ex * BASE.ex * clamp(f.ex - M.ex, -4, 4),
-      course: wc * BASE.course * clamp(f.crs, -2.5, 2.5)
+      course: wc * BASE.course * clamp(f.crs, -2.5, 2.5),
+      seibi: (w.seibi ?? 1) * (f.sb - M.sb)
     };
     for (const a of alerts){
       if (a.boat !== f.b.no) continue;
@@ -922,7 +969,7 @@ function predict(r, s, alerts, lite, stats = STATS){
       if (a.type === "in") parts.start -= w.start * (a.level === 2 ? 0.30 : 0.18);
     }
     f.parts = parts;
-    f.z = parts.skill + parts.start + parts.motor + parts.ex + parts.course;
+    f.z = parts.skill + parts.start + parts.motor + parts.ex + parts.course + parts.seibi;
     f.prior = (pri[f.course - 1] ?? 1) * (f.course === 1 ? windF : 1);
     f.raw = f.prior * Math.exp(f.z);
     S += f.raw;
@@ -963,15 +1010,36 @@ function predict(r, s, alerts, lite, stats = STATS){
     f.third = F.map((g, k) => out(k) ? 0 : (hs > 0 ? 0.5 * g.p1 / rs + 0.5 * h3[k] / hs : g.p1 / rs));
   });
 
+  // 2着・3着の分布 P2[i][j]、P3[i][j][k]（i が1着、j が2着、k が3着のとき）
+  // 1コースが勝つとき：上の「逃げ時の2着・3着率」の混ぜ込み
+  // それ以外が勝つとき：Harville と「コースの並び」の実績を混ぜる（2着は半々、3着は実績7割）
+  const P2 = [], P3 = [];
+  for (let i = 0; i < n; i++){
+    P2[i] = []; P3[i] = [];
+    const isC1 = i === i1;
+    const h2 = isC1 ? null : ccRates(stats, r.stadium, F[i].course);
+    const h2s = h2 ? F.reduce((a, g, j) => a + (j === i ? 0 : h2[g.course]), 0) : 0;
+    for (let j = 0; j < n; j++){
+      if (j === i){ P2[i][j] = 0; P3[i][j] = null; continue; }
+      const harv = F[j].p1 / (1 - F[i].p1);
+      P2[i][j] = isC1 ? F[j].after : (h2s > 0 ? 0.5 * harv + 0.5 * h2[F[j].course] / h2s : harv);
+      const h3 = isC1 ? null : ccRates(stats, r.stadium, F[i].course, F[j].course);
+      const out = k => k === i || k === j;
+      const rs = F.reduce((a, g, k) => a + (out(k) ? 0 : g.p1), 0);
+      const h3s = h3 ? F.reduce((a, g, k) => a + (out(k) ? 0 : h3[g.course]), 0) : 0;
+      P3[i][j] = isC1 && F[j].third ? F[j].third
+        : F.map((g, k) => out(k) ? 0 : (h3s > 0 ? 0.3 * g.p1 / rs + 0.7 * h3[g.course] / h3s : g.p1 / rs));
+    }
+  }
   const exAll = [], triAll = [];
   for (let i = 0; i < n; i++) for (let j = 0; j < n; j++){
     if (j === i) continue;
-    const pij = (i === i1 && q) ? F[i].p1 * q[j] : F[i].p1 * F[j].p1 / (1 - F[i].p1);
+    const pij = F[i].p1 * P2[i][j];
     exAll.push({c: [F[i].b.no, F[j].b.no], p: pij});
     F[i].p2 += pij; F[j].p2 += pij;
     for (let k = 0; k < n; k++){
       if (k === i || k === j) continue;
-      const pijk = (i === i1 && F[j].third) ? pij * F[j].third[k] : pij * F[k].p1 / Math.max(1e-9, 1 - F[i].p1 - F[j].p1);
+      const pijk = pij * P3[i][j][k];
       triAll.push({c: [F[i].b.no, F[j].b.no, F[k].b.no], p: pijk});
       F[i].p3 += pijk; F[j].p3 += pijk; F[k].p3 += pijk;
     }
@@ -1004,7 +1072,7 @@ function predict(r, s, alerts, lite, stats = STATS){
   const threat = pairs.filter(x => !(x.f === c1 && x.i === 0) && x.i < 4).sort((a, b) => b.p - a.p)[0] || null;
   const tenkai = {T, threat};
 
-  return {F, top, c1, exAll, triAll, exacta: exAll.slice(0, 3), tri: triAll.slice(0, 5), tenkai};
+  return {F, top, c1, exAll, triAll, exacta: exAll.slice(0, 3), tri: triAll.slice(0, 5), tenkai, P2, P3};
 }
 
 /* ---------- 期待値 ---------- */
@@ -1113,8 +1181,8 @@ function tune(data, s, stats){
 
 /* ---------- 状態 ---------- */
 const settings = loadSettings();
-const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "value", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}};
-const bt = {status: "idle", days: 0, data: [], res: null, tuned: null, prevW: null, msg: "", stats: null, long: null, longTried: false};
+const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "value", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}, pick: new Map()};
+const bt = {status: "idle", days: 0, data: [], res: null, tuned: null, prevW: null, msg: "", stats: null, long: null, longTried: false, paper: null, paperTried: false};
 function updateStatsInfo(){
   const el = $("stats-info");
   if (!el) return;
@@ -1220,9 +1288,9 @@ function probsHTML(r, an){
 function partsHTML(an){
   const v = x => { const p = Math.round(x * 10); return `<span class="${p < 0 ? "neg" : ""}">${sgn(p)}</span>`; };
   const ps = an.F.reduce((a, g) => a + g.prior, 0);
-  const rows = an.F.map(f => `<tr><td>${chip(f.b.no)}</td><td>${v(f.parts.skill)}</td><td>${v(f.parts.start)}</td><td>${v(f.parts.motor)}</td><td>${v(f.parts.ex)}</td><td>${v(f.parts.course)}</td><td class="tot">${v(f.z)}</td><td>${pct(f.prior / ps)}%</td></tr>`).join("");
+  const rows = an.F.map(f => `<tr><td>${chip(f.b.no)}</td><td>${v(f.parts.skill)}</td><td>${v(f.parts.start)}</td><td>${v(f.parts.motor)}</td><td>${v(f.parts.ex)}</td><td>${v(f.parts.course)}</td><td>${v(f.parts.seibi || 0)}</td><td class="tot">${v(f.z)}</td><td>${pct(f.prior / ps)}%</td></tr>`).join("");
   return `<div><h3>期待度の内訳（0がこのレースの平均）</h3><div class="tbl"><table class="lft2">
-    <thead><tr><th>艇</th><th>実力</th><th>スタート</th><th>モーター</th><th>展示</th><th>コース</th><th>合計</th><th>コース基本</th></tr></thead>
+    <thead><tr><th>艇</th><th>実力</th><th>スタート</th><th>モーター</th><th>展示</th><th>コース</th><th>整備</th><th>合計</th><th>コース基本</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
     <p class="note">合計が+7ならコースの基本確率のおよそ2倍、−7ならおよそ半分になります。</p></div>`;
 }
@@ -1241,24 +1309,36 @@ function tenkaiHTML(an){
   </div>`;
 }
 
-function nigeHTML(an){
-  const c1 = an.c1;
-  const list = an.F.filter(f => f !== c1).sort((a, b) => b.after - a.after);
-  const max = Math.max(...list.map(f => f.after), 0.01);
-  const rows = list.map(f => {
-    const raw = f.cs && f.cs[11] ? `${f.cs[12]}/${f.cs[11]}` : "実績なし";
-    return `<div class="nrow">${chip(f.b.no)}<span class="nb"><i style="width:${(f.after / max * 100).toFixed(0)}%"></i></span><span class="np">${pct(f.after)}%<small>${raw}</small></span></div>`;
+// 1着を選ぶと、そのときの2着と「2着がこの艇なら3着は」を出す（初めは1コース）
+function placeHTML(r, an){
+  const pick = state.pick.get(r.key);
+  const W = an.F.find(f => f.b.no === pick) || an.c1;
+  const i = an.F.indexOf(W), isC1 = W === an.c1;
+  const picker = an.F.map(f => `<button type="button" class="wpk" data-key="${esc(r.key)}" data-win="${f.b.no}" aria-pressed="${f === W}">${chip(f.b.no)}<small>${pct(f.p1)}%</small></button>`).join("");
+  const list = an.F.map((f, j) => ({f, j, p: an.P2[i][j]})).filter(x => x.f !== W).sort((a, b) => b.p - a.p);
+  const max = Math.max(...list.map(x => x.p), 0.01);
+  const rows = list.map(({f, p}) => {
+    const raw = isC1 ? (f.cs && f.cs[11] ? `${f.cs[12]}/${f.cs[11]}` : "実績なし") : "";
+    return `<div class="nrow">${chip(f.b.no)}<span class="nb"><i style="width:${(p / max * 100).toFixed(0)}%"></i></span><span class="np">${pct(p)}%${raw ? `<small>${raw}</small>` : ""}</span></div>`;
   }).join("");
-  // 2着がこの艇なら、3着は…
-  const third = list.filter(f => f.third).map(f => {
-    const cand = an.F.map((g, k) => ({g, p: f.third[k]})).filter(x => x.p > 0).sort((a, b) => b.p - a.p);
-    const items = cand.map((x, i) => `<span${i === 0 ? ' class="top"' : ""}>${chip(x.g.b.no)}<b>${pct(x.p)}%</b></span>`).join("");
+  const third = list.map(({f, j}) => {
+    const d = an.P3[i][j];
+    if (!d) return "";
+    const cand = an.F.map((g, k) => ({g, p: d[k]})).filter(x => x.p > 0).sort((a, b) => b.p - a.p);
+    const items = cand.map((x, n) => `<span${n === 0 ? ' class="top"' : ""}>${chip(x.g.b.no)}<b>${pct(x.p)}%</b></span>`).join("");
     return `<div class="n3row"><span class="lbl">${chip(f.b.no)}が2着なら</span><span class="lst">${items}</span></div>`;
   }).join("");
-  return `<div><h3>${chip(c1.b.no)} が逃げたときの2着</h3><div class="nige">${rows}</div>
-    <p class="note">右の分数は、その選手が今回のコースにいて1コースが逃げたときに2着だった回数／そのレース数です。</p>
-    ${third ? `<h3 class="n3h">${chip(c1.b.no)} が逃げて、2着がこの艇なら3着は</h3><div class="n3">${third}</div>
-    <p class="note">残りの艇が3着になる確率です。各選手の強さと、1コースが逃げたときに3着だった実績を半々で混ぜています。3連単の確率は「逃げる確率 × 2着の確率 × この確率」です。</p>` : ""}</div>`;
+  const verb = isC1 ? "逃げた" : "勝った";
+  const note2 = isC1
+    ? "右の分数は、その選手が今回のコースにいて1コースが逃げたときに2着だった回数／そのレース数です。"
+    : `各選手の強さと、${W.course}コースが勝ったときに何コースが2着・3着に来たかの実績を混ぜています。`;
+  return `<div class="place" data-key="${esc(r.key)}">
+    <h3>1着を選ぶ<small>（下の数字は1着率）</small></h3>
+    <div class="wpicks">${picker}</div>
+    <h3 class="n3h">${chip(W.b.no)} が${verb}ときの2着</h3><div class="nige">${rows}</div>
+    <p class="note">${note2}</p>
+    ${third ? `<h3 class="n3h">${chip(W.b.no)} が${verb}とき、2着がこの艇なら3着は</h3><div class="n3">${third}</div>
+    <p class="note">3連単の確率は「1着の確率 × 2着の確率 × この確率」です。</p>` : ""}</div>`;
 }
 
 const pctOf = (k, n) => n ? Math.round(k / n * 100) + "%" : "-";
@@ -1385,9 +1465,11 @@ function tableHTML(an){
     <td>${b.motor2 == null ? "-" : b.motor2.toFixed(1)}</td>
     <td>${b.exTime == null ? "-" : `<span class="${b.exTime === bestT ? "best" : ""}">${b.exTime.toFixed(2)}</span>`}</td>
     <td>${b.exST == null ? "-" : `<span class="${stv(b) === bestS ? "best" : ""}">${fST(b.exST, b.exF)}</span>`}</td>
+    <td>${b.tilt == null ? "-" : (b.tilt > 0 ? "+" : "") + b.tilt.toFixed(1)}</td>
+    <td class="nm">${b.parts && b.parts.length ? esc(b.parts.join("・")) : "-"}${b.prop ? `<small>${esc(b.prop)}ペラ</small>` : ""}</td>
   </tr>`).join("");
   return `<div><h3>出走表と直前情報</h3><div class="tbl"><table class="lft">
-    <thead><tr><th>進入</th><th>艇</th><th>選手</th><th>勝率</th><th>当地</th><th>平均ST</th><th>モ2連</th><th>展示T</th><th>展示ST</th></tr></thead>
+    <thead><tr><th>進入</th><th>艇</th><th>選手</th><th>勝率</th><th>当地</th><th>平均ST</th><th>モ2連</th><th>展示T</th><th>展示ST</th><th>チルト</th><th>部品交換</th></tr></thead>
     <tbody>${rows}</tbody></table></div></div>`;
 }
 
@@ -1449,11 +1531,11 @@ function cardHTML(r, an, now){
     ${probsHTML(r, an)}
     ${tenkaiHTML(an)}
     <details data-key="${esc(r.key)}"${state.open.has(r.key) ? " open" : ""}>
-      <summary>買い目・逃げた時の2着と3着・内訳・出走表</summary>
+      <summary>買い目・2着と3着の確率・内訳・出走表</summary>
       <div class="dbody">
         ${cond ? `<div class="cond">${esc(cond)}</div>` : ""}
         ${combosHTML(r, an)}
-        ${nigeHTML(an)}
+        ${placeHTML(r, an)}
         ${partsHTML(an)}
         ${r.hasPreview && !showSlitTop ? `<div><h3>スリット予想図</h3><div class="slitbox">${slitSVG(an)}</div></div>` : ""}
         ${!r.hasPreview ? `<p class="note">展示航走のあと（締切のおよそ20分前）に展示タイムとスタートが反映され、スリット図とアラートが出ます。</p>` : ""}
@@ -1477,7 +1559,9 @@ function cardHTML(r, an, now){
 function condHTML(){
   const L = bt.long;
   const g = L && L.grid ? L.grid.find(x => Math.abs(x.ev - settings.ev) < 1e-6 && Math.abs(x.minP * 100 - settings.minP) < 1e-6) : null;
-  return `<p class="cond-l">条件：単勝・1着率${settings.minP}%以上・期待値${settings.ev.toFixed(1)}以上${g && g.win.n ? `<span>長期検証 回収率${Math.round(g.win.roi * 100)}%（${Math.round(Math.max(0, g.win.lo) * 100)}〜${Math.round(g.win.hi * 100)}%）</span>` : ""}</p>`;
+  ensurePaper();
+  const pf = bt.paper && bt.paper.paper.follow;
+  return `<p class="cond-l">条件：単勝・1着率${settings.minP}%以上・期待値${settings.ev.toFixed(1)}以上${g && g.win.n ? `<span>長期検証 回収率${Math.round(g.win.roi * 100)}%（${Math.round(Math.max(0, g.win.lo) * 100)}〜${Math.round(g.win.hi * 100)}%）</span>` : ""}${pf && pf.n ? `<span class="${pf.roi >= 1 ? "" : "neg"}">通知どおりの実績 ${Math.round(pf.roi * 100)}%（${pf.n}点）</span>` : ""}</p>`;
 }
 // 締切前のオッズが通知の仕組みから届いているか（今日だけ）
 function oddsStatusHTML(){
@@ -1487,6 +1571,11 @@ function oddsStatusHTML(){
     : L.status === "ng" ? ["ng", "読み込めませんでした（通知は届きます。買いラインと見比べてください）"]
     : L.n ? ["ok", `${L.n}レース分（最新 ${L.at}）`] : ["", "まだ届いていません（締切7分前ごろから入ります）"];
   return `<p class="odds-l${cls ? " " + cls : ""}">締切前のオッズ：${esc(t)}</p>`;
+}
+function ensurePaper(){
+  if (bt.paperTried) return;
+  bt.paperTried = true;
+  loadJSONFile("paper.json").then(j => { bt.paper = j && j.v && j.paper ? j : null; renderBT(); safeRender(); });
 }
 function ensureLong(){
   if (bt.longTried) return;
@@ -1555,6 +1644,36 @@ function render(){
 }
 const safeRender = () => { if (!typing()) render(); };
 
+// 買ったつもりの成績（record.mjs が毎日3回つける）
+function paperHTML(P){
+  const head = `<h2>買ったつもりの成績（通知どおり・自動で記録）</h2>`;
+  if (!P || !P.paper.all.n) return `${head}<p class="btmsg">${bt.paperTried && !bt.paper ? "まだ記録がありません。" : P ? "まだ結果の出た買い目がありません。" : "読み込み中…"}GitHubのアクションで「record」が動くと（1日3回）、通知した買い目をレース結果と照らし合わせてここに出ます。</p>`;
+  const Pc = v => Math.round(v * 100) + "%";
+  const f = P.paper.follow, all = P.paper.all;
+  const days = P.days.slice().reverse().map(d => `<tr><td>${+d.d.slice(5, 7)}/${+d.d.slice(8)}</td><td>${d.n}</td><td>${d.hit}</td><td class="${d.roi >= 1 && d.n ? "plus" : ""}">${d.n ? Pc(d.roi) : "-"}</td><td>${d.n ? yen(d.ret - 100 * d.n) : "-"}</td></tr>`).join("");
+  const bets = P.bets.slice(-20).reverse().map(x => `<tr><td class="zr">${esc(x.close)}<small>${+x.d.slice(5, 7)}/${+x.d.slice(8)}</small></td><td class="feat">${esc(x.name)}</td><td>${chip(x.no)}</td><td>${(+x.od).toFixed(1)}</td><td>${x.fin ? (+x.fin).toFixed(1) : "-"}</td><td>${Math.round(x.p * 100)}%</td><td class="${x.pay > 0 && !x.skip ? "plus" : ""}">${x.skip ? "見送り" : x.pay > 0 ? x.pay + "円" : "×"}</td></tr>`).join("");
+  const cal = (rows, label) => rows.map(c => `<tr><td>${label}</td><td>${c.ev.toFixed(1)}以上</td><td>${c.n}</td><td class="${c.roi >= 1 && c.n ? "plus" : ""}">${c.n ? Pc(c.roi) : "-"}</td><td>${c.finEv != null ? c.finEv.toFixed(2) : "-"}</td></tr>`).join("");
+  const dr = (a, b) => a.map((x, i) => `<tr><td>${x.hi ? `${x.lo}〜${x.hi}倍` : `${x.lo}倍以上`}</td><td class="zr">${x.med != null ? "×" + x.med.toFixed(2) : "-"}<small>${x.n}件</small></td><td class="zr">${b[i].med != null ? "×" + b[i].med.toFixed(2) : "-"}<small>${b[i].n}件</small></td></tr>`).join("");
+  return `${head}
+    <p class="lead">${esc(P.from)}〜${esc(P.to)}に通知した単勝の買い目を、各100円で買ったつもりにして結果と照らし合わせています。払戻は確定オッズで決まるので、これが実際に近い成績です。</p>
+    <div class="stats">
+      <div class="stat"><span>通知どおり（見送りに従う）</span><b class="${f.roi >= 1 && f.n ? "plus" : ""}">${f.n ? Pc(f.roi) : "-"}</b><small>${f.n}点・的中${f.hit}・収支${f.n ? yen(f.ret - 100 * f.n) : "-"}</small></div>
+      <div class="stat"><span>見送りも買った場合</span><b class="${all.roi >= 1 && all.n ? "plus" : ""}">${all.n ? Pc(all.roi) : "-"}</b><small>${all.n}点・的中${all.hit}</small></div>
+    </div>
+    <p class="note">数百点たまるまでは、1日ごとの数字は大きくぶれます。2週間ほど見てから判断してください。</p>
+    <div><h3>日ごと（通知どおり）</h3><div class="tbl"><table class="lft2">
+      <thead><tr><th>日</th><th>点数</th><th>的中</th><th>回収率</th><th>収支</th></tr></thead><tbody>${days}</tbody></table></div></div>
+    <div><h3>最近の買い目</h3><div class="tbl"><table class="lft2">
+      <thead><tr><th>締切</th><th>レース</th><th>艇</th><th>通知時</th><th>確定</th><th>1着率</th><th>結果</th></tr></thead><tbody>${bets}</tbody></table></div></div>
+    <div><h3>締切前のオッズで選ぶと、本当の回収率は</h3><div class="tbl"><table class="lft2">
+      <thead><tr><th>いつのオッズ</th><th>期待値</th><th>点数</th><th>回収率</th><th>確定での期待値</th></tr></thead>
+      <tbody>${cal(P.calib.t7, "7分前")}${cal(P.calib.t3, "3分前")}</tbody></table></div>
+      <p class="note">1着率${Math.round(P.rule.minP * 100)}%以上の艇を、締切前のオッズでの期待値で選んだときの成績です（通知していない艇も含む）。「確定での期待値」が2を大きく下回るなら、買いラインを上げる必要があります。</p></div>
+    <div><h3>締切前→確定でオッズはどう動くか</h3><div class="tbl"><table class="lft2">
+      <thead><tr><th>締切前のオッズ</th><th>7分前→確定</th><th>3分前→確定</th></tr></thead><tbody>${dr(P.drift.t7, P.drift.t3)}</tbody></table></div>
+      <p class="note">真ん中の値です。×0.85なら、確定オッズはだいたい15%下がります。確定オッズは翌日に入ります。</p></div>`;
+}
+
 function longHTML(L){
   const head = `<h2>長期検証（毎晩GitHubで計算）</h2>`;
   if (!L) return `${head}<p class="btmsg">${bt.longTried && !bt.long ? "まだ計算されていません。" : "読み込み中…"}GitHubのアクションで「backtest」を一度動かすと、2026年1月からの全レースで検証した結果がここに出ます。</p>`;
@@ -1588,7 +1707,7 @@ function longHTML(L){
     <div><h3>単勝オッズの帯ごとの成績（同じ条件）</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>単勝オッズ</th><th>点数</th><th>的中率</th><th>回収率</th><th>95%の範囲</th></tr></thead>
       <tbody>${bands}</tbody></table></div></div>
-    <p class="note">コース別成績は、検証する月より前のデータだけで作っています。買う艇は確定オッズで選んでいるので、締切前のオッズを見て買う実際の場面より少し有利な結果になります。「95%の範囲」は、偶然のブレを考えると本当の回収率がだいたいこの間にある、という目安です。</p>`;
+    <p class="note">コース別成績は、検証する月より前のデータだけで作っています。ただし買う艇を確定オッズで選んでいるので、締切前のオッズを見て買う実際の場面より有利な結果です。実際の場面でどうなるかは、上の「買ったつもりの成績」で確かめています。「95%の範囲」は、偶然のブレを考えると本当の回収率がだいたいこの間にある、という目安です。</p>`;
 }
 
 function renderBT(){
@@ -1597,9 +1716,9 @@ function renderBT(){
     el.innerHTML = `<p class="btmsg">実データで動かしているときに使えます。HTMLを自分のサイト（GitHub Pagesなど）に置いて開くと、過去の着順・払戻と照らし合わせて、◎の的中率や回収率、期待値プラスだけ買った場合の成績、重みの自動調整が見られます。</p>`;
     return;
   }
-  ensureLong();
+  ensureLong(); ensurePaper();
   const busy = bt.status === "loading";
-  let h = longHTML(bt.long) + `<div class="hr"></div><h2>直近の数日で検証</h2><p class="lead">今の重み付けと設定のしきい値で、その場で計算し直します。</p><div class="btrow">
+  let h = paperHTML(bt.paper) + `<div class="hr"></div>` + longHTML(bt.long) + `<div class="hr"></div><h2>直近の数日で検証</h2><p class="lead">今の重み付けと設定のしきい値で、その場で計算し直します。</p><div class="btrow">
     <button class="ibtn" type="button" data-bt="3"${busy ? " disabled" : ""}>過去3日</button>
     <button class="ibtn" type="button" data-bt="7"${busy ? " disabled" : ""}>過去7日</button>
     <button class="ibtn" type="button" data-bt="14"${busy ? " disabled" : ""}>過去14日</button>
@@ -1731,6 +1850,15 @@ $("feed").addEventListener("toggle", e => {
   if (d.tagName !== "DETAILS") return;
   if (d.open) state.open.add(d.dataset.key); else state.open.delete(d.dataset.key);
 }, true);
+$("feed").addEventListener("click", e => {
+  const btn = e.target.closest && e.target.closest(".wpk");
+  if (!btn) return;
+  const key = btn.dataset.key, r = state.races.find(x => x.key === key);
+  if (!r) return;
+  state.pick.set(key, +btn.dataset.win);
+  const box = btn.closest(".place");
+  if (box) box.outerHTML = placeHTML(r, analyze(r, settings));
+});
 $("feed").addEventListener("input", e => {
   const el = e.target;
   if (!el.classList || !el.classList.contains("oin")) return;
@@ -1760,6 +1888,7 @@ const SL = [
   ["w-motor", s => s.w.motor, (s, v) => s.w.motor = v, v => "×" + v.toFixed(2)],
   ["w-ex",    s => s.w.ex,    (s, v) => s.w.ex = v,    v => "×" + v.toFixed(2)],
   ["w-course", s => s.w.course, (s, v) => s.w.course = v, v => "×" + v.toFixed(2)],
+  ["w-seibi", s => s.w.seibi ?? 1, (s, v) => s.w.seibi = v, v => "×" + v.toFixed(2)],
   ["ev",      s => s.ev,      (s, v) => s.ev = v,      v => v.toFixed(1) + "以上"],
   ["minp",    s => s.minP,    (s, v) => s.minP = v,    v => v + "%以上"],
   ["exgap",   s => s.exGap,   (s, v) => s.exGap = v,   v => v.toFixed(2) + "秒以上速い"],

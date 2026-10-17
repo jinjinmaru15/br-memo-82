@@ -10,7 +10,7 @@ import {compact as compactStats, build} from "./build-stats.mjs";
 const SRC = "https://turnmark.github.io/api/v1";
 const START = "2026-01-01";
 const CACHE = "btcache";
-const PREFIX = "b1-";
+const PREFIX = "b2-";
 const GRID_EV = [1.2, 1.3, 1.5, 2.0];
 const GRID_P = [0.02, 0.05, 0.10];
 const MAIN = {ev: 2.0, minP: 0.10};
@@ -30,14 +30,14 @@ const keepFrom = addDays(today, -3);
 function mini(r){
   const o = r.odds;
   return {
-    s: r.stadium, no: r.no, hp: r.hasPreview, wind: r.cond ? r.cond.wind : null,
-    boats: r.boats.map(b => ({no: b.no, reg: b.reg, cls: b.cls, win: b.win, local: b.local, avgST: b.avgST, F: b.F, motor2: b.motor2, boat2: b.boat2, course: b.course, exST: b.exST, exF: b.exF, exTime: b.exTime})),
+    s: r.stadium, no: r.no, hp: r.hasPreview, wind: r.cond ? r.cond.wind : null, wd: r.cond ? r.cond.wd : null, wave: r.cond ? r.cond.wave : null,
+    boats: r.boats.map(b => ({no: b.no, reg: b.reg, cls: b.cls, win: b.win, local: b.local, avgST: b.avgST, F: b.F, motor2: b.motor2, boat2: b.boat2, course: b.course, exST: b.exST, exF: b.exF, exTime: b.exTime, tilt: b.tilt, prop: b.prop, parts: b.parts, wt: b.wt, wtAdj: b.wtAdj})),
     order: r.result.order,
     pay: {win: r.result.payouts.win || [], exacta: r.result.payouts.exacta || [], trifecta: r.result.payouts.trifecta || []},
     odds: o ? {win: o.win, exacta: o.exacta, trifecta: o.trifecta} : null
   };
 }
-const race = m => ({stadium: m.s, no: m.no, hasPreview: m.hp, cond: m.wind == null ? null : {wind: m.wind}, boats: m.boats, odds: m.odds, result: {order: m.order, payouts: m.pay}});
+const race = m => ({stadium: m.s, no: m.no, hasPreview: m.hp, cond: m.wind == null ? null : {wind: m.wind, wd: m.wd, wave: m.wave}, boats: m.boats, odds: m.odds, result: {order: m.order, payouts: m.pay}});
 
 export async function getDay(d, fetcher = fetch){
   const f = `${CACHE}/${PREFIX}${d}.json.gz`;

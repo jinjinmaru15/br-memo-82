@@ -11,6 +11,8 @@
 // 2. スリットアラート強：締切40分以内で「強」が出たら通知する
 // 3. 見た単勝オッズは 合言葉-odds のトピックに3分おきにまとめて送り、アプリが読む
 //    （公開リポジトリには保存しない。ntfy は12時間で消える）
+//    各艇の1着率と締切までの分も一緒に送り、record.mjs が「買ったつもり」の成績と
+//    「締切前のオッズ→確定オッズ」の動きの記録に使う
 //
 // 予想の計算は index.html の中のコードをそのまま使う（アプリと同じ判定になる）。
 import fs from "node:fs";
@@ -98,7 +100,7 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
   const s = {...M.DEFAULTS, w: {...M.DEFAULTS.w}};
   const sent = await sentKeys(today);
   const seen = new Map();          // レースごと：オッズを見た回数・時刻・失敗回数
-  const pending = new Map();       // まだアプリ用に送っていないオッズ
+  const pending = [];              // まだ送っていないオッズ（同じレースを2回見たら両方残す）
   const firstWin = LOOP_MIN ? FIRST : 16;   // 1回だけの実行なら広めに見る
   const t0 = clock();
   let races = null, lastApi = -Infinity, lastPub = t0, lastFetch = -Infinity;
@@ -128,9 +130,9 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
   }
 
   async function flushOdds(){
-    if (!pending.size) return;
+    if (!pending.length) return;
     // 1通4096バイトまでなので小分けにする
-    const list = [...pending.entries()].map(([k, v]) => ({k, w: v.w, t: v.t}));
+    const list = pending.slice();
     let chunk = [];
     const send = async () => {
       if (!chunk.length) return;
@@ -142,7 +144,7 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
       if (JSON.stringify(chunk).length > 3300){ chunk.pop(); await send(); chunk.push(e); }
     }
     await send();
-    pending.clear();
+    pending.length = 0;
     lastPub = clock();
   }
 
@@ -162,7 +164,7 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
     oddsOK++;
     st.n++; st.fail = 0; st.last = clock();
     const at = M.hhmm(new Date(clock()));
-    pending.set(r.key, {w: Object.fromEntries(odds), t: at});
+    pending.push({k: r.key, w: Object.fromEntries(odds), t: at, m: +left.toFixed(1), p: Object.fromEntries(pr.F.map(f => [f.b.no, +f.p1.toFixed(3)]))});
     const mins = Math.max(1, Math.round(left));
     const head = `締切 ${M.hhmm(r.closedAt)}（あと${mins}分）・${at}時点のオッズ`;
     const byNo = new Map(pr.F.map(f => [f.b.no, f]));
@@ -246,10 +248,10 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
       else if (!upcoming.length) testNote = "今日のレースはもう全部締め切りました。";
       else {
         const r = upcoming[0];
-        const got = pending.get(r.key);
+        const got = pending.find(x => x.k === r.key);
         const odds = got ? new Map(Object.entries(got.w).map(([no, od]) => [+no, od])) : await fetchWinOdds(r);
         if (odds){
-          if (!got) pending.set(r.key, {w: Object.fromEntries(odds), t: M.hhmm(new Date(clock()))});
+          if (!got) pending.push({k: r.key, w: Object.fromEntries(odds), t: M.hhmm(new Date(clock())), m: +((r.closedAt - clock()) / 60000).toFixed(1)});
           testNote = `公式サイトの単勝オッズも取れています（${M.STADIUMS[r.stadium] || ""}${r.no}R ${[...odds].map(([no, od]) => CIRCLED[no] + od.toFixed(1)).join(" ")}）。アプリの買い候補タブの上に「締切前のオッズ：1レース分」と出れば、アプリもオッズを読めています。`;
         } else testNote = "公式サイトの単勝オッズは取れませんでした。";
         testNote = `締切前のレース${upcoming.length}件。` + testNote;

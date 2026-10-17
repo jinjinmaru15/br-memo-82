@@ -15,6 +15,7 @@
 //
 // 選手ごと：c = コース別の配列、z = 展示ST→本番STのズレ [件数, 合計, 絶対値の合計]（1/100秒）
 //           r = 直近10日の結果 [何日前, 場, R, コース, 着順(0=失格など), ST]
+// 場ごと：cc = 1着・2着・3着のコースの並びの回数（216個。(1着-1)*36+(2着-1)*6+(3着-1)）
 import fs from "node:fs";
 
 const API = "https://boatraceopenapi.github.io/api/v1";
@@ -104,7 +105,7 @@ export function build(days, data, until, opt = {}){
   let from = null, to = null;
   for (const [d, s, rno, tech, tri, rows] of list){
     from = from && from < d ? from : d; to = to && to > d ? to : d;
-    const sd = stadiums[s] || (stadiums[s] = {races: 0, manshu: 0, c: [blank(), blank(), blank(), blank(), blank(), blank()], deme: {}});
+    const sd = stadiums[s] || (stadiums[s] = {races: 0, manshu: 0, c: [blank(), blank(), blank(), blank(), blank(), blank()], deme: {}, cc: new Array(216).fill(0)});
     sd.races++;
     if (tri >= 10000) sd.manshu++;
     const ti = TECH[tech] ?? 4;
@@ -114,6 +115,8 @@ export function build(days, data, until, opt = {}){
     const sts = rows.filter(r => r[3] != null && r[3] >= 0).map(r => r[3]);
     const top = [1, 2, 3].map(p => (rows.find(r => r[2] === p) || [])[5]);
     if (top.every(Boolean)){ const k = top.join("-"); sd.deme[k] = (sd.deme[k] || 0) + 1; }
+    const tc = [1, 2, 3].map(p => (rows.find(r => r[2] === p) || [])[1]);
+    if (tc.every(c => c >= 1 && c <= 6) && new Set(tc).size === 3) sd.cc[(tc[0] - 1) * 36 + (tc[1] - 1) * 6 + tc[2] - 1]++;
     for (const [reg, c, place, st, ex] of rows){
       if (c < 1 || c > 6) continue;
       const R = racers[reg] || (racers[reg] = {c: [0, 0, 0, 0, 0, 0], z: [0, 0, 0]});
@@ -134,7 +137,8 @@ export function build(days, data, until, opt = {}){
           if (av && av[1] >= 3 && Math.abs(st - av[0] / av[1]) <= 3) a[21]++;
         }
       }
-      if (st != null && ex != null && st > -50 && ex > -50){ R.z[0]++; R.z[1] += st - ex; R.z[2] += Math.abs(st - ex); }
+      // 展示でF（ex < 0）のときはずれの計算に入れない
+      if (st != null && ex != null && st >= 0 && ex >= 0){ R.z[0]++; R.z[1] += st - ex; R.z[2] += Math.abs(st - ex); }
       if (opt.recent && d >= fromRecent) (R.r || (R.r = [])).push([dayDiff(until, d), s, rno, c, place, st]);
     }
   }
