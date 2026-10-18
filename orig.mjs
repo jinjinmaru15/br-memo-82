@@ -25,8 +25,9 @@ const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 
 // 三国のページから、class に col5〜col8 を持つ欄の数字を順に取り出す（col5=展示 col6=一周 col7=まわり足 col8=直線）
 export function parseOrig(page){
-  const col = k => [...page.matchAll(new RegExp(`<(td|th|div|span|p)[^>]*class="[^"]*\\bcol${k}\\b[^"]*"[^>]*>([\\s\\S]*?)<\\/\\1>`, "g"))]
-    .map(m => m[2].replace(/<[^>]+>/g, "").replace(/&nbsp;/g, "").trim())
+  // class は ' と " の両方で書かれている（例：<td rowspan='2' class='col5 '>6.81</td>、<td class="col6 rank_1" rowspan="2">36.68</td>）
+  const col = k => [...page.matchAll(new RegExp(`<(td|th)\\b[^>]*class\\s*=\\s*(["'])[^"']*\\bcol${k}\\b[^"']*\\2[^>]*>([\\s\\S]*?)<\\/\\1>`, "g"))]
+    .map(m => m[3].replace(/<[^>]+>/g, "").replace(/&nbsp;/g, "").trim())
     .map(t => parseFloat(t)).filter(v => v > 0);
   const ex = col(5), lap = col(6), turn = col(7), straight = col(8);
   if (ex.length < 6 || lap.length < 6 || turn.length < 6 || straight.length < 6) return null;
@@ -65,13 +66,16 @@ async function dayRaces(d){
   return out || [];
 }
 
+// ページはそのまま（圧縮して）キャッシュに置き、読み方を直しても取り直さずに済むようにする
 async function origOf(d, rno, debug){
-  const f = `${CACHE}/o-${d}-${rno}.json`;
-  if (fs.existsSync(f)) return JSON.parse(fs.readFileSync(f, "utf8"));
-  const page = await getText(URL(d, rno));
+  const f = `${CACHE}/h-${d}-${rno}.html.gz`;
+  let page = fs.existsSync(f) ? zlib.gunzipSync(fs.readFileSync(f)).toString("utf8") : null;
+  if (page == null){
+    page = await getText(URL(d, rno));
+    if (page) fs.writeFileSync(f, zlib.gzipSync(page));
+  }
   const v = page ? parseOrig(page) : null;
   if (!v && page && !debug.html) debug.html = page.slice(Math.max(0, page.indexOf("col6") - 1500), page.indexOf("col6") + 1500).slice(0, 3000);
-  fs.writeFileSync(f, JSON.stringify(v));
   return v;
 }
 
