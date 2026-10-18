@@ -1,0 +1,91 @@
+{
+ "v": 1,
+ "built": "2026-10-18T12:21:09.627Z",
+ "stadium": "三国",
+ "from": "2026-01-01",
+ "to": "2026-10-17",
+ "races": 1796,
+ "parsed": 0,
+ "matched": 0,
+ "used": 0,
+ "train": 0,
+ "test": 0,
+ "base": {
+  "train": {
+   "n": 0,
+   "ll": null,
+   "hit": null,
+   "bets": 0,
+   "roi": null
+  },
+  "test": {
+   "n": 0,
+   "ll": null,
+   "hit": null,
+   "bets": 0,
+   "roi": null
+  }
+ },
+ "feats": {
+  "lap": {
+   "name": "一周",
+   "beta": 0,
+   "test": {
+    "n": 0,
+    "ll": null,
+    "hit": null,
+    "bets": 0,
+    "roi": null
+   }
+  },
+  "turn": {
+   "name": "まわり足",
+   "beta": 0,
+   "test": {
+    "n": 0,
+    "ll": null,
+    "hit": null,
+    "bets": 0,
+    "roi": null
+   }
+  },
+  "straight": {
+   "name": "直線",
+   "beta": 0,
+   "test": {
+    "n": 0,
+    "ll": null,
+    "hit": null,
+    "bets": 0,
+    "roi": null
+   }
+  }
+ },
+ "all": {
+  "beta": {
+   "lap": 0,
+   "turn": 0,
+   "straight": 0
+  },
+  "test": {
+   "n": 0,
+   "ll": null,
+   "hit": null,
+   "bets": 0,
+   "roi": null
+  },
+  "train": {
+   "n": 0,
+   "ll": null,
+   "hit": null,
+   "bets": 0,
+   "roi": null
+  }
+ },
+ "fullBeta": {
+  "lap": 0,
+  "turn": 0,
+  "straight": 0
+ },
+ "debug": " type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/modules/yosou/css/group-cyokuzen.css?ver=1.0.16\" type=\"text/css\">  <script src=\"/resources/assets/js/jquery-3.6.0.min.js\"></script>\n</head>\n<body class=\"in_frame_body\">\n    <div class=\"in_iframe\">\n<div class =\"yosou-content\">\r\n    <div class=\"js-sub_tabs sub-tabs \">\r\n\t<ul>\r\n\t\t<li class=\"link\" data-kind=\"0\"><a href=\"javascript:void(0)\" data-kind=\"0\" data-day=\"20260101\" data-race=\"1\" >直前情報・予想</a></li>\r\n\t\t<li class=\"link\" data-kind=\"1\"><a href=\"javascript:void(0)\" data-kind=\"1\" data-day=\"20260101\" data-race=\"1\" >スタート展示</a></li>\r\n\t\t<li class=\"link selected\" data-kind=\"2\"><a href=\"javascript:void(0)\" data-kind=\"2\" data-day=\"20260101\" data-race=\"1\" >オリジナル展示データ</a></li>\r\n\t\t<li class=\"link nouryoku_link\" data-kind=\"3\"><a href=\"javascript:void(0)\" data-kind=\"3\" data-day=\"20260101\" data-race=\"1\" >能力指数</a></li>\r\n\t\t\r\n\t\t\r\n\t</ul>\r\n</div>    \t<script type=\"text/javascript\" src=\"/modules/yosou/js/simple-light-box.js\"></script>\r\n\t<div class=\"yosou-content\">\r\n\t\t<div class=\"category-oriten\">\r\n\t\t\t\t\t\t<table class=\"par-table01 oriten\">\n\r\n\t\t\t\t<thead>\n\r\n\t\t\t\t\t<tr>\n\r\n\t\t\t\t\t\t<th class=\"col1 head_waku\" rowspan=\"2\">枠</th>\n\r\n\t\t\t\t\t\t<th class=\"col2 head_player\" rowspan=\"2\"><span class=\"head_player__toban\">級別/登録番号</span><span class=\"head_player__racer\">選手名</span><span class=\"head_player__shibu\">支部/出身地/年齢</span></th>\n\r\n\t\t\t\t\t\t<th class=\"col3\">体重</th>\n\r\n\t\t\t\t\t\t<th class=\"col4\" rowspan=\"2\">チルト</th>\n\r\n\t\t\t\t\t\t<th class=\"col5\" rowspan=\"2\">展示タイム</th>\n\r\n\t\t\t\t\t\t<th class=\"col6\" rowspan=\"2\">一周</th>\n\r\n\t\t\t\t\t\t<th class=\"col7\" rowspan=\"2\">まわり足</th>\n\r\n\t\t\t\t\t\t<th class=\"col8\" rowspan=\"2\">直線</th>\n\r\n\t\t\t\t\t</tr>\n\r\n\t\t\t\t\t<tr>\n\r\n\t\t\t\t\t\t<th class=\"col3\">調整</th>\n\r\n\t\t\t\t\t</tr>\n\r\n\t\t\t\t</thead>\n\r\n\t\t\t\t<tbody>\n\r\n\t\t\t\t\t<tr class='odd'><td rowspan='2' class='col1 waku tei_color1 '>1</td><td rowspan='2' class='col2 tei_sub_color1 com-racer-data'><div class='com-racer-block'><div class='com-racer-img'><span style='background-image: url(/uploads/cdn/kao/faceimg/Face34013.jpg?d=20261018);'></span></div><!----><ul class='com-racer-info'><li class='com-toban'><span class='par-ico_kyubetu col-kyu_A1'>A1</span>/4013</li><li class='com-rname'><a href='https://www.boatrace.jp/owpc/pc/data/racersearch/profile?toban=4013' target='_blank'>中島　　孝平</a></li><li class='com-subinfo'>福　井/福　井/46</li></ul></div></td><td class='col3'>52.0</td><td rowspan='2' class='col4'>-0.5</td><td rowspan='2' class='col5 '>6.81</td>\t\t\t\t\t<td class=\"col6 rank_1\" rowspan=\"2\">36.68</td>\r\n\t\t\t\t\t<td class=\"col7 rank_2\" rowspan=\"2\">5.65</td>\r\n\t\t\t\t\t<td class=\"col8 \" rowspan=\"2\">6.77</td></tr><tr class='odd'><td class='col3'></td></tr><tr class='even'><td rowspan='2' class='col1 waku tei_color2 '>2</td><td rowspan='2' class='col2 tei_sub_color2 com-racer-data'><div class='com-racer-block'><div class='com-racer-img'><span style='background-image: url(/uploads/cdn/kao/faceimg/Face34253.jpg?d=20261018);'></span></div><!----><ul class='com-racer-info'><li class='com-toban'><span class='par-ico_kyubetu col-kyu_B1'>B1</spa"
+}
