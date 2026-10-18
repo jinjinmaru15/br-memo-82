@@ -1,20 +1,33 @@
-// 三国のオリジナル展示データ（一周・まわり足・直線タイム）が予想に効くかを、
-// 2026年の過去レースで確かめる（GitHub Actions で手動で1回動かす）。
+// 各場の公式サイトが出している「オリジナル展示データ」（一周・まわり足・直線タイム）が
+// 予想に効くかを、2026年の過去レースで確かめる（GitHub Actions で手動で動かす）。
 //
-// 1. 三国の公式サイトの直前情報ページから、各レースの一周・まわり足・直線タイムを読む（1秒に1回まで）
+// 1. 9場の公式サイトから、各レースの一周（桐生は半周）・まわり足・直線タイムを読む
+//    （場ごとに1秒に1回まで。場どうしは同時に読む）
 // 2. 同じレースを turnmark（確定オッズ付き）で読み、今のアプリの予想に足したら良くなるかを見る
 //    1〜6月で効き方を決めて、7月以降で確かめる（答えを先に見ない）
-// 3. 結果の集計だけを orig.json に書く。読んだタイムは GitHub のキャッシュ（origcache/）にだけ置く
+// 3. 結果の集計だけを orig.json に書く。読んだページは GitHub のキャッシュ（origcache/）にだけ置く
 import fs from "node:fs";
 import zlib from "node:zlib";
 
-const STADIUM = 10;   // 三国
 const START = "2026-01-01";
 const CACHE = "origcache";
-const URL = (d, r) => `https://www.boatrace-mikuni.jp/modules/yosou/group-cyokuzen.php?day=${d.replace(/-/g, "")}&race=${r}&kind=2`;
 const TM = d => `https://turnmark.github.io/api/v1/${d.slice(0, 4)}/${d.replace(/-/g, "")}.json`;
 const FEATS = ["lap", "turn", "straight"];
 const NAMES = {lap: "一周", turn: "まわり足", straight: "直線"};
+const ymd = d => d.replace(/-/g, "");
+// 場ごとのページと、どの欄に何があるか（公開されている読み取りライブラリを参考にした）
+const VENUES = {
+  1:  {name: "桐生", url: (d, r) => `http://www.kiryu-kyotei.com/modules/yosou/cyokuzen.php?day=${ymd(d)}&race=${r}`, cols: {ex: 5, lap: 6, turn: 7, straight: 8}},
+  5:  {name: "多摩川", url: (d, r) => `https://boatrace-tamagawa.com/modules/yosou/oriten.php?day=${ymd(d)}&race=${r}`, cols: {ex: 6, lap: 7, turn: 8, straight: 9}},
+  6:  {name: "浜名湖", url: (d, r) => `https://www.boatrace-hamanako.jp/modules/yosou/group-cyokuzen.php?day=${ymd(d)}&race=${r}&kind=2`, cols: {ex: 5, lap: 6, turn: 7, straight: 8}},
+  10: {name: "三国", url: (d, r) => `https://www.boatrace-mikuni.jp/modules/yosou/group-cyokuzen.php?day=${ymd(d)}&race=${r}&kind=2`, cols: {ex: 5, lap: 6, turn: 7, straight: 8}},
+  11: {name: "びわこ", url: (d, r) => `https://www.boatrace-biwako.jp/modules/yosou/cyokuzen.php?day=${ymd(d)}&race=${r}&kind=2`, cols: {ex: 5, lap: 6, turn: 7, straight: 8}},
+  13: {name: "尼崎", url: (d, r) => `https://boatrace-amagasaki.jp/modules/yosou/group-cyokuzen.php?day=${ymd(d)}&race=${r}&kind=2`, cols: {ex: 5, lap: 6, turn: 7, straight: 8}},
+  16: {name: "児島", url: (d, r) => `https://hj.kojima-yosou.com/hjpc/index/${ymd(d)}/${String(r).padStart(2, "0")}`, kojima: true},
+  18: {name: "徳山", url: (d, r) => `https://www.boatrace-tokuyama.jp/modules/yosou/tenji.php?day=${ymd(d)}&race=${r}&kind=2`, cols: {ex: 10, lap: 11, turn: 12}},
+  22: {name: "福岡", url: (d, r) => `https://www.boatrace-fukuoka.com/modules/yosou/tenji_info.php?day=${ymd(d)}&race=${r}`, cols: {ex: 6, lap: 7, turn: 8, straight: 9}}
+};
+const ONLY = process.env.ORIG_VENUES ? process.env.ORIG_VENUES.split(",").map(Number) : null;
 
 const html = fs.readFileSync("index.html", "utf8");
 const ia = html.indexOf("/* ---------- 定数 ---------- */"), ib = html.indexOf("/* ---------- 状態 ---------- */");
@@ -23,22 +36,37 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const addDays = (d, n) => { const t = new Date(d + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
 const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 
-// 三国のページから、class に col5〜col8 を持つ欄の数字を順に取り出す（col5=展示 col6=一周 col7=まわり足 col8=直線）
-export function parseOrig(page){
-  // class は ' と " の両方で書かれている（例：<td rowspan='2' class='col5 '>6.81</td>、<td class="col6 rank_1" rowspan="2">36.68</td>）
-  const col = k => [...page.matchAll(new RegExp(`<(td|th)\\b[^>]*class\\s*=\\s*(["'])[^"']*\\bcol${k}\\b[^"']*\\2[^>]*>([\\s\\S]*?)<\\/\\1>`, "g"))]
-    .map(m => m[3].replace(/<[^>]+>/g, "").replace(/&nbsp;/g, "").trim())
-    .map(t => parseFloat(t)).filter(v => v > 0);
-  const ex = col(5), lap = col(6), turn = col(7), straight = col(8);
-  if (ex.length < 6 || lap.length < 6 || turn.length < 6 || straight.length < 6) return null;
-  return [0, 1, 2, 3, 4, 5].map(i => ({ex: ex[i], lap: lap[i], turn: turn[i], straight: straight[i]}));
+const textOf = s => s.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, "").replace(/\s+/g, "").trim();
+// class に colN を持つ td/th の数字を順に（見出しの文字は数字でないので落ちる）。class は ' と " の両方に対応
+function colNums(page, k){
+  return [...page.matchAll(new RegExp(`<(td|th)\\b[^>]*class\\s*=\\s*(["'])[^"']*\\bcol${k}\\b[^"']*\\2[^>]*>([\\s\\S]*?)<\\/\\1>`, "g"))]
+    .map(m => parseFloat(textOf(m[3]))).filter(v => v > 0);
+}
+function classTexts(page, cls){
+  return [...page.matchAll(new RegExp(`<([a-z0-9]+)\\b[^>]*class\\s*=\\s*(["'])[^"']*\\b${cls}\\b[^"']*\\2[^>]*>([\\s\\S]*?)<\\/\\1>`, "g"))].map(m => textOf(m[3]));
+}
+const last6 = a => a.length >= 6 ? a.slice(-6) : null;
+
+export function parseOrig(page, v){
+  if (v.kojima){
+    const ex = classTexts(page, "ren-tenji").map(parseFloat).filter(x => x > 0).slice(0, 6);
+    const ctl = classTexts(page, "control");
+    if (ex.length < 6 || ctl.length < 30) return null;
+    return [0, 1, 2, 3, 4, 5].map(i => ({ex: ex[i], lap: parseFloat(ctl[i * 5 + 2]) || null, turn: parseFloat(ctl[i * 5 + 3]) || null, straight: parseFloat(ctl[i * 5 + 4]) || null}));
+  }
+  const ex = last6(colNums(page, v.cols.ex));
+  if (!ex) return null;
+  const get = k => v.cols[k] ? last6(colNums(page, v.cols[k])) : null;
+  const lap = get("lap"), turn = get("turn"), straight = get("straight");
+  if (!lap && !turn && !straight) return null;
+  return [0, 1, 2, 3, 4, 5].map(i => ({ex: ex[i], lap: lap ? lap[i] : null, turn: turn ? turn[i] : null, straight: straight ? straight[i] : null}));
 }
 
-let lastFetch = 0;
-async function getText(url){
-  const wait = lastFetch + 1100 - Date.now();
+const lastFetch = {};
+async function getText(host, url){
+  const wait = (lastFetch[host] || 0) + 1100 - Date.now();
   if (wait > 0) await sleep(wait);
-  lastFetch = Date.now();
+  lastFetch[host] = Date.now();
   for (let a = 0; a < 3; a++){
     try {
       const r = await fetch(url, {headers: {"Accept-Language": "ja"}});
@@ -50,33 +78,36 @@ async function getText(url){
   return null;
 }
 
-async function dayRaces(d){
-  const f = `${CACHE}/tm-${d}.json.gz`;
+async function dayRaces(d, keys){
+  const f = `${CACHE}/tm2-${d}.json.gz`;
   if (fs.existsSync(f)) return JSON.parse(zlib.gunzipSync(fs.readFileSync(f)).toString("utf8"));
-  let out = [];
+  let out = {};
   try {
     const r = await fetch(TM(d));
     if (r.ok){
       const j = await r.json();
-      const S = j && j.programs && j.programs.stadiums && j.programs.stadiums[STADIUM];
-      out = S ? M.parseV1({programs: {stadiums: {[STADIUM]: S}}}, d).filter(x => x.hasPreview && x.result && x.result.order.length) : [];
-    }
+      const st = (j && j.programs && j.programs.stadiums) || {};
+      for (const sk of keys){
+        if (!st[sk]) continue;
+        out[sk] = M.parseV1({programs: {stadiums: {[sk]: st[sk]}}}, d).filter(x => x.hasPreview && x.result && x.result.order.length);
+      }
+    } else if (r.status !== 404) out = null;
   } catch (e) { out = null; }
   if (out) fs.writeFileSync(f, zlib.gzipSync(JSON.stringify(out)));
-  return out || [];
+  return out || {};
 }
 
-// ページはそのまま（圧縮して）キャッシュに置き、読み方を直しても取り直さずに済むようにする
-async function origOf(d, rno, debug){
-  const f = `${CACHE}/h-${d}-${rno}.html.gz`;
-  let page = fs.existsSync(f) ? zlib.gunzipSync(fs.readFileSync(f)).toString("utf8") : null;
-  if (page == null){
-    page = await getText(URL(d, rno));
-    if (page) fs.writeFileSync(f, zlib.gzipSync(page));
-  }
-  const v = page ? parseOrig(page) : null;
-  if (!v && page && !debug.html) debug.html = page.slice(Math.max(0, page.indexOf("col6") - 1500), page.indexOf("col6") + 1500).slice(0, 3000);
-  return v;
+async function pageOf(sk, d, rno){
+  const v = VENUES[sk];
+  const f = `${CACHE}/h${sk}-${d}-${rno}.html.gz`;
+  // 前の版（三国だけ）のキャッシュも使う
+  const old = `${CACHE}/h-${d}-${rno}.html.gz`;
+  if (fs.existsSync(f)) return zlib.gunzipSync(fs.readFileSync(f)).toString("utf8");
+  if (+sk === 10 && fs.existsSync(old)) return zlib.gunzipSync(fs.readFileSync(old)).toString("utf8");
+  const url = v.url(d, rno);
+  const page = await getText(new URL(url).host, url);
+  if (page) fs.writeFileSync(f, zlib.gzipSync(page));
+  return page;
 }
 
 // 条件付きロジット（各レースで1着になる確率）：u0（今のアプリの予想）＋ β・x
@@ -94,7 +125,6 @@ function fit(rows, keys, lam = 1){
       }
     }
     for (let j = 0; j < k; j++){ g[j] -= 2 * lam * beta[j]; H[j][j] -= 2 * lam; }
-    // H δ = -g を解く（ガウスの消去法）
     const A = H.map((row, i) => [...row.map(v => -v), g[i]]);
     for (let i = 0; i < k; i++){
       let piv = i; for (let r = i + 1; r < k; r++) if (Math.abs(A[r][i]) > Math.abs(A[piv][i])) piv = r;
@@ -125,42 +155,63 @@ export async function main(){
   fs.mkdirSync(CACHE, {recursive: true});
   const stats = M.prepStats(JSON.parse(fs.readFileSync("stats-bt.json", "utf8")));
   const s = {...M.DEFAULTS, w: {...M.DEFAULTS.w}};
-  const rows = [], debug = {};
-  let races = 0, parsed = 0, matched = 0;
-  for (let d = START; d < today; d = addDays(d, 1)){
-    const list = await dayRaces(d);
-    for (const r of list){
-      races++;
-      const o = await origOf(d, r.no, debug);
-      if (!o) continue;
-      parsed++;
-      // 展示タイムが turnmark と一致するか（読み違いを防ぐ）
-      const ok = r.boats.every(b => b.exTime == null || (o[b.no - 1] && Math.abs(o[b.no - 1].ex - b.exTime) < 0.006));
-      if (!ok) continue;
-      matched++;
-      const pr = M.predict(r, s, M.slitAlerts(r, s), true, stats);
-      const wi = pr.F.findIndex(f => f.b.no === r.result.order[0]);
-      if (wi < 0) continue;
-      const vals = pr.F.map(f => o[f.b.no - 1]);
-      const mean = Object.fromEntries(FEATS.map(k => [k, vals.reduce((a, v) => a + v[k], 0) / vals.length]));
-      // 速いほどプラス。秒の差を0.1秒単位に
-      const x = vals.map(v => Object.fromEntries(FEATS.map(k => [k, (mean[k] - v[k]) * 10])));
-      const pay = (r.result.payouts.win || []).find(y => String(y.combination) === String(r.result.order[0]));
-      rows.push({d, wi, u0: pr.F.map(f => Math.log(f.raw)), x, od: pr.F.map(f => M.oddsOf(r.odds, "win", [f.b.no]) || 0), pay: pay ? +pay.amount : 0});
+  const keys = Object.keys(VENUES).filter(k => !ONLY || ONLY.includes(+k));
+  // まず全日の turnmark をそろえる
+  const days = [];
+  for (let d = START; d < today; d = addDays(d, 1)) days.push(d);
+  const byDay = new Map();
+  for (const d of days) byDay.set(d, await dayRaces(d, keys));
+  const counts = Object.fromEntries(keys.map(k => [k, {name: VENUES[k].name, races: 0, pages: 0, parsed: 0, matched: 0}]));
+  const debug = {};
+  const rows = [];
+  // 場ごとに同時に読む（各場は1秒に1回まで）
+  await Promise.all(keys.map(async sk => {
+    const v = VENUES[sk], c = counts[sk];
+    for (const d of days){
+      for (const r of (byDay.get(d)[sk] || [])){
+        c.races++;
+        const page = await pageOf(sk, d, r.no);
+        if (!page) continue;
+        c.pages++;
+        const o = parseOrig(page, v);
+        if (!o){ if (!debug[sk]){ const i = page.indexOf("col"); debug[sk] = page.slice(Math.max(0, i - 800), i + 2200); } continue; }
+        c.parsed++;
+        const ok = r.boats.every(b => b.exTime == null || (o[b.no - 1] && Math.abs(o[b.no - 1].ex - b.exTime) < 0.006));
+        if (!ok){ if (!debug[sk + "x"]) debug[sk + "x"] = JSON.stringify({d, r: r.no, page: o.map(x => x.ex), tm: r.boats.map(b => b.exTime)}); continue; }
+        c.matched++;
+        const pr = M.predict(r, s, M.slitAlerts(r, s), true, stats);
+        const wi = pr.F.findIndex(f => f.b.no === r.result.order[0]);
+        if (wi < 0) continue;
+        const vals = pr.F.map(f => o[f.b.no - 1]);
+        // 速いほどプラス。場ごとに測り方が違う（桐生は半周）ので、そのレースの中でのばらつきで割って比べる
+        const x = vals.map(() => ({}));
+        for (const k of FEATS){
+          const vs = vals.map(q => q[k]).filter(q => q > 0);
+          if (vs.length < 6){ x.forEach(o2 => { o2[k] = 0; }); continue; }
+          const mean = vs.reduce((a, b) => a + b, 0) / 6, sd = Math.max(Math.sqrt(vs.reduce((a, b) => a + (b - mean) ** 2, 0) / 6), 0.02);
+          vals.forEach((q, i) => { x[i][k] = Math.max(-3, Math.min(3, (mean - q[k]) / sd)); });
+        }
+        const pay = (r.result.payouts.win || []).find(y => String(y.combination) === String(r.result.order[0]));
+        rows.push({sk, d, wi, u0: pr.F.map(f => Math.log(f.raw)), x, od: pr.F.map(f => M.oddsOf(r.odds, "win", [f.b.no]) || 0), pay: pay ? +pay.amount : 0});
+      }
     }
-    if (races && races % 120 === 0) console.log(d, `レース${races} 読めた${parsed} 一致${matched}`);
-  }
+    console.log(v.name, JSON.stringify(c));
+  }));
   const train = rows.filter(r => r.d < "2026-07-01"), test = rows.filter(r => r.d >= "2026-07-01");
   const base = {train: evaluate(train, {}), test: evaluate(test, {})};
   const feats = {};
   for (const k of FEATS){ const b = fit(train, [k]); feats[k] = {name: NAMES[k], beta: b[k], test: evaluate(test, b)}; }
   const bAll = fit(train, FEATS);
+  const perVenue = Object.fromEntries(keys.map(sk => {
+    const te = test.filter(r => r.sk === sk);
+    return [sk, {name: VENUES[sk].name, test: te.length, base: evaluate(te, {}), all: evaluate(te, bAll)}];
+  }));
   const out = {
-    v: 1, built: new Date().toISOString(), stadium: "三国", from: START, to: addDays(today, -1),
-    races, parsed, matched, used: rows.length, train: train.length, test: test.length,
+    v: 2, built: new Date().toISOString(), from: START, to: addDays(today, -1),
+    counts, used: rows.length, train: train.length, test: test.length,
     base, feats, all: {beta: bAll, test: evaluate(test, bAll), train: evaluate(train, bAll)},
-    fullBeta: fit(rows, FEATS),
-    debug: parsed ? undefined : debug.html
+    perVenue, fullBeta: fit(rows, FEATS),
+    debug: Object.keys(debug).length ? debug : undefined
   };
   fs.writeFileSync("orig.json", JSON.stringify(out, null, 1));
   console.log(JSON.stringify(out, null, 1));
