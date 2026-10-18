@@ -95,6 +95,10 @@ export async function main(fetcher = fetch){
 
   const s = {...M.DEFAULTS, w: {...M.DEFAULTS.w}};
   const cand = [], alertAll = [], alertEV = [];
+  // 信頼度（◎の1着率）ごとの成績：アプリの「信頼度」と同じ区切り
+  const CONF = [[0.65, "高"], [0.5, "中"], [0.35, "低"], [0, "混戦"]];
+  const z = () => ({n: 0, hit: 0, ret: 0});
+  const byConf = CONF.map(([from, label]) => ({from, label, races: 0, top: z(), rec: z(), ex1: z(), tri: z()}));
   const months = [...new Set(days.map(d => d.slice(0, 7)))];
   const perMonth = {};
   let N = 0, oddsRaces = 0, hit1 = 0, c1Win = 0, ll = 0, llBase = 0;
@@ -139,6 +143,22 @@ export async function main(fetcher = fetch){
         pr.F.forEach(f => add("win", [f.b.no], f.p1));
         pr.exAll.forEach(x => add("ex", x.c, x.p));
         pr.triAll.forEach(x => add("tri", x.c, x.p));
+        // 信頼度ごと：◎の単勝・推奨（期待値で選ぶ単勝）・参考の2連単1点と3連単（合計25%まで最大5点）
+        const C = byConf[CONF.findIndex(([t]) => pr.top.p1 >= t)];
+        const order = r.result.order;
+        const put = (o, cost, pay) => { o.n += cost; if (pay > 0){ o.hit++; o.ret += pay; } };
+        C.races++;
+        put(C.top, 1, pr.top.b.no === win ? payOf("win", [win]) : 0);
+        for (const f of pr.F){
+          const od = M.oddsOf(r.odds, "win", [f.b.no]);
+          if (od && f.p1 >= MAIN.minP && f.p1 * od >= MAIN.ev) put(C.rec, 1, f.b.no === win ? payOf("win", [win]) : 0);
+        }
+        const e1 = pr.exAll[0];
+        put(C.ex1, 1, e1.c[0] === order[0] && e1.c[1] === order[1] ? payOf("ex", e1.c) : 0);
+        let cum = 0; const picks = [];
+        for (const t of pr.triAll){ if (picks.length >= 5 || cum >= 0.25) break; picks.push(t); cum += t.p; }
+        const th = picks.find(t => t.c[0] === order[0] && t.c[1] === order[1] && t.c[2] === order[2]);
+        C.tri.n += picks.length; if (th){ C.tri.hit++; C.tri.ret += payOf("tri", th.c); }
         for (const a of alerts){
           if (a.type !== "nobi" || a.level !== 2) continue;
           const f = pr.F.find(g => g.b.no === a.boat);
@@ -161,7 +181,8 @@ export async function main(fetcher = fetch){
     grid: GRID_EV.flatMap(ev => GRID_P.map(minP => ({ev, minP, win: agg(pick("win", ev, minP)), ex: agg(pick("ex", ev, minP)), tri: agg(pick("tri", ev, minP))}))),
     monthly: months.map(m => ({m, ...perMonth[m], ...agg(main.filter(x => x.m === m))})),
     bands: BANDS.map(([from, to]) => ({from, to, ...agg(main.filter(x => x.od >= from && x.od < to))})),
-    alert: {all: agg(alertAll), ev: agg(alertEV)}
+    alert: {all: agg(alertAll), ev: agg(alertEV)},
+    byConf: byConf.map(c => ({...c, ...Object.fromEntries(["top", "rec", "ex1", "tri"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))}))
   };
   fs.writeFileSync("backtest.json", JSON.stringify(out));
   const w = out.main.win;

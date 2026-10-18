@@ -139,6 +139,9 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
     const id = `${x.d}|${x.k}`;
     (byRace.get(id) || byRace.set(id, []).get(id)).push(x);
   }
+  // 信頼度（その時点の◎の1着率）ごとの実際の成績。アプリの「信頼度」と同じ区切り
+  const CONF = [[0.65, "高"], [0.5, "中"], [0.35, "低"], [0, "混戦"]];
+  const byConf = Object.fromEntries(["t1", "t3"].map(k => [k, CONF.map(([from, label]) => ({from, label, races: 0, top: [], rec: []}))]));
   const rules = {t1: [], t3: [], t7: []}, points = [], drift = Object.fromEntries(PHASES.map(([k]) => [k, BANDS.map(() => [])]));
   for (const [id, list] of byRace){
     const R = log.races[id];
@@ -171,6 +174,13 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
     for (const [k] of PHASES){
       const x = list.find(y => y.pp && phaseOf(y.m) === k);
       for (const no of boatsOf(x)) rules[k].push(mk(x, no));
+      if (x && byConf[k]){
+        const [topNo, topP] = Object.entries(x.pp).map(([no, p]) => [+no, +p]).sort((a, b) => b[1] - a[1])[0];
+        const C = byConf[k][CONF.findIndex(([t]) => topP >= t)];
+        C.races++;
+        C.top.push({pay: payOf(topNo)});
+        for (const no of boatsOf(x)) C.rec.push({pay: payOf(no)});
+      }
     }
   }
   for (const k in rules) rules[k].sort((x, y) => (x.d + x.close).localeCompare(y.d + y.close) || x.no - y.no);
@@ -189,6 +199,7 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
     rule: {ev: BUY_EV, minP: BUY_P},
     paper: {follow: aggF(follow), t3: aggF(rules.t3), early: aggF(rules.t7)},
     betsRule: rules.t1.length ? "t1" : "t3",
+    byConf: Object.fromEntries(Object.entries(byConf).map(([k, list]) => [k, list.map(c => ({from: c.from, label: c.label, races: c.races, top: agg(c.top), rec: agg(c.rec)}))])),
     days: dayList.slice(-30),
     bets: bets.slice(-150),
     calib: Object.fromEntries(PHASES.map(([k]) => [k, calib(k)])),

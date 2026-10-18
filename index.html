@@ -186,6 +186,28 @@ button:disabled{cursor:default}
 /* 期待値 block */
 .vblock{display:grid;gap:6px;border:1px solid var(--val);background:var(--val-soft);border-radius:10px;padding:9px 11px;min-width:0}
 .vblock .probs-h{color:var(--val)}
+.verdict{display:grid;gap:6px;border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0}
+.verdict > div{display:grid;grid-template-columns:3.4em minmax(0,1fr);gap:3px 8px;align-items:center;min-width:0}
+.vd-k{grid-column:1;font-size:11.5px;color:var(--muted);font-weight:700;white-space:nowrap}
+.vd-v{grid-column:2;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:13px;font-weight:700;min-width:0}
+.vd-v small{font-weight:500;color:var(--muted);font-size:11.5px}
+.vd-n{grid-column:2;font-size:11.5px;color:var(--muted);line-height:1.5}
+.verdict > .vd-conf{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.vd-conf .vd-k{width:3.4em}
+.vd-conf .vd-v{flex:1 1 auto}
+.vd-c{font-family:var(--f-display);font-size:15px;padding:1px 8px;border-radius:6px;background:var(--track)}
+.vd-conf.lv4 .vd-c{background:var(--solid);color:var(--solid-ink)}
+.vd-conf.lv3 .vd-c{background:var(--bar3);color:var(--ink)}
+.vd-conf.lv1 .vd-c{background:var(--ana-soft);color:var(--ana)}
+.vd-rec.go .vd-v{color:var(--val)}
+.vd-rec.go .vd-v small{color:var(--val)}
+.vd-ref .vd-v{font-weight:600;font-size:12.5px}
+.vd-ref .cb{display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-weight:500}
+.vd-ref .vd-v b{display:inline-grid;place-items:center;min-width:16px;height:17px;padding:0 2px;border-radius:3px;font-family:var(--f-num);font-size:12.5px;box-shadow:inset 0 0 0 1px var(--hull-stroke)}
+.vd-v em{font-style:normal;font-size:12px;padding:0 6px;border-radius:5px}
+.vd-v em.hit{background:var(--val);color:var(--val-ink)}
+.vd-v em.miss{background:var(--track);color:var(--muted)}
+.vd-v .chipb{width:20px;height:20px;font-size:13px}
 .vrow{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto 3em;gap:8px;align-items:center;font-size:12.5px}
 .vline{font-size:12px;color:var(--ink);margin:-2px 0 4px}
 .vline b{color:var(--val);font-family:var(--f-num);font-size:15px}
@@ -303,6 +325,7 @@ td.tot{font-weight:700}
 .n3row .lst b{font-family:var(--f-num);font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted)}
 .n3row .lst > .top b{color:var(--val);font-weight:700}
 td.feat{font-family:var(--f-body);font-size:12px;text-align:left}
+small.cf{display:block;font-size:10.5px;color:var(--muted);font-weight:400}
 td.zr small{display:block;font-family:var(--f-body);font-size:10.5px;color:var(--muted)}
 table.tk-t2 th,table.tk-t2 td{text-align:center;padding:5px 2px}
 table.tk-t2 thead th{font-size:11px;line-height:1.5}
@@ -1255,6 +1278,39 @@ function badgeHTML(r, an){
 }
 
 const lineOf = p => Math.ceil(settings.ev / p * 10) / 10;
+// このレースの結論：信頼度（◎がそのまま勝つ確率）と推奨の買い目
+// 1〜10月の4万4千レースで、◎の1着率の予想と実際はほぼ一致（例：予想60%→実際60.5%、予想75%→実際74%）
+const CONF = [[0.65, "高", "lv4", "4回に3回は◎が勝つ"], [0.5, "中", "lv3", "2回に1回強は◎"], [0.35, "低", "lv2", "◎でも半分以下"], [0, "混戦", "lv1", "どの艇にもチャンス"]];
+function verdictHTML(r, an){
+  if (!r.hasPreview && !r.odds) return "";
+  const top = an.top, cf = CONF.find(([t]) => top.p1 >= t);
+  const won = r.result ? r.result.order : null;
+  // 推奨（期待値で選ぶ単勝。長期検証でプラスだったのはこれだけ）
+  let rec;
+  if (an.value.length){
+    const pre = /^予告/.test(r.oddsLabel || "");
+    const res = won ? (an.value.some(x => x.c[0] === won[0]) ? `<em class="hit">的中</em>` : `<em class="miss">ハズレ</em>`) : "";
+    rec = `<div class="vd-rec go"><span class="vd-k">推奨</span><span class="vd-v">${an.value.map(x => `単勝 ${chip(x.c[0])}<small>${lineOf(x.p).toFixed(1)}倍以上なら</small>`).join(" ")}${res}</span>${pre ? `<span class="vd-n">予告の段階です。1分半前のオッズで最終判断します</span>` : ""}</div>`;
+  } else if (r.odds){
+    rec = `<div class="vd-rec"><span class="vd-k">推奨</span><span class="vd-v">見送り</span><span class="vd-n">${esc(r.oddsLabel || "オッズ")}では、期待値${settings.ev.toFixed(1)}以上の艇がありません</span></div>`;
+  } else {
+    rec = `<div class="vd-rec"><span class="vd-k">推奨</span><span class="vd-v">オッズ待ち</span><span class="vd-n">締切7分前ごろから判定します。下の「単勝の買いライン」以上のオッズなら買い候補です</span></div>`;
+  }
+  // 参考：当てにいく買い目（2連単1点・3連単は確率の高い順に合計25%まで最大5点）
+  const ex = an.exAll[0];
+  const picks = []; let cum = 0;
+  for (const t of an.triAll){ if (picks.length >= 5 || cum >= 0.25) break; picks.push(t); cum += t.p; }
+  const comb = c => `<span class="cb">${c.map(n => `<b class="c${n}">${n}</b>`).join("-")}</span>`;
+  const hitMark = (c, k) => won ? (c.every((n, i) => won[i] === n) ? " ✓" : "") : "";
+  const ref = `<div class="vd-ref"><span class="vd-k">参考</span><span class="vd-v">2連単 ${comb(ex.c)}<small>${pct(ex.p)}%・${(1 / ex.p).toFixed(1)}倍〜</small>${hitMark(ex.c)}</span>
+    <span class="vd-v">3連単 ${picks.map(t => comb(t.c) + hitMark(t.c)).join("・")}<small>${picks.length}点で${pct(cum)}%</small></span>
+    <span class="vd-n">当てにいくならの目安。長期の回収率は約80%（マイナス）なので楽しむ分だけ。「〜倍」はこれ以上なら損しないオッズ</span></div>`;
+  return `<div class="verdict">
+    <div class="vd-conf ${cf[2]}"><span class="vd-k">信頼度</span><span class="vd-c">${cf[1]}</span><span class="vd-v">◎${chip(top.b.no)} 1着率${pct(top.p1)}%<small>${cf[3]}</small></span></div>
+    ${rec}${ref}
+  </div>`;
+}
+
 function valueHTML(r, an){
   if (!an.value.length) return buyLineHTML(r, an);
   const won = r.result ? r.result.order[0] : null;
@@ -1528,6 +1584,7 @@ function cardHTML(r, an, now){
       <div class="close"><span class="t">${hhmm(r.closedAt)}</span><span class="cd${!closed && mins <= 10 ? " soon" : ""}" data-close="${r.closedAt.getTime()}">${cd}</span></div>
       <div class="rmeta">${meta}</div>
     </div>
+    ${verdictHTML(r, an)}
     ${badgeHTML(r, an)}
     ${showSlitTop ? `<div class="slitbox">${slitSVG(an)}</div>` : ""}
     ${valueHTML(r, an)}
@@ -1646,6 +1703,16 @@ function render(){
 }
 const safeRender = () => { if (!typing()) render(); };
 
+// 信頼度ごとの成績の表（回収率と、小さく点数・的中率）
+function confRows(list, cols){
+  const Pc = v => Math.round(v * 100) + "%";
+  return list.map(c => `<tr><td>${esc(c.label)}<small class="cf">◎${({0.65: "65%以上", 0.5: "50〜65%", 0.35: "35〜50%", 0: "35%未満"})[c.from] || ""}</small></td><td>${c.races}</td>${cols.map(([k, sub]) => {
+    const a = c[k] || {n: 0};
+    const s2 = sub === "hit" ? (c.races ? `的中${Math.round(a.hit / c.races * 100)}%` : "") : `${a.n}点`;
+    return `<td class="zr${a.n && a.roi >= 1 ? " plus" : ""}">${a.n ? Pc(a.roi) : "-"}<small>${s2}</small></td>`;
+  }).join("")}</tr>`).join("");
+}
+
 // 買ったつもりの成績（record.mjs が毎日3回つける）
 function paperHTML(P){
   const head = `<h2>買ったつもりの成績（自動で記録）</h2>`;
@@ -1672,6 +1739,9 @@ function paperHTML(P){
       ${box("7分前のオッズで決めると", e7)}
     </div>
     <p class="note">数百点たまるまでは、数字は大きくぶれます。2週間ほど見てから判断してください。</p>
+    ${P.byConf && P.byConf[P.betsRule || "t1"] ? `<div><h3>信頼度ごと（${P.betsRule === "t3" ? "3分前" : "1分半前"}のオッズ・実際の払戻）</h3><div class="tbl"><table class="lft2">
+      <thead><tr><th>信頼度</th><th>レース</th><th>◎の単勝</th><th>推奨</th></tr></thead>
+      <tbody>${confRows(P.byConf[P.betsRule || "t1"], [["top", "hit"], ["rec", "n"]])}</tbody></table></div></div>` : ""}
     <div><h3>日ごと</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>日</th><th>点数</th><th>的中</th><th>1分半前</th><th>3分前</th><th>7分前</th></tr></thead><tbody>${days}</tbody></table></div>
       <p class="note">点数・的中は1分半前で決めた場合です。</p></div>
@@ -1712,6 +1782,10 @@ function longHTML(L){
     <div><h3>条件ごとの回収率</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>期待値</th><th>確率</th><th>単勝の点数</th><th>単勝</th><th>95%の範囲</th><th>2連単</th><th>3連単</th></tr></thead>
       <tbody>${grid}</tbody></table></div></div>
+    ${L.byConf ? `<div><h3>信頼度ごとの成績</h3><div class="tbl"><table class="lft2">
+      <thead><tr><th>信頼度</th><th>レース</th><th>◎の単勝</th><th>推奨</th><th>2連単1点</th><th>3連単（参考）</th></tr></thead>
+      <tbody>${confRows(L.byConf, [["top", "hit"], ["rec", "n"], ["ex1", "hit"], ["tri", "hit"]])}</tbody></table></div>
+      <p class="note">◎の単勝は◎を毎回100円、推奨は期待値で選ぶ単勝、2連単1点と3連単はカードの「参考」の買い方です（3連単は合計25%まで最大5点）。小さい数字は的中率か点数です。推奨は確定オッズで選んでいるので、実際より有利です。</p></div>` : ""}
     <div><h3>月ごとの成績（単勝・期待値${L.main.ev.toFixed(2)}以上・確率${Math.round(L.main.minP * 100)}%以上）</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>月</th><th>レース</th><th>点数</th><th>的中率</th><th>回収率</th><th>収支</th></tr></thead>
       <tbody>${months}</tbody></table></div>
