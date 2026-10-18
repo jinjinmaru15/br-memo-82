@@ -207,7 +207,7 @@ button:disabled{cursor:default}
 .vd-conf.lv1 .vd-c{background:var(--ana-soft);color:var(--ana)}
 .vd-rec.go .vd-v{color:var(--val)}
 .vd-rec.go .vd-v small{color:var(--val)}
-.vd-ref .vd-v{font-weight:600;font-size:12.5px}
+.vd-ref .vd-v,.vd-ax .vd-v{font-weight:600;font-size:12.5px}
 .vd-ref .cb{display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-weight:500}
 .vd-ref .vd-v b{display:inline-grid;place-items:center;min-width:16px;height:17px;padding:0 2px;border-radius:3px;font-family:var(--f-num);font-size:12.5px;box-shadow:inset 0 0 0 1px var(--hull-stroke)}
 .vd-v em{font-style:normal;font-size:12px;padding:0 6px;border-radius:5px}
@@ -395,6 +395,7 @@ table.tk-t2 td.tot small{display:inline;font-size:12px}
     <div class="srow"><label for="s-w-course">コース実績<small>その選手がそのコースで勝っている率</small></label><output id="o-w-course"></output><input type="range" id="s-w-course" min="0" max="2.5" step="0.25"><p id="stats-info"></p></div>
     <div class="srow"><label for="s-w-seibi">整備・チルト<small>チルト角度・部品交換</small></label><output id="o-w-seibi"></output><input type="range" id="s-w-seibi" min="0" max="2.5" step="0.25"></div>
     <div class="srow"><label for="s-w-trait">選手の特徴<small>まくり屋・ST安定・当地成績など</small></label><output id="o-w-trait"></output><input type="range" id="s-w-trait" min="0" max="2.5" step="0.25"></div>
+    <div class="srow"><label for="s-w-form">今節の調子<small>同じ場で6日以内の着順</small></label><output id="o-w-form"></output><input type="range" id="s-w-form" min="0" max="2.5" step="0.25"></div>
     <div class="hr"></div>
     <h2>買い候補の条件（単勝）</h2>
     <div class="srow">
@@ -500,12 +501,12 @@ const priorFor = s => (PRIOR[s] || NATL).map((v, i) => 0.7 * v + 0.3 * NATL[i]);
 
 // 各要素の効き方。2026年1〜6月の約2万7千レースで当てはめ、7〜10月の約1万7千レースで良くなることを確かめた値
 // prior：場別コース1着率の効かせ方（1なら率そのまま）、alert：スリットアラート（攻め・凹み）の上乗せの効かせ方
-const BASE = {prior: 0.94, skill: 0.536, avgst: 0.094, exst: 0.025, alert: 0.09, motor: 0.118, boat: 0.039, ex: 0.232, course: 0.177, seibi: 1.14};
+const BASE = {prior: 0.94, skill: 0.536, avgst: 0.094, exst: 0.025, alert: 0.09, motor: 0.118, boat: 0.039, ex: 0.232, course: 0.177, seibi: 1.14, form: 0.69};
 // 整備・チルト：2026年1〜6月のレースで当てはめ、7〜10月で効くことを確かめた係数
 // チルト1度あたり（1・2コース／3コースより外）、部品交換したとき（リング・キャブ・大きい部品・電気系）
 const SEIBI = {tiltIn: 0.12, tiltOut: 0.23, ring: -0.06, carb: -0.18, major: -0.13, elec: -0.18};
 const MAJOR_PARTS = ["ピストン", "シリンダ", "シャフト", "キャリボ", "ギヤ", "クランク"];
-const DEFAULTS = {exGap: 0.10, gap: 0.05, strong: 0.08, honmei: 60, ana: 35, ev: 2.0, minP: 10, w: {skill: 1, start: 1, motor: 1, ex: 1, course: 1, seibi: 1, trait: 1}};
+const DEFAULTS = {exGap: 0.10, gap: 0.05, strong: 0.08, honmei: 60, ana: 35, ev: 2.0, minP: 10, w: {skill: 1, start: 1, motor: 1, ex: 1, course: 1, seibi: 1, trait: 1, form: 1}};
 const WLABEL = {skill: "実力・腕", start: "スタート力", motor: "モーター", ex: "展示タイム", course: "コース実績"};
 const TECHS = ["逃げ", "差し", "まくり", "まくり差し", "その他"];
 // 集計がないときの決まり手の目安（コース別：逃げ・差し・まくり・まくり差し・その他）
@@ -950,6 +951,50 @@ function seibiOf(b, course){
   return v;
 }
 
+// 今節の調子：同じ場で6日以内（同じ日の先のレースも含む）に走ったレースの平均着順。失格・欠場などは6.5着として数える
+// 1〜6月の2.2万レースで効き方を決め、7〜10月の1.7万レースで精度が上がることを確かめた（それまで予想に入っていなかった情報）
+const dayGap = (a, b) => Math.round((new Date(a + "T00:00:00Z") - new Date(b + "T00:00:00Z")) / 86400000);
+function formFor(r, stats, sameDay){
+  const out = new Map();
+  for (const b of r.boats){
+    if (b.reg == null) continue;
+    const pl = [];
+    const R = racerOf(stats, b.reg);
+    if (R && R.r && stats.to && r.date){
+      const gap = dayGap(r.date, stats.to);
+      for (const [ago, st, , , place] of R.r) if (+st === +r.stadium && ago + gap >= 1 && ago + gap <= 6) pl.push(place >= 1 ? place : 6.5);
+    }
+    for (const x of sameDay || []){
+      if (x.stadium !== r.stadium || !x.result || x.no >= r.no) continue;
+      const bx = x.boats.find(y => y.reg === b.reg);
+      if (!bx) continue;
+      const i = x.result.order.indexOf(bx.no);
+      pl.push(i >= 0 ? i + 1 : 6.5);
+    }
+    if (pl.length) out.set(b.no, {n: pl.length, avg: pl.reduce((a, v) => a + v, 0) / pl.length, pl});
+  }
+  return out;
+}
+const FORM_PLACE = [0.86, 0.96];   // 2着・3着への効き
+const PLACE_TEMP = [0.90, 0.84];   // 2着・3着の分布のならし具合（1より小さいほど平ら）
+const formFeat = fm => fm && fm.n >= 1 ? (3.5 - fm.avg) / 2.5 * Math.min(fm.n, 6) / 6 : 0;
+// 過去のレースの一覧だけから今節の調子を付ける（検証用。一覧より前の日は数えない）
+function formFromList(list, targets = list){
+  const by = new Map();
+  for (const x of list) if (x.result) (by.get(x.stadium) || by.set(x.stadium, []).get(x.stadium)).push(x);
+  for (const r of targets){
+    const out = new Map();
+    const H = (by.get(r.stadium) || []).filter(x => x.date === r.date ? x.no < r.no : x.date < r.date && dayGap(r.date, x.date) <= 6);
+    for (const b of r.boats){
+      if (b.reg == null) continue;
+      const pl = [];
+      for (const x of H){ const bx = x.boats.find(y => y.reg === b.reg); if (bx){ const i = x.result.order.indexOf(bx.no); pl.push(i >= 0 ? i + 1 : 6.5); } }
+      if (pl.length) out.set(b.no, {n: pl.length, avg: pl.reduce((a, v) => a + v, 0) / pl.length, pl});
+    }
+    r.form = out;
+  }
+}
+
 // 選手の特徴による予想の補正（コース 1／2／3・4／5・6 ごと）。今の予想がまだ取りこぼしている分だけを、
 // 2026年1〜10月の約3万9千レースで当てはめた値（1〜6月で決めた補正は7〜10月でも精度を上げた）
 const TRAIT_FX = {"stFast": [0.13, -0.064, 0.071, 0.063], "stSlow": [-0.075, 0.014, -0.108, -0.059], "stStable": [0.083, -0.045, -0.021, 0.079], "stErratic": [-0.063, -0.049, 0.088, 0.152], "late": [0.011, 0.031, 0.115, 0.131], "makuri": [-0.074, 0.049, 0.073, 0.098], "sashi": [-0.02, -0.061, -0.135, -0.091], "inStrong": [0.075, 0.071, -0.016, 0.081], "inWeak": [-0.054, -0.11, -0.104, -0.031], "zureGood": [-0.101, -0.039, -0.045, -0.064], "zureBad": [-0.023, -0.003, -0.023, -0.083], "outerPlace": [-0.061, -0.078, -0.155, -0.104], "localGood": [0.0, 0.069, 0.043, -0.017], "localBad": [0.078, 0.022, 0.136, 0.095]};
@@ -1037,12 +1082,13 @@ function predict(r, s, alerts, lite, stats = STATS){
       ex: b.exTime != null ? -b.exTime / 0.05 : null,
       es: predST != null ? -predST / 0.05 : null, zure, predST,
       crs, sb: seibiOf(b, course),
-      traits: stats ? traitsOf(stats, b) : []
+      traits: stats ? traitsOf(stats, b) : [],
+      form: r.form ? r.form.get(b.no) || null : null
     };
   });
   const avg = k => { const v = F.map(f => f[k]).filter(x => x != null); return v.length ? v.reduce((a, c) => a + c, 0) / v.length : 0; };
-  F.forEach(f => { f.tx = stats ? traitFx(f.traits, f.b, f.course) : 0; });
-  const M = {winEff: avg("winEff"), st: avg("st"), mo: avg("mo"), ex: avg("ex"), es: avg("es"), sb: avg("sb"), tx: avg("tx")};
+  F.forEach(f => { f.tx = stats ? traitFx(f.traits, f.b, f.course) : 0; f.fm = formFeat(f.form); });
+  const M = {winEff: avg("winEff"), st: avg("st"), mo: avg("mo"), ex: avg("ex"), es: avg("es"), sb: avg("sb"), tx: avg("tx"), fm: avg("fm")};
   const wind = r.cond && r.cond.wind;
   const windF = wind >= 5 ? Math.max(0.75, 1 - 0.03 * (wind - 4)) : 1;
   const wc = w.course ?? 0;
@@ -1055,7 +1101,8 @@ function predict(r, s, alerts, lite, stats = STATS){
       ex: f.ex == null ? 0 : w.ex * BASE.ex * clamp(f.ex - M.ex, -4, 4),
       course: wc * BASE.course * clamp(f.crs, -2.5, 2.5),
       seibi: (w.seibi ?? 1) * BASE.seibi * (f.sb - M.sb),
-      trait: (w.trait ?? 1) * (f.tx - M.tx)
+      trait: (w.trait ?? 1) * (f.tx - M.tx),
+      form: (w.form ?? 1) * BASE.form * (f.fm - M.fm)
     };
     for (const a of alerts){
       if (a.boat !== f.b.no) continue;
@@ -1063,7 +1110,7 @@ function predict(r, s, alerts, lite, stats = STATS){
       if (a.type === "in") parts.start -= w.start * BASE.alert * (a.level === 2 ? 0.30 : 0.18);
     }
     f.parts = parts;
-    f.z = parts.skill + parts.start + parts.motor + parts.ex + parts.course + parts.seibi + parts.trait;
+    f.z = parts.skill + parts.start + parts.motor + parts.ex + parts.course + parts.seibi + parts.trait + parts.form;
     f.prior = (pri[f.course - 1] ?? 1) * (f.course === 1 ? windF : 1);
     f.raw = Math.pow(f.prior, BASE.prior) * Math.exp(f.z);
     S += f.raw;
@@ -1124,6 +1171,19 @@ function predict(r, s, alerts, lite, stats = STATS){
       P3[i][j] = isC1 && F[j].third ? F[j].third
         : F.map((g, k) => out(k) ? 0 : (h3s > 0 ? 0.3 * g.p1 / rs + 0.7 * h3[g.course] / h3s : g.p1 / rs));
     }
+  }
+  // 今節の調子は2着・3着にも効く（コースの実績を混ぜると薄まるので、最後に掛け直す）
+  // 1〜6月で決めて7〜10月で確認：2着の当たり具合 +6.7‰、3着 +13.4‰
+  // さらに、2着・3着の分布は尖りすぎていた（本命が3着以内に来る確率を高く見すぎ）ので少しならす（2着 +4.4‰、3着 +5.8‰）
+  const wf = w.form ?? 1;
+  const e2 = F.map(f => Math.exp(wf * FORM_PLACE[0] * (f.fm || 0))), e3 = F.map(f => Math.exp(wf * FORM_PLACE[1] * (f.fm || 0)));
+  const adj = (row, e, t) => {
+    const v = row.map((x, k) => x > 0 ? Math.pow(x * e[k], t) : 0), sum = v.reduce((a, x) => a + x, 0);
+    return sum > 0 ? v.map(x => x / sum) : row;
+  };
+  for (let i = 0; i < n; i++){
+    P2[i] = adj(P2[i], e2, PLACE_TEMP[0]);
+    for (let j = 0; j < n; j++) if (P3[i][j]) P3[i][j] = adj(P3[i][j], e3, PLACE_TEMP[1]);
   }
   const exAll = [], triAll = [];
   for (let i = 0; i < n; i++) for (let j = 0; j < n; j++){
@@ -1192,6 +1252,7 @@ function valueBets(r, pr, s){
 }
 
 function analyze(r, s){
+  if (!r.form && STATS) r.form = formFor(r, STATS, state.races);
   const alerts = slitAlerts(r, s);
   const pr = predict(r, s, alerts);
   const value = valueBets(r, pr, s);
@@ -1348,6 +1409,8 @@ function badgeHTML(r, an){
 const lineOf = p => Math.ceil(settings.ev / p * 10) / 10;
 // このレースの結論：信頼度（◎がそのまま勝つ確率）と推奨の買い目
 // 1〜10月の4万4千レースで、◎の1着率の予想と実際はほぼ一致（例：予想60%→実際60.5%、予想75%→実際74%）
+const AXIS_P = 0.85, CUT_P = 0.15;
+const AXIS_NOTE = "7〜10月の検証：軸は90%で3着以内、消しも10回に1回は3着以内に来た。軸から消しを抜いて3連複を買っても回収率76%（マイナス）なので、点数を絞る目安に";
 const CONF = [[0.65, "高", "lv4", "4回に3回は◎が勝つ"], [0.5, "中", "lv3", "2回に1回強は◎"], [0.35, "低", "lv2", "◎でも半分以下"], [0, "混戦", "lv1", "どの艇にもチャンス"]];
 function verdictHTML(r, an){
   if (!r.hasPreview && !r.odds) return "";
@@ -1373,9 +1436,18 @@ function verdictHTML(r, an){
   const ref = `<div class="vd-ref"><span class="vd-k">参考</span><span class="vd-v">2連単 ${comb(ex.c)}<small>${pct(ex.p)}%・${(1 / ex.p).toFixed(1)}倍〜</small>${hitMark(ex.c)}</span>
     <span class="vd-v">3連単 ${picks.map(t => comb(t.c) + hitMark(t.c)).join("・")}<small>${picks.length}点で${pct(cum)}%</small></span>
     <span class="vd-n">当てにいくならの目安。長期の回収率は約80%（マイナス）なので楽しむ分だけ。「〜倍」はこれ以上なら損しないオッズ</span></div>`;
+  // 軸（3着以内に来る確率85%以上）と消し（15%未満）。舟券を絞る目安で、これだけで勝てるわけではない
+  const t3 = won ? won.slice(0, 3) : null;
+  const ax = [...an.F].sort((x, y) => y.p3 - x.p3)[0];
+  const axOk = ax.p3 >= AXIS_P;
+  const cuts = an.F.filter(f => f !== ax && f.p3 < CUT_P).sort((x, y) => x.b.no - y.b.no);
+  const mark = (f, good) => t3 ? (t3.includes(f.b.no) === good ? " ✓" : " ✗") : "";
+  const axl = `<div class="vd-ax"><span class="vd-k">軸・消し</span><span class="vd-v">${axOk ? `軸 ${chip(ax.b.no)}<small>3着以内${pct(ax.p3)}%</small>${mark(ax, true)}` : `軸なし<small>3着以内が${Math.round(AXIS_P * 100)}%以上の艇がいない</small>`}</span>
+    <span class="vd-v">${cuts.length ? `消し ${cuts.map(f => chip(f.b.no) + `<small>${pct(f.p3)}%</small>` + mark(f, false)).join(" ")}` : `消しなし<small>${Math.round(CUT_P * 100)}%未満の艇がいない</small>`}</span>
+    <span class="vd-n">${AXIS_NOTE}</span></div>`;
   return `<div class="verdict">
     <div class="vd-conf ${cf[2]}"><span class="vd-k">信頼度</span><span class="vd-c">${cf[1]}</span><span class="vd-v">◎${chip(top.b.no)} 1着率${pct(top.p1)}%<small>${cf[3]}</small></span></div>
-    ${rec}${ref}
+    ${rec}${axl}${ref}
   </div>`;
 }
 
@@ -1416,9 +1488,9 @@ function probsHTML(r, an){
 function partsHTML(an){
   const v = x => { const p = Math.round(x * 10); return `<span class="${p < 0 ? "neg" : ""}">${sgn(p)}</span>`; };
   const ps = an.F.reduce((a, g) => a + g.prior, 0);
-  const rows = an.F.map(f => `<tr><td>${chip(f.b.no)}</td><td>${v(f.parts.skill)}</td><td>${v(f.parts.start)}</td><td>${v(f.parts.motor)}</td><td>${v(f.parts.ex)}</td><td>${v(f.parts.course)}</td><td>${v(f.parts.seibi || 0)}</td><td>${v(f.parts.trait || 0)}</td><td class="tot">${v(f.z)}</td><td>${pct(f.prior / ps)}%</td></tr>`).join("");
+  const rows = an.F.map(f => `<tr><td>${chip(f.b.no)}</td><td>${v(f.parts.skill)}</td><td>${v(f.parts.start)}</td><td>${v(f.parts.motor)}</td><td>${v(f.parts.ex)}</td><td>${v(f.parts.course)}</td><td>${v(f.parts.seibi || 0)}</td><td>${v(f.parts.trait || 0)}</td><td>${v(f.parts.form || 0)}</td><td class="tot">${v(f.z)}</td><td>${pct(f.prior / ps)}%</td></tr>`).join("");
   return `<div><h3>期待度の内訳（0がこのレースの平均）</h3><div class="tbl"><table class="lft2">
-    <thead><tr><th>艇</th><th>実力</th><th>スタート</th><th>モーター</th><th>展示</th><th>コース</th><th>整備</th><th>特徴</th><th>合計</th><th>コース基本</th></tr></thead>
+    <thead><tr><th>艇</th><th>実力</th><th>スタート</th><th>モーター</th><th>展示</th><th>コース</th><th>整備</th><th>特徴</th><th>調子</th><th>合計</th><th>コース基本</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
     <p class="note">合計が+7ならコースの基本確率のおよそ2倍、−7ならおよそ半分になります。</p></div>`;
 }
@@ -1496,7 +1568,9 @@ const TRAIT_ORDER = ["makuri", "sashi", "outerPlace", "inStrong", "inWeak", "stF
 function traitChips(f){
   const rel = t => f.course === 1 ? !["makuri", "sashi", "outerPlace"].includes(t.k) : !["inStrong", "inWeak"].includes(t.k);
   const list = (f.traits || []).filter(rel).sort((a, b) => TRAIT_ORDER.indexOf(a.k) - TRAIT_ORDER.indexOf(b.k)).slice(0, 3);
-  return list.length ? `<span class="ptr">${list.map(t => `<i class="${t.c}">${esc(t.t)}</i>`).join("")}</span>` : "";
+  const fm = f.form && f.form.n >= 3 ? (f.form.avg <= 2.5 ? {t: `今節好調（平均${f.form.avg.toFixed(1)}着）`, c: "up"} : f.form.avg >= 4.5 ? {t: `今節不調（平均${f.form.avg.toFixed(1)}着）`, c: "down"} : null) : null;
+  const all = fm ? [fm, ...list.slice(0, 2)] : list;
+  return all.length ? `<span class="ptr">${all.map(t => `<i class="${t.c}">${esc(t.t)}</i>`).join("")}</span>` : "";
 }
 function traitTableHTML(an){
   if (!an.F.some(f => (f.traits || []).length)) return "";
@@ -1583,7 +1657,7 @@ function konsetsuHTML(r, an){
     return `<div class="krow">${chip(f.b.no)}<span class="kl">${cells}</span><span class="kp num">${rate}</span></div>`;
   }).join("");
   return `<div><h3>今節成績</h3><div class="kh"><span>大きい数字が着順、小さい数字が進入コース（×は失格・欠場など）</span><span>得点率</span></div>${rows}
-    <p class="note">得点率は 1着10点・2着8点・3着6点・4着4点・5着2点・6着1点の平均です（事故の減点は入っていない目安）。</p></div>`;
+    <p class="note">得点率は 1着10点・2着8点・3着6点・4着4点・5着2点・6着1点の平均です（事故の減点は入っていない目安）。この平均着順を「調子」として予想に入れています（走った回数が多いほど強く効く・6走で最大）。</p></div>`;
 }
 
 function demeHTML(r){
@@ -1996,6 +2070,7 @@ async function runBacktest(days){
   }
   bt.msg = "計算中…"; renderBT();
   await new Promise(res => setTimeout(res, 30));
+  formFromList(bt.data);
   bt.res = bt.data.length ? evaluate(bt.data, settings, bt.stats) : null;
   bt.status = "done"; bt.msg = "";
   renderBT();
@@ -2069,6 +2144,7 @@ const SL = [
   ["w-course", s => s.w.course, (s, v) => s.w.course = v, v => "×" + v.toFixed(2)],
   ["w-seibi", s => s.w.seibi ?? 1, (s, v) => s.w.seibi = v, v => "×" + v.toFixed(2)],
   ["w-trait", s => s.w.trait ?? 1, (s, v) => s.w.trait = v, v => "×" + v.toFixed(2)],
+  ["w-form", s => s.w.form ?? 1, (s, v) => s.w.form = v, v => "×" + v.toFixed(2)],
   ["ev",      s => s.ev,      (s, v) => s.ev = v,      v => v.toFixed(1) + "以上"],
   ["minp",    s => s.minP,    (s, v) => s.minP = v,    v => v + "%以上"],
   ["exgap",   s => s.exGap,   (s, v) => s.exGap = v,   v => v.toFixed(2) + "秒以上速い"],

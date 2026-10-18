@@ -36,7 +36,7 @@ const html = fs.readFileSync("index.html", "utf8");
 const a = html.indexOf("/* ---------- 定数 ---------- */");
 const b = html.indexOf("/* ---------- 状態 ---------- */");
 if (a < 0 || b < 0) throw new Error("index.html から判定コードを見つけられませんでした");
-const M = new Function(html.slice(a, b) + "\nreturn {parseV1, slitAlerts, predict, prepStats, DEFAULTS, STADIUMS, TECHS, jstNowDate, hhmm};")();
+const M = new Function(html.slice(a, b) + "\nreturn {parseV1, slitAlerts, predict, prepStats, DEFAULTS, STADIUMS, TECHS, jstNowDate, hhmm, formFor: typeof formFor === 'function' ? formFor : null};")();
 
 const CIRCLED = ["", "①", "②", "③", "④", "⑤", "⑥"];
 const [owner, repo] = String(process.env.GITHUB_REPOSITORY || "/").split("/");
@@ -231,6 +231,7 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
       const strong = left <= ALERT_WINDOW ? alerts.filter(x => x.type === "nobi" && x.level === 2) : [];
       const needAlert = strong.length && !sent.has(name);
       if (!due && !needAlert) continue;
+      if (M.formFor && stats) r.form = M.formFor(r, stats, races);   // 今節の調子
       const pr = M.predict(r, s, alerts, false, stats);
 
       // スリットアラート強（オッズは見ずに、買いラインを添える）

@@ -19,7 +19,7 @@ const BANDS = [[1, 3], [3, 6], [6, 10], [10, 20], [20, 1e9]];
 const html = fs.readFileSync("index.html", "utf8");
 const ia = html.indexOf("/* ---------- 定数 ---------- */"), ib = html.indexOf("/* ---------- 状態 ---------- */");
 if (ia < 0 || ib < 0) throw new Error("index.html から判定コードを見つけられませんでした");
-const M = new Function(html.slice(ia, ib) + "\nreturn {parseV1, predict, slitAlerts, prepStats, oddsOf, DEFAULTS, PAYKEY};")();
+const M = new Function(html.slice(ia, ib) + "\nreturn {parseV1, predict, slitAlerts, prepStats, oddsOf, DEFAULTS, PAYKEY, formFromList: typeof formFromList === 'function' ? formFromList : null};")();
 
 const addDays = (d, n) => { const t = new Date(d + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
 const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
@@ -105,6 +105,7 @@ export async function main(fetcher = fetch){
   const bins = [0, 1, 2, 3, 4].map(() => ({n: 0, w: 0, p: 0}));
 
   // 2回目：月ごとに、その月より前のデータだけで集計を作って予想する
+  let recent = [];   // 今節の調子用：直近6日のレース
   for (const mon of months){
     const until = addDays(mon + "-01", -1);
     const built = build(days, statsData, until);
@@ -112,8 +113,10 @@ export async function main(fetcher = fetch){
     perMonth[mon] = {races: 0, odds: 0, statsRaces: built.races};
     for (const d of days.filter(x => x.startsWith(mon))){
       const list = fresh.has(d) ? fresh.get(d) : (await getDay(d, fetcher)).races;
-      for (const m of list){
-        const r = race(m);
+      const dayRaces = list.map(m => ({...race(m), date: d}));
+      recent = recent.filter(x => x.date >= addDays(d, -6)).concat(dayRaces);
+      if (M.formFromList) M.formFromList(recent, dayRaces);
+      for (const r of dayRaces){
         if (!r.hasPreview) continue;
         const alerts = M.slitAlerts(r, s);
         const pr = M.predict(r, s, alerts, false, stats);

@@ -25,7 +25,7 @@ const html = fs.readFileSync("index.html", "utf8");
 const a = html.indexOf("/* ---------- 定数 ---------- */");
 const b = html.indexOf("/* ---------- 状態 ---------- */");
 if (a < 0 || b < 0) throw new Error("index.html から判定コードを見つけられませんでした");
-const M = new Function(html.slice(a, b) + "\nreturn {parseV1, slitAlerts, predict, prepStats, DEFAULTS, STADIUMS, hhmm, jstNowDate};")();
+const M = new Function(html.slice(a, b) + "\nreturn {parseV1, slitAlerts, predict, prepStats, DEFAULTS, STADIUMS, hhmm, jstNowDate, formFor: typeof formFor === 'function' ? formFor : null};")();
 
 const addDays = (d, n) => { const t = new Date(d + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
 const ymd = d => [d.slice(0, 4), d.replace(/-/g, "")];
@@ -109,6 +109,7 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
         R.name = `${M.STADIUMS[r.stadium] || ""}${r.no}R`;
         R.close = r.closedAt ? M.hhmm(r.closedAt) : R.close;
         if (r.hasPreview && !R.p){
+          if (M.formFor && stats) r.form = M.formFor(r, stats, [...races.values()]);
           const pr = M.predict(r, s, M.slitAlerts(r, s), false, stats);
           R.p = Object.fromEntries(pr.F.map(f => [f.b.no, +f.p1.toFixed(3)]));
         }
