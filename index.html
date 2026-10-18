@@ -182,6 +182,12 @@ button:disabled{cursor:default}
 .pbar .t1{background:var(--bar1)}
 .prow.top .pbar .t1{background:var(--accent)}
 .p3{font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap}
+.ptr{grid-column:2 / 6;display:flex;flex-wrap:wrap;gap:3px 5px;margin-top:-1px}
+.ptr i{font-style:normal;font-size:10.5px;font-weight:700;line-height:1.5;padding:0 6px;border-radius:4px;background:var(--track);color:var(--ink)}
+.ptr i.up{background:var(--val-soft);color:var(--val)}
+.ptr i.down{color:var(--muted)}
+.trt td{text-align:left;white-space:normal;font-size:12px;line-height:1.6}
+.trt td b{font-weight:700}.trt td b.up{color:var(--val)}.trt td b.down{color:var(--muted)}
 
 /* 期待値 block */
 .vblock{display:grid;gap:6px;border:1px solid var(--val);background:var(--val-soft);border-radius:10px;padding:9px 11px;min-width:0}
@@ -388,6 +394,7 @@ table.tk-t2 td.tot small{display:inline;font-size:12px}
     <div class="srow"><label for="s-w-ex">展示タイム<small>そのレースの中での速さ</small></label><output id="o-w-ex"></output><input type="range" id="s-w-ex" min="0" max="2.5" step="0.25"></div>
     <div class="srow"><label for="s-w-course">コース実績<small>その選手がそのコースで勝っている率</small></label><output id="o-w-course"></output><input type="range" id="s-w-course" min="0" max="2.5" step="0.25"><p id="stats-info"></p></div>
     <div class="srow"><label for="s-w-seibi">整備・チルト<small>チルト角度・部品交換</small></label><output id="o-w-seibi"></output><input type="range" id="s-w-seibi" min="0" max="2.5" step="0.25"></div>
+    <div class="srow"><label for="s-w-trait">選手の特徴<small>まくり屋・ST安定・当地成績など</small></label><output id="o-w-trait"></output><input type="range" id="s-w-trait" min="0" max="2.5" step="0.25"></div>
     <div class="hr"></div>
     <h2>買い候補の条件（単勝）</h2>
     <div class="srow">
@@ -498,7 +505,7 @@ const BASE = {prior: 0.94, skill: 0.536, avgst: 0.094, exst: 0.025, alert: 0.09,
 // チルト1度あたり（1・2コース／3コースより外）、部品交換したとき（リング・キャブ・大きい部品・電気系）
 const SEIBI = {tiltIn: 0.12, tiltOut: 0.23, ring: -0.06, carb: -0.18, major: -0.13, elec: -0.18};
 const MAJOR_PARTS = ["ピストン", "シリンダ", "シャフト", "キャリボ", "ギヤ", "クランク"];
-const DEFAULTS = {exGap: 0.10, gap: 0.05, strong: 0.08, honmei: 60, ana: 35, ev: 2.0, minP: 10, w: {skill: 1, start: 1, motor: 1, ex: 1, course: 1, seibi: 1}};
+const DEFAULTS = {exGap: 0.10, gap: 0.05, strong: 0.08, honmei: 60, ana: 35, ev: 2.0, minP: 10, w: {skill: 1, start: 1, motor: 1, ex: 1, course: 1, seibi: 1, trait: 1}};
 const WLABEL = {skill: "実力・腕", start: "スタート力", motor: "モーター", ex: "展示タイム", course: "コース実績"};
 const TECHS = ["逃げ", "差し", "まくり", "まくり差し", "その他"];
 // 集計がないときの決まり手の目安（コース別：逃げ・差し・まくり・まくり差し・その他）
@@ -943,6 +950,64 @@ function seibiOf(b, course){
   return v;
 }
 
+// 選手の特徴による予想の補正（コース 1／2／3・4／5・6 ごと）。今の予想がまだ取りこぼしている分だけを、
+// 2026年1〜10月の約3万9千レースで当てはめた値（1〜6月で決めた補正は7〜10月でも精度を上げた）
+const TRAIT_FX = {"stFast": [0.13, -0.064, 0.071, 0.063], "stSlow": [-0.075, 0.014, -0.108, -0.059], "stStable": [0.083, -0.045, -0.021, 0.079], "stErratic": [-0.063, -0.049, 0.088, 0.152], "late": [0.011, 0.031, 0.115, 0.131], "makuri": [-0.074, 0.049, 0.073, 0.098], "sashi": [-0.02, -0.061, -0.135, -0.091], "inStrong": [0.075, 0.071, -0.016, 0.081], "inWeak": [-0.054, -0.11, -0.104, -0.031], "zureGood": [-0.101, -0.039, -0.045, -0.064], "zureBad": [-0.023, -0.003, -0.023, -0.083], "outerPlace": [-0.061, -0.078, -0.155, -0.104], "localGood": [0.0, 0.069, 0.043, -0.017], "localBad": [0.078, 0.022, 0.136, 0.095]};
+const TRAIT_LOC = -0.046;   // 当地勝率−全国勝率 1点あたり（当地勝率を少し割り引く）
+function traitFx(traits, b, course){
+  const gi = course === 1 ? 0 : course === 2 ? 1 : course <= 4 ? 2 : 3;
+  let v = traits.reduce((a, t) => a + ((TRAIT_FX[t.k] || [])[gi] || 0), 0);
+  if (b.local > 0 && b.win > 0) v += TRAIT_LOC * (b.local - b.win);
+  return v;
+}
+
+// 選手の特徴（直近6ヶ月の集計から）。しきい値は全選手のだいたい上下15%
+// k：検証用の名前、t：表示、c：up（強み）／down（弱み）／neu、d：根拠
+function traitsOf(stats, b){
+  const out = [];
+  if (b.local > 0 && b.win > 0){
+    const df = b.local - b.win;
+    if (df >= 1.0) out.push({k: "localGood", t: "当地巧者", c: "up", d: `当地勝率${b.local.toFixed(2)}（全国${b.win.toFixed(2)}）`});
+    else if (df <= -1.0) out.push({k: "localBad", t: "当地苦手", c: "down", d: `当地勝率${b.local.toFixed(2)}（全国${b.win.toFixed(2)}）`});
+  }
+  const R = racerOf(stats, b.reg);
+  if (!R || !R.c) return out;
+  const cs = [0, 1, 2, 3, 4, 5].map(i => Array.isArray(R.c[i]) ? R.c[i] : null);
+  const S = new Array(30).fill(0);
+  cs.forEach(a => { if (a) a.forEach((v, k) => { S[k] += v; }); });
+  const pc = (x, n) => Math.round(x / n * 100) + "%";
+  if (S[5] >= 20){
+    const st = S[4] / S[5] / 100, txt = `平均ST .${String(Math.round(st * 100)).padStart(2, "0")}`;
+    if (st <= 0.139) out.push({k: "stFast", t: "ST速い", c: "up", d: txt});
+    else if (st >= 0.185) out.push({k: "stSlow", t: "ST遅め", c: "down", d: txt});
+  }
+  if (S[17] >= 20){
+    if (S[21] / S[17] >= 0.46) out.push({k: "stStable", t: "ST安定", c: "up", d: `いつものSTから±.03以内 ${pc(S[21], S[17])}`});
+    else if (S[21] / S[17] <= 0.31) out.push({k: "stErratic", t: "STムラ", c: "down", d: `いつものSTから±.03以内 ${pc(S[21], S[17])}`});
+  }
+  if (S[20] >= 20 && S[19] / S[20] >= 0.18) out.push({k: "late", t: "出遅れ多め", c: "down", d: `両隣より.05以上遅い ${pc(S[19], S[20])}`});
+  const w = [1, 2, 3, 4, 5].reduce((a, i) => a + (cs[i] ? cs[i][1] : 0), 0);
+  if (w >= 4){
+    const mk = [1, 2, 3, 4, 5].reduce((a, i) => a + (cs[i] ? cs[i][8] : 0), 0);
+    const ss = [1, 2, 3, 4, 5].reduce((a, i) => a + (cs[i] ? cs[i][7] : 0), 0);
+    if (mk / w >= 0.55) out.push({k: "makuri", t: "まくり屋", c: "neu", d: `2〜6コースの勝ち${w}回中まくり${mk}回`});
+    else if (ss / w >= 0.46) out.push({k: "sashi", t: "差し巧者", c: "neu", d: `2〜6コースの勝ち${w}回中差し${ss}回`});
+  }
+  if (cs[0] && cs[0][0] >= 10){
+    const r1 = cs[0][1] / cs[0][0];
+    if (r1 >= 0.74) out.push({k: "inStrong", t: "イン強い", c: "up", d: `1コース ${cs[0][1]}/${cs[0][0]}勝`});
+    else if (r1 <= 0.29) out.push({k: "inWeak", t: "イン弱い", c: "down", d: `1コース ${cs[0][1]}/${cs[0][0]}勝`});
+  }
+  if (R.z && R.z[0] >= 10){
+    const zv = R.z[1] / R.z[0] / 100, txt = `展示→本番ST 平均${zv >= 0 ? "+" : "−"}.${String(Math.round(Math.abs(zv) * 100)).padStart(2, "0")}`;
+    if (zv <= 0.017) out.push({k: "zureGood", t: "本番で踏み込む", c: "up", d: txt});
+    else if (zv >= 0.063) out.push({k: "zureBad", t: "本番で遅れる", c: "down", d: txt});
+  }
+  const o = [3, 4, 5].map(i => cs[i]).filter(Boolean), on = o.reduce((a, x) => a + x[0], 0);
+  if (on >= 20 && o.reduce((a, x) => a + x[1] + x[2] + x[3], 0) / on >= 0.52) out.push({k: "outerPlace", t: "外から絡む", c: "up", d: `4〜6コース3連対 ${pc(o.reduce((a, x) => a + x[1] + x[2] + x[3], 0), on)}`});
+  return out;
+}
+
 /* ---------- 判定：期待度（1着率） ----------
    場別コース1着率 × exp(実力 + スタート力 + モーター + 展示タイム + コース実績 の偏差)
    2着・3着は Harville 方式に実績を混ぜる。1コースが勝つときは「逃げ時の2着率・3着率」、それ以外は「コースの並び」の実績 */
@@ -971,11 +1036,13 @@ function predict(r, s, alerts, lite, stats = STATS){
       mo: BASE.motor * (b.motor2 > 0 ? (b.motor2 - 35) / 10 : 0) + BASE.boat * (b.boat2 > 0 ? (b.boat2 - 35) / 20 : 0),
       ex: b.exTime != null ? -b.exTime / 0.05 : null,
       es: predST != null ? -predST / 0.05 : null, zure, predST,
-      crs, sb: seibiOf(b, course)
+      crs, sb: seibiOf(b, course),
+      traits: stats ? traitsOf(stats, b) : []
     };
   });
   const avg = k => { const v = F.map(f => f[k]).filter(x => x != null); return v.length ? v.reduce((a, c) => a + c, 0) / v.length : 0; };
-  const M = {winEff: avg("winEff"), st: avg("st"), mo: avg("mo"), ex: avg("ex"), es: avg("es"), sb: avg("sb")};
+  F.forEach(f => { f.tx = stats ? traitFx(f.traits, f.b, f.course) : 0; });
+  const M = {winEff: avg("winEff"), st: avg("st"), mo: avg("mo"), ex: avg("ex"), es: avg("es"), sb: avg("sb"), tx: avg("tx")};
   const wind = r.cond && r.cond.wind;
   const windF = wind >= 5 ? Math.max(0.75, 1 - 0.03 * (wind - 4)) : 1;
   const wc = w.course ?? 0;
@@ -987,7 +1054,8 @@ function predict(r, s, alerts, lite, stats = STATS){
       motor: w.motor * (f.mo - M.mo),
       ex: f.ex == null ? 0 : w.ex * BASE.ex * clamp(f.ex - M.ex, -4, 4),
       course: wc * BASE.course * clamp(f.crs, -2.5, 2.5),
-      seibi: (w.seibi ?? 1) * BASE.seibi * (f.sb - M.sb)
+      seibi: (w.seibi ?? 1) * BASE.seibi * (f.sb - M.sb),
+      trait: (w.trait ?? 1) * (f.tx - M.tx)
     };
     for (const a of alerts){
       if (a.boat !== f.b.no) continue;
@@ -995,7 +1063,7 @@ function predict(r, s, alerts, lite, stats = STATS){
       if (a.type === "in") parts.start -= w.start * BASE.alert * (a.level === 2 ? 0.30 : 0.18);
     }
     f.parts = parts;
-    f.z = parts.skill + parts.start + parts.motor + parts.ex + parts.course + parts.seibi;
+    f.z = parts.skill + parts.start + parts.motor + parts.ex + parts.course + parts.seibi + parts.trait;
     f.prior = (pri[f.course - 1] ?? 1) * (f.course === 1 ? windF : 1);
     f.raw = Math.pow(f.prior, BASE.prior) * Math.exp(f.z);
     S += f.raw;
@@ -1337,6 +1405,7 @@ function probsHTML(r, an){
       <span class="pp">${pct(f.p1)}<small>%</small></span>
       <span class="pbar"><i class="t3" style="width:${pct(f.p3, 1)}%"></i><i class="t1" style="width:${pct(f.p1, 1)}%"></i></span>
       <span class="p3 num">3連対 ${pct(f.p3)}%</span>
+      ${traitChips(f)}
     </div>`).join("");
   return `<div class="probs">
     <div class="probs-h"><span>期待度（予想1着率）${r.hasPreview ? "" : " · 展示前・枠なり想定"}</span><span>1着率</span></div>
@@ -1347,9 +1416,9 @@ function probsHTML(r, an){
 function partsHTML(an){
   const v = x => { const p = Math.round(x * 10); return `<span class="${p < 0 ? "neg" : ""}">${sgn(p)}</span>`; };
   const ps = an.F.reduce((a, g) => a + g.prior, 0);
-  const rows = an.F.map(f => `<tr><td>${chip(f.b.no)}</td><td>${v(f.parts.skill)}</td><td>${v(f.parts.start)}</td><td>${v(f.parts.motor)}</td><td>${v(f.parts.ex)}</td><td>${v(f.parts.course)}</td><td>${v(f.parts.seibi || 0)}</td><td class="tot">${v(f.z)}</td><td>${pct(f.prior / ps)}%</td></tr>`).join("");
+  const rows = an.F.map(f => `<tr><td>${chip(f.b.no)}</td><td>${v(f.parts.skill)}</td><td>${v(f.parts.start)}</td><td>${v(f.parts.motor)}</td><td>${v(f.parts.ex)}</td><td>${v(f.parts.course)}</td><td>${v(f.parts.seibi || 0)}</td><td>${v(f.parts.trait || 0)}</td><td class="tot">${v(f.z)}</td><td>${pct(f.prior / ps)}%</td></tr>`).join("");
   return `<div><h3>期待度の内訳（0がこのレースの平均）</h3><div class="tbl"><table class="lft2">
-    <thead><tr><th>艇</th><th>実力</th><th>スタート</th><th>モーター</th><th>展示</th><th>コース</th><th>整備</th><th>合計</th><th>コース基本</th></tr></thead>
+    <thead><tr><th>艇</th><th>実力</th><th>スタート</th><th>モーター</th><th>展示</th><th>コース</th><th>整備</th><th>特徴</th><th>合計</th><th>コース基本</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
     <p class="note">合計が+7ならコースの基本確率のおよそ2倍、−7ならおよそ半分になります。</p></div>`;
 }
@@ -1422,6 +1491,20 @@ function courseTableHTML(r, an){
 }
 
 // 展開データ：1コースは「逃げ・差され・まくられ…」、2〜6コースは「逃げられ・差し・まくり…」の回数
+// 選手の特徴：カードの1着率の下に、今のコースに関係するものを最大3つ
+const TRAIT_ORDER = ["makuri", "sashi", "outerPlace", "inStrong", "inWeak", "stFast", "stSlow", "stStable", "stErratic", "late", "zureGood", "zureBad", "localGood", "localBad"];
+function traitChips(f){
+  const rel = t => f.course === 1 ? !["makuri", "sashi", "outerPlace"].includes(t.k) : !["inStrong", "inWeak"].includes(t.k);
+  const list = (f.traits || []).filter(rel).sort((a, b) => TRAIT_ORDER.indexOf(a.k) - TRAIT_ORDER.indexOf(b.k)).slice(0, 3);
+  return list.length ? `<span class="ptr">${list.map(t => `<i class="${t.c}">${esc(t.t)}</i>`).join("")}</span>` : "";
+}
+function traitTableHTML(an){
+  if (!an.F.some(f => (f.traits || []).length)) return "";
+  const rows = an.F.map(f => `<tr><td>${chip(f.b.no)}</td><td>${(f.traits || []).sort((a, b) => TRAIT_ORDER.indexOf(a.k) - TRAIT_ORDER.indexOf(b.k)).map(t => `<b class="${t.c}">${esc(t.t)}</b>（${esc(t.d)}）`).join("・") || "<span class=\"neg\">目立つ特徴なし</span>"}</td></tr>`).join("");
+  return `<div><h3>選手の特徴（${esc(periodLabel())}）</h3><div class="tbl"><table class="lft2 trt"><tbody>${rows}</tbody></table></div>
+    <p class="note">全選手の中で上位・下位およそ15%に入るものを特徴として出しています。緑は強み、灰色は弱みです。1〜10月の約3万9千レースで確かめると、特徴の多くはすでに今の予想に入っていました。予想が取りこぼしていた分だけを「期待度の内訳」の「特徴」で足しています（例：当地勝率が全国より低い選手は、思ったより勝つ）。</p></div>`;
+}
+
 function tenkaiTableHTML(an){
   if (!STATS) return "";
   const F = [...an.F].sort((x, y) => x.course - y.course);
@@ -1603,8 +1686,9 @@ function cardHTML(r, an, now){
       </div>
     </details>
     <details data-key="${esc(r.key)}#d"${state.open.has(r.key + "#d") ? " open" : ""}>
-      <summary>選手データ：展開・コース別・スタート・決まり手・今節・出目</summary>
+      <summary>選手データ：特徴・展開・コース別・スタート・決まり手・今節・出目</summary>
       <div class="dbody">
+        ${traitTableHTML(an)}
         ${tenkaiTableHTML(an)}
         ${courseTableHTML(r, an)}
         ${stTableHTML(an)}
@@ -1984,6 +2068,7 @@ const SL = [
   ["w-ex",    s => s.w.ex,    (s, v) => s.w.ex = v,    v => "×" + v.toFixed(2)],
   ["w-course", s => s.w.course, (s, v) => s.w.course = v, v => "×" + v.toFixed(2)],
   ["w-seibi", s => s.w.seibi ?? 1, (s, v) => s.w.seibi = v, v => "×" + v.toFixed(2)],
+  ["w-trait", s => s.w.trait ?? 1, (s, v) => s.w.trait = v, v => "×" + v.toFixed(2)],
   ["ev",      s => s.ev,      (s, v) => s.ev = v,      v => v.toFixed(1) + "以上"],
   ["minp",    s => s.minP,    (s, v) => s.minP = v,    v => v + "%以上"],
   ["exgap",   s => s.exGap,   (s, v) => s.exGap = v,   v => v.toFixed(2) + "秒以上速い"],
