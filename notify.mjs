@@ -4,10 +4,11 @@
 // （GitHub の定期実行は「5分おき」にしても実際は20〜40分おきなので、
 //   1回の実行で長く見張って、次の実行に引き継ぐ）
 //
-// 1. 買い候補：締切7分前ごろに公式サイトの単勝オッズを見て、
-//    「1着率10%以上・期待値2.0以上」の艇があれば通知する（1レース1回）
-//    締切3分前ごろにもう一度見て、買いラインを下回っていたら「見送り」を通知する
-//    （7分前は条件外だったのが3分前に条件を満たしたら、そこで買い候補を通知する）
+// 1. 買い候補：公式サイトの単勝オッズで「1着率10%以上・期待値2.0以上」の艇を探す
+//    締切7分前ごろ：条件を満たす艇があれば「予告」
+//    締切3分前ごろ：オッズを記録するだけ（通知なし）
+//    締切1分半前ごろ：もう一度見て、満たしていれば「買い」、予告した艇が割っていれば「見送り」
+//    （締切前のオッズは確定までに大きく下がることが多いので、なるべく遅いオッズで決める）
 // 2. スリットアラート強：締切40分以内で「強」が出たら通知する
 // 3. 見た単勝オッズは 合言葉-odds のトピックに3分おきにまとめて送り、アプリが読む
 //    （公開リポジトリには保存しない。ntfy は12時間で消える）
@@ -21,11 +22,12 @@ const TOPIC = process.env.NTFY_TOPIC;
 const NTFY = "https://ntfy.sh";
 const BUY_EV = 2.0;            // 買い候補：期待値
 const BUY_P = 0.10;            // 買い候補：1着率
-const FIRST = 7;               // 締切まで何分で1回目のオッズを見るか
-const FINAL = 3;               // 締切まで何分で2回目（直前）のオッズを見るか
-const LAST = 1;                // 締切まで1分を切ったら見ない
+const FIRST = 7;               // 締切まで何分で1回目（予告）のオッズを見るか
+const MID = 3.5;               // 締切まで何分で2回目（記録だけ）のオッズを見るか
+const FINAL = 1.75;            // 締切まで何分を切ったら最後（買うかどうか決める）のオッズを見るか
+const LAST = 0.75;             // 締切まで45秒を切ったら見ない
 const ALERT_WINDOW = 40;       // スリットアラートを見る範囲（分）
-const STEP = 60e3;             // 見張りの間隔
+const STEP = 30e3;             // 見張りの間隔（1分半前の判断を逃さないよう30秒おき）
 const API_EVERY = 2 * 60e3;    // レースデータを取り直す間隔
 const ODDS_PUB_EVERY = 3 * 60e3; // アプリ用オッズを送る間隔（ntfy は1日の通数に上限がある）
 const LOOP_MIN = +(process.env.LOOP_MINUTES || 0);
@@ -104,7 +106,7 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
   const firstWin = LOOP_MIN ? FIRST : 16;   // 1回だけの実行なら広めに見る
   const t0 = clock();
   let races = null, lastApi = -Infinity, lastPub = t0, lastFetch = -Infinity;
-  let buys = 0, skips = 0, alertsSent = 0, checked = 0, oddsOK = 0, oddsMsgs = 0, rounds = 0;
+  let buys = 0, previews = 0, skips = 0, alertsSent = 0, checked = 0, oddsOK = 0, oddsMsgs = 0, rounds = 0;
   let testNote = null;
 
   const wait = async ms => { if (ms > 0) await sleep(ms); };
@@ -152,51 +154,63 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
     .filter(f => f.p1 >= BUY_P && odds.get(f.b.no) && f.p1 * odds.get(f.b.no) >= BUY_EV)
     .sort((x, y) => y.p1 * odds.get(y.b.no) - x.p1 * odds.get(x.b.no));
 
-  async function checkRace(r, pr, name, left){
+  // phase: "pre"（7分前の予告）か "final"（3分前の判断）
+  async function checkRace(r, pr, name, left, phase){
     const st = seen.get(r.key) || {n: 0, last: 0, fail: 0};
     seen.set(r.key, st);
     const odds = await fetchWinOdds(r);
     checked++;
     if (!odds){
-      if (++st.fail >= 3){ st.n++; st.fail = 0; st.last = clock(); }
+      if (++st.fail >= 2){ st.n++; st.fail = 0; st.last = clock(); st[phase] = true; }
       return;
     }
     oddsOK++;
     st.n++; st.fail = 0; st.last = clock();
+    st[phase] = true;
     const at = M.hhmm(new Date(clock()));
     pending.push({k: r.key, w: Object.fromEntries(odds), t: at, m: +left.toFixed(1), p: Object.fromEntries(pr.F.map(f => [f.b.no, +f.p1.toFixed(3)]))});
-    const mins = Math.max(1, Math.round(left));
-    const head = `締切 ${M.hhmm(r.closedAt)}（あと${mins}分）・${at}時点のオッズ`;
+    const sec = Math.max(0, Math.round(left * 60));
+    const leftTxt = left >= 3 ? `${Math.round(left)}分` : `${Math.floor(sec / 60)}分${String(sec % 60).padStart(2, "0")}秒`;
+    const head = `締切 ${M.hhmm(r.closedAt)}（あと${leftTxt}）・${at}時点のオッズ`;
     const byNo = new Map(pr.F.map(f => [f.b.no, f]));
     const buy = buyOf(pr, odds);
-    const sentTitle = sent.get(name + "買い");
+    const boatLines = list => list.flatMap(f => {
+      const od = odds.get(f.b.no);
+      return [`${CIRCLED[f.b.no]} ${f.b.name}（${f.b.cls}）単勝${od.toFixed(1)}倍・1着率${Math.round(f.p1 * 100)}%・期待値${(f.p1 * od).toFixed(2)}`,
+              `　買いライン${line(f.p1).toFixed(1)}倍以上`];
+    });
 
-    // 買い候補（まだ送っていなければ）
-    if (!sentTitle && buy.length){
-      const lines = [head];
-      for (const f of buy){
-        const od = odds.get(f.b.no);
-        lines.push(`${CIRCLED[f.b.no]} ${f.b.name}（${f.b.cls}）単勝${od.toFixed(1)}倍・1着率${Math.round(f.p1 * 100)}%・期待値${(f.p1 * od).toFixed(2)}`);
-        lines.push(`　買いライン${line(f.p1).toFixed(1)}倍以上`);
-      }
-      const title = `${name}買い ${buy.map(f => CIRCLED[f.b.no]).join("")}単勝`;
-      if (await publish(title, lines.join("\n"), 4)){ sent.set(name + "買い", title); buys++; console.log("買い候補:", name, buy.map(f => f.b.no).join(",")); }
+    // 3分前：記録だけ
+    if (phase === "mid") return;
+    // 7分前：予告だけ。買うかどうかは1分半前のオッズで決める
+    if (phase === "pre"){
+      if (!buy.length || sent.has(name + "予告") || sent.has(name + "買い")) return;
+      const lines = [head, ...boatLines(buy), "→ 締切1分半前のオッズで「買い」か「見送り」を通知します。投票アプリでこのレースを開いて待っていてください。"];
+      const title = `${name}予告 ${buy.map(f => CIRCLED[f.b.no]).join("")}単勝`;
+      if (await publish(title, lines.join("\n"), 3)){ sent.set(name + "予告", title); previews++; console.log("予告:", name, buy.map(f => f.b.no).join(",")); }
       return;
     }
 
-    // 直前に見直して、送った艇がどれも買いラインを割っていたら見送り
-    if (sentTitle && left <= FINAL + 0.5 && !sent.has(name + "見送り")){
-      const boats = circ(sentTitle.split(" ").slice(1).join(" "));
-      if (!boats.length || boats.some(no => buy.some(f => f.b.no === no))) return;
+    // 1分半前：ここで決める
+    if (sent.has(name + "買い") || sent.has(name + "見送り")) return;
+    if (buy.length){
+      const lines = [head, ...boatLines(buy), "締切まで約1分半。投票アプリのオッズが買いライン以上なら買い。"];
+      const title = `${name}買い ${buy.map(f => CIRCLED[f.b.no]).join("")}単勝`;
+      if (await publish(title, lines.join("\n"), 4)){ sent.set(name + "買い", title); buys++; console.log("買い:", name, buy.map(f => f.b.no).join(",")); }
+      return;
+    }
+    const pre = sent.get(name + "予告");
+    if (pre){
+      const boats = circ(pre.split(" ").slice(1).join(" "));
       const lines = [head];
       for (const no of boats){
         const f = byNo.get(no), od = odds.get(no);
         if (!f) continue;
         lines.push(`${CIRCLED[no]} 単勝${od ? od.toFixed(1) + "倍" : "なし"}（買いライン${line(f.p1).toFixed(1)}倍）${od ? `・期待値${(f.p1 * od).toFixed(2)}` : ""}`);
       }
-      lines.push("オッズが下がって買いラインを割りました。まだ買っていなければ見送り。");
+      lines.push("オッズが下がって買いラインを割ったので、このレースは見送りです。");
       const title = `${name}見送り ${boats.map(no => CIRCLED[no]).join("")}`;
-      if (await publish(title, lines.join("\n"), 4)){ sent.set(name + "見送り", title); skips++; console.log("見送り:", name); }
+      if (await publish(title, lines.join("\n"), 3)){ sent.set(name + "見送り", title); skips++; console.log("見送り:", name); }
     }
   }
 
@@ -208,7 +222,11 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
       if (left <= LAST || !r.hasPreview) continue;
       const name = `${M.STADIUMS[r.stadium] || ""}${r.no}R`;
       const st = seen.get(r.key) || {n: 0, last: 0, fail: 0};
-      const due = (st.n === 0 && left <= firstWin) || (LOOP_MIN && st.n === 1 && left <= FINAL && now - st.last >= 90e3);
+      // 1回だけの実行（watch.yml がないとき）は、その場で決める
+      const phase = !LOOP_MIN || left <= FINAL ? "final" : left <= MID ? "mid" : "pre";
+      const due = !LOOP_MIN ? left <= firstWin && !st.final
+        : phase === "pre" ? st.n === 0 && left <= FIRST
+        : !st[phase];
       const alerts = M.slitAlerts(r, s);
       const strong = left <= ALERT_WINDOW ? alerts.filter(x => x.type === "nobi" && x.level === 2) : [];
       const needAlert = strong.length && !sent.has(name);
@@ -224,11 +242,11 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
           lines.push(`${CIRCLED[x.boat]} ${f.b.name}（${f.b.cls}）展示${f.b.exTime.toFixed(2)}・内側より−${x.diff.toFixed(2)}`);
           lines.push(`　1着率${Math.round(f.p1 * 100)}%・単勝${line(f.p1).toFixed(1)}倍以上なら買い候補`);
         }
-        lines.push("（アラート単独は長期検証でマイナス。締切7分前ごろにオッズを見て、買いなら別に通知します）");
+        lines.push("（アラート単独は長期検証でマイナス。締切1分半前のオッズで買いなら別に通知します）");
         const title = `${name} スリットアラート強 ${strong.map(x => CIRCLED[x.boat]).join("")}`;
         if (await publish(title, lines.join("\n"), 3)){ sent.set(name, title); alertsSent++; console.log("スリットアラート:", name); }
       }
-      if (due) await checkRace(r, pr, name, left);
+      if (due) await checkRace(r, pr, name, left, phase);
     }
   }
 
@@ -270,7 +288,7 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
     await wait(t0 + rounds * STEP - clock());
   }
   await flushOdds();
-  console.log(`見張り ${rounds}回、オッズを見た ${checked}回（取得 ${oddsOK}）、買い候補 ${buys}件、見送り ${skips}件、スリットアラート ${alertsSent}件、アプリ用オッズ ${oddsMsgs}通`);
+  console.log(`見張り ${rounds}回、オッズを見た ${checked}回（取得 ${oddsOK}）、予告 ${previews}件、買い ${buys}件、見送り ${skips}件、スリットアラート ${alertsSent}件、アプリ用オッズ ${oddsMsgs}通`);
 }
 
 if (process.argv[1] && process.argv[1].endsWith("notify.mjs")) await main();

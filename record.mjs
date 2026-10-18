@@ -14,7 +14,10 @@ const NTFY = "https://ntfy.sh";
 const DIR = "oddslog";
 const LOG = `${DIR}/log.json`;
 const KEEP_DAYS = 120;
-const BUY_EV = 2.0, BUY_P = 0.10, FINAL = 3;
+const BUY_EV = 2.0, BUY_P = 0.10;
+// いつのオッズか（締切までの分）：今の通知は1分半前（1.85分以内）で決める
+const PHASES = [["t7", 3.6, 99], ["t3", 1.85, 3.6], ["t1", 0.4, 1.85]];
+const phaseOf = m => { if (m == null) return null; const p = PHASES.find(([, lo, hi]) => m > lo && m <= hi); return p ? p[0] : null; };
 const EVS = [1.5, 2.0, 2.5, 3.0, 4.0];
 const BANDS = [[1, 2], [2, 4], [4, 7], [7, 12], [12, 25], [25, 1e9]];
 
@@ -58,6 +61,14 @@ async function readSnaps(fetcher){
 const agg = list => {
   const n = list.length, hit = list.filter(x => x.pay > 0).length, ret = list.reduce((s, x) => s + x.pay, 0);
   return {n, hit, ret, roi: n ? +(ret / (100 * n)).toFixed(4) : 0};
+};
+// 買い目の成績に「確定オッズで見た期待値」と「決めた時→確定のオッズの動き」を足す（確定オッズは翌日に入る）
+const aggF = list => {
+  const w = list.filter(x => x.fin > 0);
+  return {...agg(list), nFin: w.length,
+    finEv: w.length ? +(w.reduce((s, x) => s + x.p * x.fin, 0) / w.length).toFixed(3) : null,
+    ev: list.length ? +(list.reduce((s, x) => s + x.p * x.od, 0) / list.length).toFixed(3) : null,
+    drop: w.length ? +median(w.map(x => x.fin / x.od)).toFixed(3) : null};
 };
 const median = v => { if (!v.length) return null; const s = [...v].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
 
@@ -128,7 +139,7 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
     const id = `${x.d}|${x.k}`;
     (byRace.get(id) || byRace.set(id, []).get(id)).push(x);
   }
-  const bets = [], points = [], drift = {t7: BANDS.map(() => []), t3: BANDS.map(() => [])};
+  const rules = {t1: [], t3: [], t7: []}, points = [], drift = Object.fromEntries(PHASES.map(([k]) => [k, BANDS.map(() => [])]));
   for (const [id, list] of byRace){
     const R = log.races[id];
     if (!R || R.pay == null || R.void) continue;   // 結果がまだ（または中止）
@@ -140,7 +151,7 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
     const payOf = no => R.back && R.back.includes(no) ? 100 : (R.win === no ? R.pay : 0);
     // 期待値ごとの成績（その時点のオッズで選んで、確定オッズで払い戻されたら）
     for (const x of list){
-      const phase = x.m >= 4.5 && x.m <= 9 ? "t7" : x.m > 0.5 && x.m < 4.5 ? "t3" : null;
+      const phase = x.m > 9 ? null : phaseOf(x.m);
       if (!phase || !x.pp) continue;
       for (const [no, od] of Object.entries(x.w)){
         const p = x.pp[no], n = +no;
@@ -152,21 +163,21 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
         }
       }
     }
-    // 通知どおりの買い（最初に条件を満たした時点の艇。直前に買いラインを割ったら見送り）
     const meets = (x, no) => x.pp && x.pp[no] >= BUY_P && x.w[no] > 0 && x.pp[no] * x.w[no] >= BUY_EV;
-    const first = list.find(x => x.pp && Object.keys(x.w).some(no => meets(x, no)));
-    if (!first) continue;
-    const boats = Object.keys(first.w).filter(no => meets(first, no)).map(Number);
-    const late = list.filter(x => toMin(x.t) > toMin(first.t) && x.m != null && x.m <= FINAL + 0.5);
-    const skip = late.length > 0 && !boats.some(no => meets(late[late.length - 1], no));
-    for (const no of boats){
-      bets.push({d: R.d, k: R.k, name: R.name || R.k, close: R.close || "", t: first.t, m: first.m, no, p: first.pp[no], od: first.w[no],
-        fin: R.fin ? R.fin[no] ?? null : null, skip, pay: payOf(no)});
+    const boatsOf = x => x ? Object.keys(x.w).filter(no => meets(x, no)).map(Number) : [];
+    const mk = (x, no, extra = {}) => ({d: R.d, k: R.k, name: R.name || R.k, close: R.close || "", t: x.t, m: x.m, no, p: x.pp[no], od: x.w[no],
+      fin: R.fin ? R.fin[no] ?? null : null, pay: payOf(no), ...extra});
+    // それぞれの時点の最初のオッズで決めたら（t1 が今の通知＝1分半前、t3 は3分前、t7 は7分前）
+    for (const [k] of PHASES){
+      const x = list.find(y => y.pp && phaseOf(y.m) === k);
+      for (const no of boatsOf(x)) rules[k].push(mk(x, no));
     }
   }
-  bets.sort((x, y) => (x.d + x.close).localeCompare(y.d + y.close) || x.no - y.no);
-  const follow = bets.filter(x => !x.skip);
-  const dayList = [...new Set(bets.map(x => x.d))].sort().map(d => ({d, ...agg(follow.filter(x => x.d === d)), all: agg(bets.filter(x => x.d === d))}));
+  for (const k in rules) rules[k].sort((x, y) => (x.d + x.close).localeCompare(y.d + y.close) || x.no - y.no);
+  const follow = rules.t1;
+  const bets = rules.t1.length ? rules.t1 : rules.t3;
+  const dayList = [...new Set([...rules.t1, ...rules.t3, ...rules.t7].map(x => x.d))].sort()
+    .map(d => ({d, ...agg(follow.filter(x => x.d === d)), t3: agg(rules.t3.filter(x => x.d === d)), early: agg(rules.t7.filter(x => x.d === d))}));
   const calib = phase => EVS.map(ev => {
     const sel = points.filter(x => x.phase === phase && x.p >= BUY_P && x.ev >= ev);
     const fe = sel.map(x => x.finEv).filter(v => v != null);
@@ -176,16 +187,17 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
     v: 1, built: new Date().toISOString(), today,
     from: days[0] || null, to: days[days.length - 1] || null,
     rule: {ev: BUY_EV, minP: BUY_P},
-    paper: {follow: agg(follow), all: agg(bets)},
+    paper: {follow: aggF(follow), t3: aggF(rules.t3), early: aggF(rules.t7)},
+    betsRule: rules.t1.length ? "t1" : "t3",
     days: dayList.slice(-30),
     bets: bets.slice(-150),
-    calib: {t7: calib("t7"), t3: calib("t3")},
-    drift: {t7: BANDS.map(([lo, hi], i) => ({lo, hi: hi > 1e8 ? null : hi, n: drift.t7[i].length, med: median(drift.t7[i])})),
-            t3: BANDS.map(([lo, hi], i) => ({lo, hi: hi > 1e8 ? null : hi, n: drift.t3[i].length, med: median(drift.t3[i])}))}
+    calib: Object.fromEntries(PHASES.map(([k]) => [k, calib(k)])),
+    drift: Object.fromEntries(PHASES.map(([k]) => [k, BANDS.map(([lo, hi], i) => ({lo, hi: hi > 1e8 ? null : hi, n: drift[k][i].length, med: median(drift[k][i])}))]))
   };
   fs.writeFileSync("paper.json", JSON.stringify(out));
   console.log(`締切前オッズ：新しく${added}件（全${Object.keys(log.snaps).length}件）、結果のわかったレース${[...byRace.keys()].filter(id => log.races[id] && log.races[id].pay != null && !log.races[id].void).length}件`);
-  console.log(`買ったつもり（通知どおり）：${out.paper.follow.n}点 回収率${(out.paper.follow.roi * 100).toFixed(1)}%（見送りも買うと ${out.paper.all.n}点 ${(out.paper.all.roi * 100).toFixed(1)}%）`);
+  const P = a => `${a.n}点 回収率${(a.roi * 100).toFixed(1)}%`;
+  console.log(`買ったつもり：1分半前で決める ${P(out.paper.follow)}｜3分前 ${P(out.paper.t3)}｜7分前 ${P(out.paper.early)}`);
   return out;
 }
 

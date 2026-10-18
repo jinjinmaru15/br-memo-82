@@ -468,7 +468,9 @@ const PRIOR = {
 const NATL = [0,1,2,3,4,5].map(i => Object.values(PRIOR).reduce((a, v) => a + v[i], 0) / 24);
 const priorFor = s => (PRIOR[s] || NATL).map((v, i) => 0.7 * v + 0.3 * NATL[i]);
 
-const BASE = {skill: 0.50, avgst: 0.12, exst: 0.06, motor: 0.20, ex: 0.25, course: 0.35};
+// 各要素の効き方。2026年1〜6月の約2万7千レースで当てはめ、7〜10月の約1万7千レースで良くなることを確かめた値
+// prior：場別コース1着率の効かせ方（1なら率そのまま）、alert：スリットアラート（攻め・凹み）の上乗せの効かせ方
+const BASE = {prior: 0.94, skill: 0.536, avgst: 0.094, exst: 0.025, alert: 0.09, motor: 0.118, boat: 0.039, ex: 0.232, course: 0.177, seibi: 1.14};
 // 整備・チルト：2026年1〜6月のレースで当てはめ、7〜10月で効くことを確かめた係数
 // チルト1度あたり（1・2コース／3コースより外）、部品交換したとき（リング・キャブ・大きい部品・電気系）
 const SEIBI = {tiltIn: 0.12, tiltOut: 0.23, ring: -0.06, carb: -0.18, major: -0.13, elec: -0.18};
@@ -723,7 +725,7 @@ async function loadLiveOdds(date){
         if (m.event !== "message") continue;
         const d = JSON.parse(m.message);
         if (d.d !== date) continue;
-        for (const e of d.r || []) out.set(e.k, {win: e.w, at: e.t || d.at});
+        for (const e of d.r || []) out.set(e.k, {win: e.w, at: e.t || d.at, m: e.m ?? null});
       } catch (e) {}
     }
   } catch (e) {}
@@ -742,7 +744,8 @@ async function loadDay(date){
     races.forEach(r => { if (!r.odds && m.has(r.key)){ r.odds = m.get(r.key); r.oddsLabel = "オッズ"; } });
   }
   const live = await liveP;
-  races.forEach(r => { const x = live.get(r.key); if (!r.odds && x){ r.odds = {win: x.win}; r.oddsLabel = `${x.at}時点のオッズ`; } });
+  // 締切1分半前より前のオッズは「予告」（通知も1分半前に最終判断する）
+  races.forEach(r => { const x = live.get(r.key); if (!r.odds && x){ r.odds = {win: x.win}; r.oddsLabel = x.m != null && x.m > 1.85 ? `予告：${x.at}時点のオッズ` : `${x.at}時点のオッズ`; } });
   state.liveOdds = {date, status: live.status, n: live.size, at: [...live.values()].reduce((m, x) => x.at > m ? x.at : m, "")};
   return races;
 }
@@ -942,7 +945,7 @@ function predict(r, s, alerts, lite, stats = STATS){
       b, course, cs, cST: cST,
       winEff: b.win == null ? 4.5 : (b.local > 0 ? 0.75 * b.win + 0.25 * b.local : b.win),
       st: (stv != null ? (0.16 - stv) / 0.02 : 0) - (b.F > 0 ? 0.8 : 0),
-      mo: (b.motor2 > 0 ? (b.motor2 - 35) / 10 : 0) + (b.boat2 > 0 ? (b.boat2 - 35) / 20 : 0),
+      mo: BASE.motor * (b.motor2 > 0 ? (b.motor2 - 35) / 10 : 0) + BASE.boat * (b.boat2 > 0 ? (b.boat2 - 35) / 20 : 0),
       ex: b.exTime != null ? -b.exTime / 0.05 : null,
       es: predST != null ? -predST / 0.05 : null, zure, predST,
       crs, sb: seibiOf(b, course)
@@ -958,20 +961,20 @@ function predict(r, s, alerts, lite, stats = STATS){
     const parts = {
       skill: w.skill * BASE.skill * (f.winEff - M.winEff),
       start: w.start * (BASE.avgst * (f.st - M.st) + (f.es == null ? 0 : BASE.exst * clamp(f.es - M.es, -3, 3))),
-      motor: w.motor * BASE.motor * (f.mo - M.mo),
+      motor: w.motor * (f.mo - M.mo),
       ex: f.ex == null ? 0 : w.ex * BASE.ex * clamp(f.ex - M.ex, -4, 4),
       course: wc * BASE.course * clamp(f.crs, -2.5, 2.5),
-      seibi: (w.seibi ?? 1) * (f.sb - M.sb)
+      seibi: (w.seibi ?? 1) * BASE.seibi * (f.sb - M.sb)
     };
     for (const a of alerts){
       if (a.boat !== f.b.no) continue;
-      if (a.type === "attack") parts.start += w.start * (a.level === 2 ? 0.30 : 0.18);
-      if (a.type === "in") parts.start -= w.start * (a.level === 2 ? 0.30 : 0.18);
+      if (a.type === "attack") parts.start += w.start * BASE.alert * (a.level === 2 ? 0.30 : 0.18);
+      if (a.type === "in") parts.start -= w.start * BASE.alert * (a.level === 2 ? 0.30 : 0.18);
     }
     f.parts = parts;
     f.z = parts.skill + parts.start + parts.motor + parts.ex + parts.course + parts.seibi;
     f.prior = (pri[f.course - 1] ?? 1) * (f.course === 1 ? windF : 1);
-    f.raw = f.prior * Math.exp(f.z);
+    f.raw = Math.pow(f.prior, BASE.prior) * Math.exp(f.z);
     S += f.raw;
   });
   F.forEach(f => { f.p1 = f.raw / S; f.p2 = 0; f.p3 = 0; });
@@ -1557,11 +1560,10 @@ function cardHTML(r, an, now){
 }
 
 function condHTML(){
-  const L = bt.long;
-  const g = L && L.grid ? L.grid.find(x => Math.abs(x.ev - settings.ev) < 1e-6 && Math.abs(x.minP * 100 - settings.minP) < 1e-6) : null;
   ensurePaper();
-  const pf = bt.paper && bt.paper.paper.follow;
-  return `<p class="cond-l">条件：単勝・1着率${settings.minP}%以上・期待値${settings.ev.toFixed(1)}以上${g && g.win.n ? `<span>長期検証 回収率${Math.round(g.win.roi * 100)}%（${Math.round(Math.max(0, g.win.lo) * 100)}〜${Math.round(g.win.hi * 100)}%）</span>` : ""}${pf && pf.n ? `<span class="${pf.roi >= 1 ? "" : "neg"}">通知どおりの実績 ${Math.round(pf.roi * 100)}%（${pf.n}点）</span>` : ""}</p>`;
+  const pp = bt.paper && bt.paper.paper;
+  const pf = pp && (pp.follow && pp.follow.n ? [pp.follow, "1分半前で決めた"] : pp.t3 && pp.t3.n ? [pp.t3, "3分前で決めた"] : null);
+  return `<p class="cond-l">条件：単勝・1着率${settings.minP}%以上・期待値${settings.ev.toFixed(1)}以上${pf ? `<span class="${pf[0].roi >= 1 ? "" : "neg"}">実際の回収率 ${Math.round(pf[0].roi * 100)}%（${pf[1]}場合・${pf[0].n}点・実際の払戻で計算）</span>` : ""}</p>`;
 }
 // 締切前のオッズが通知の仕組みから届いているか（今日だけ）
 function oddsStatusHTML(){
@@ -1646,36 +1648,46 @@ const safeRender = () => { if (!typing()) render(); };
 
 // 買ったつもりの成績（record.mjs が毎日3回つける）
 function paperHTML(P){
-  const head = `<h2>買ったつもりの成績（通知どおり・自動で記録）</h2>`;
-  if (!P || !P.paper.all.n) return `${head}<p class="btmsg">${bt.paperTried && !bt.paper ? "まだ記録がありません。" : P ? "まだ結果の出た買い目がありません。" : "読み込み中…"}GitHubのアクションで「record」が動くと（1日3回）、通知した買い目をレース結果と照らし合わせてここに出ます。</p>`;
+  const head = `<h2>買ったつもりの成績（自動で記録）</h2>`;
+  const Z = {n: 0, hit: 0, ret: 0, roi: 0};
+  const pp = P && P.paper ? P.paper : null;
+  if (!pp || !((pp.follow || Z).n || (pp.t3 || Z).n || (pp.early || Z).n)) return `${head}<p class="btmsg">${bt.paperTried && !bt.paper ? "まだ記録がありません。" : P ? "まだ結果の出た買い目がありません。" : "読み込み中…"}GitHubのアクションで「record」が動くと（1日3回）、見張りが見たオッズをレース結果と照らし合わせてここに出ます。</p>`;
   const Pc = v => Math.round(v * 100) + "%";
-  const f = P.paper.follow, all = P.paper.all;
-  const days = P.days.slice().reverse().map(d => `<tr><td>${+d.d.slice(5, 7)}/${+d.d.slice(8)}</td><td>${d.n}</td><td>${d.hit}</td><td class="${d.roi >= 1 && d.n ? "plus" : ""}">${d.n ? Pc(d.roi) : "-"}</td><td>${d.n ? yen(d.ret - 100 * d.n) : "-"}</td></tr>`).join("");
-  const bets = P.bets.slice(-20).reverse().map(x => `<tr><td class="zr">${esc(x.close)}<small>${+x.d.slice(5, 7)}/${+x.d.slice(8)}</small></td><td class="feat">${esc(x.name)}</td><td>${chip(x.no)}</td><td>${(+x.od).toFixed(1)}</td><td>${x.fin ? (+x.fin).toFixed(1) : "-"}</td><td>${Math.round(x.p * 100)}%</td><td class="${x.pay > 0 && !x.skip ? "plus" : ""}">${x.skip ? "見送り" : x.pay > 0 ? x.pay + "円" : "×"}</td></tr>`).join("");
-  const cal = (rows, label) => rows.map(c => `<tr><td>${label}</td><td>${c.ev.toFixed(1)}以上</td><td>${c.n}</td><td class="${c.roi >= 1 && c.n ? "plus" : ""}">${c.n ? Pc(c.roi) : "-"}</td><td>${c.finEv != null ? c.finEv.toFixed(2) : "-"}</td></tr>`).join("");
-  const dr = (a, b) => a.map((x, i) => `<tr><td>${x.hi ? `${x.lo}〜${x.hi}倍` : `${x.lo}倍以上`}</td><td class="zr">${x.med != null ? "×" + x.med.toFixed(2) : "-"}<small>${x.n}件</small></td><td class="zr">${b[i].med != null ? "×" + b[i].med.toFixed(2) : "-"}<small>${b[i].n}件</small></td></tr>`).join("");
+  const f = pp.follow || Z, t3 = pp.t3 || Z, e7 = pp.early || Z;
+  const md = d => `${+d.slice(5, 7)}/${+d.slice(8)}`;
+  const box = (label, a) => `<div class="stat"><span>${label}</span><b class="${a.roi >= 1 && a.n ? "plus" : ""}">${a.n ? Pc(a.roi) : "-"}</b><small>${a.n}点・的中${a.hit || 0}${a.n ? "・収支" + yen(a.ret - 100 * a.n) : ""}${a.nFin ? `<br>確定オッズでの期待値 ${a.finEv.toFixed(2)}（決めた時 ${a.ev.toFixed(2)}）<br>オッズは確定までに ×${a.drop.toFixed(2)}（${a.nFin}点）` : ""}</small></div>`;
+  const days = P.days.slice().reverse().map(d => `<tr><td>${md(d.d)}</td><td>${d.n}</td><td>${d.hit}</td><td class="${d.roi >= 1 && d.n ? "plus" : ""}">${d.n ? Pc(d.roi) : "-"}</td><td class="zr">${d.t3 && d.t3.n ? Pc(d.t3.roi) + `<small>${d.t3.n}点</small>` : "-"}</td><td class="zr">${d.early && d.early.n ? Pc(d.early.roi) + `<small>${d.early.n}点</small>` : "-"}</td></tr>`).join("");
+  const bets = P.bets.slice(-20).reverse().map(x => `<tr><td class="zr">${esc(x.close)}<small>${md(x.d)}</small></td><td class="feat">${esc(x.name)}</td><td>${chip(x.no)}</td><td>${(+x.od).toFixed(1)}</td><td>${x.fin ? (+x.fin).toFixed(1) : "-"}</td><td>${Math.round(x.p * 100)}%</td><td class="${x.pay > 0 ? "plus" : ""}">${x.pay > 0 ? x.pay + "円" : "×"}</td></tr>`).join("");
+  const LBL = {t7: "7分前", t3: "3分前", t1: "1分半前"};
+  const cal = ["t7", "t3", "t1"].filter(k => P.calib && P.calib[k]).map(k => P.calib[k].map(c => `<tr><td>${LBL[k]}</td><td>${c.ev.toFixed(1)}以上</td><td>${c.n}</td><td class="${c.roi >= 1 && c.n ? "plus" : ""}">${c.n ? Pc(c.roi) : "-"}</td><td>${c.finEv != null ? c.finEv.toFixed(2) : "-"}</td></tr>`).join("")).join("");
+  const dk = ["t7", "t3", "t1"].filter(k => P.drift && P.drift[k]);
+  const cell = x => `<td class="zr">${x.med != null ? "×" + x.med.toFixed(2) : "-"}<small>${x.n}件</small></td>`;
+  const dr = dk.length ? P.drift[dk[0]].map((x, i) => `<tr><td>${x.hi ? `${x.lo}〜${x.hi}倍` : `${x.lo}倍以上`}</td>${dk.map(k => cell(P.drift[k][i])).join("")}</tr>`).join("") : "";
+  const bl = P.betsRule === "t1" ? "1分半前で決める" : "3分前で決める。1分半前の記録がまだないため";
   return `${head}
-    <p class="lead">${esc(P.from)}〜${esc(P.to)}に通知した単勝の買い目を、各100円で買ったつもりにして結果と照らし合わせています。払戻は確定オッズで決まるので、これが実際に近い成績です。</p>
+    <p class="lead">${esc(P.from)}〜${esc(P.to)}に見張りが見た締切前のオッズで、条件（単勝・1着率${Math.round(P.rule.minP * 100)}%以上・期待値${P.rule.ev.toFixed(1)}以上）を満たした艇を各100円で買ったつもりにして、結果と照らし合わせています。<b>回収率は実際の払戻金（確定オッズ）で計算</b>しているので、本当に買った場合と同じ成績です。「確定オッズでの期待値」は、確定オッズで見直すと期待値がいくつだったかで、回収率よりぶれが小さい目安です（確定オッズは翌日に入ります）。</p>
     <div class="stats">
-      <div class="stat"><span>通知どおり（見送りに従う）</span><b class="${f.roi >= 1 && f.n ? "plus" : ""}">${f.n ? Pc(f.roi) : "-"}</b><small>${f.n}点・的中${f.hit}・収支${f.n ? yen(f.ret - 100 * f.n) : "-"}</small></div>
-      <div class="stat"><span>見送りも買った場合</span><b class="${all.roi >= 1 && all.n ? "plus" : ""}">${all.n ? Pc(all.roi) : "-"}</b><small>${all.n}点・的中${all.hit}</small></div>
+      ${box("1分半前のオッズで決める（今の通知）", f)}
+      ${box("3分前のオッズで決めると", t3)}
+      ${box("7分前のオッズで決めると", e7)}
     </div>
-    <p class="note">数百点たまるまでは、1日ごとの数字は大きくぶれます。2週間ほど見てから判断してください。</p>
-    <div><h3>日ごと（通知どおり）</h3><div class="tbl"><table class="lft2">
-      <thead><tr><th>日</th><th>点数</th><th>的中</th><th>回収率</th><th>収支</th></tr></thead><tbody>${days}</tbody></table></div></div>
-    <div><h3>最近の買い目</h3><div class="tbl"><table class="lft2">
-      <thead><tr><th>締切</th><th>レース</th><th>艇</th><th>通知時</th><th>確定</th><th>1着率</th><th>結果</th></tr></thead><tbody>${bets}</tbody></table></div></div>
+    <p class="note">数百点たまるまでは、数字は大きくぶれます。2週間ほど見てから判断してください。</p>
+    <div><h3>日ごと</h3><div class="tbl"><table class="lft2">
+      <thead><tr><th>日</th><th>点数</th><th>的中</th><th>1分半前</th><th>3分前</th><th>7分前</th></tr></thead><tbody>${days}</tbody></table></div>
+      <p class="note">点数・的中は1分半前で決めた場合です。</p></div>
+    <div><h3>最近の買い目（${bl}）</h3><div class="tbl"><table class="lft2">
+      <thead><tr><th>締切</th><th>レース</th><th>艇</th><th>決めた時</th><th>確定</th><th>1着率</th><th>結果</th></tr></thead><tbody>${bets}</tbody></table></div></div>
     <div><h3>締切前のオッズで選ぶと、本当の回収率は</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>いつのオッズ</th><th>期待値</th><th>点数</th><th>回収率</th><th>確定での期待値</th></tr></thead>
-      <tbody>${cal(P.calib.t7, "7分前")}${cal(P.calib.t3, "3分前")}</tbody></table></div>
-      <p class="note">1着率${Math.round(P.rule.minP * 100)}%以上の艇を、締切前のオッズでの期待値で選んだときの成績です（通知していない艇も含む）。「確定での期待値」が2を大きく下回るなら、買いラインを上げる必要があります。</p></div>
+      <tbody>${cal}</tbody></table></div>
+      <p class="note">1着率${Math.round(P.rule.minP * 100)}%以上の艇を、その時点のオッズでの期待値で選んだときの成績です（通知していない艇も含む）。「確定での期待値」が2を大きく下回るなら、買いラインを上げる必要があります。</p></div>
     <div><h3>締切前→確定でオッズはどう動くか</h3><div class="tbl"><table class="lft2">
-      <thead><tr><th>締切前のオッズ</th><th>7分前→確定</th><th>3分前→確定</th></tr></thead><tbody>${dr(P.drift.t7, P.drift.t3)}</tbody></table></div>
+      <thead><tr><th>締切前のオッズ</th>${dk.map(k => `<th>${LBL[k]}→確定</th>`).join("")}</tr></thead><tbody>${dr}</tbody></table></div>
       <p class="note">真ん中の値です。×0.85なら、確定オッズはだいたい15%下がります。確定オッズは翌日に入ります。</p></div>`;
 }
 
 function longHTML(L){
-  const head = `<h2>長期検証（毎晩GitHubで計算）</h2>`;
+  const head = `<h2>長期検証（参考：確定オッズで選んだ場合）</h2>`;
   if (!L) return `${head}<p class="btmsg">${bt.longTried && !bt.long ? "まだ計算されていません。" : "読み込み中…"}GitHubのアクションで「backtest」を一度動かすと、2026年1月からの全レースで検証した結果がここに出ます。</p>`;
   const P = v => Math.round(v * 100) + "%";
   const rng = a => a.n ? `${P(Math.max(0, a.lo))}〜${P(a.hi)}` : "-";
@@ -1689,7 +1701,7 @@ function longHTML(L){
   const months = L.monthly.filter(m => m.races).map(m => `<tr><td>${+m.m.slice(5)}月${m.statsRaces ? "" : "＊"}</td><td>${m.odds}</td><td>${m.n}</td><td>${hitR(m)}</td><td class="${m.roi >= 1 && m.n ? "plus" : ""}">${m.n ? P(m.roi) : "-"}</td><td>${m.n ? yen(m.ret - 100 * m.n) : "-"}</td></tr>`).join("");
   const bands = L.bands.map(b => `<tr><td>${b.to > 1e8 ? b.from + "倍以上" : b.from + "〜" + b.to + "倍"}</td><td>${b.n}</td><td>${hitR(b)}</td><td class="${good(b)}">${b.n ? P(b.roi) : "-"}</td><td>${rng(b)}</td></tr>`).join("");
   return `${head}
-    <p class="lead">${esc(L.from)}〜${esc(L.to)}の${L.races}レース（オッズあり ${L.oddsRaces}）を、アプリと同じ計算で予想し直した結果です。重みは初期値（すべて×1.00）で計算しています。</p>
+    <p class="lead">${esc(L.from)}〜${esc(L.to)}の${L.races}レース（オッズあり ${L.oddsRaces}）を、アプリと同じ計算で予想し直した結果です。<b>買う艇を確定オッズで選んでいるので、実際（締切前のオッズで選ぶ）よりかなり有利な数字です。</b>予想の当たり具合や、条件どうしの比べに使ってください。本当の回収率は上の「買ったつもりの成績」です。</p>
     <div class="stats">
       <div class="stat"><span>単勝・期待値${L.main.ev.toFixed(2)}以上・確率${Math.round(L.main.minP * 100)}%以上</span><b class="${good(w)}">${w.n ? P(w.roi) : "-"}</b><small>95%の範囲 ${rng(w)}・${w.n}点・的中${hitR(w)}</small></div>
       <div class="stat"><span>その収支（各100円）</span><b class="${w.ret - 100 * w.n >= 0 && w.n ? "plus" : ""}">${w.n ? yen(w.ret - 100 * w.n) : "-"}</b><small>1日あたり約${Math.round(w.n / Math.max(1, L.monthly.filter(m => m.races).length) / 30)}点</small></div>
