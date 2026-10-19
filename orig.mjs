@@ -28,6 +28,10 @@ const VENUES = {
   22: {name: "福岡", url: (d, r) => `https://www.boatrace-fukuoka.com/modules/yosou/tenji_info.php?day=${ymd(d)}&race=${r}`, cols: {ex: 6, lap: 7, turn: 8, straight: 9}}
 };
 const ONLY = process.env.ORIG_VENUES ? process.env.ORIG_VENUES.split(",").map(Number) : null;
+// GitHub は2時間で打ち切るので、95分たったら新しいページは読まずに、そこまでの分で集計して保存する
+// （読んだページはキャッシュに残るので、もう一度動かすと続きから読む）
+const T0 = Date.now(), LIMIT = (+process.env.ORIG_MINUTES || 95) * 60e3;
+const overTime = () => Date.now() - T0 > LIMIT;
 
 const html = fs.readFileSync("index.html", "utf8");
 const ia = html.indexOf("/* ---------- 定数 ---------- */"), ib = html.indexOf("/* ---------- 状態 ---------- */");
@@ -67,13 +71,14 @@ async function getText(host, url){
   const wait = (lastFetch[host] || 0) + 1100 - Date.now();
   if (wait > 0) await sleep(wait);
   lastFetch[host] = Date.now();
-  for (let a = 0; a < 3; a++){
+  // 応答がないサイトで止まらないように、1回20秒で打ち切る
+  for (let a = 0; a < 2; a++){
     try {
-      const r = await fetch(url, {headers: {"Accept-Language": "ja"}});
+      const r = await fetch(url, {headers: {"Accept-Language": "ja"}, signal: AbortSignal.timeout(20000)});
       if (r.ok) return await r.text();
       if (r.status === 404) return null;
     } catch (e) {}
-    await sleep(3000 * (a + 1));
+    if (a === 0) await sleep(3000);
   }
   return null;
 }
@@ -97,16 +102,20 @@ async function dayRaces(d, keys){
   return out || {};
 }
 
-async function pageOf(sk, d, rno){
+async function pageOf(sk, d, rno, c){
   const v = VENUES[sk];
   const f = `${CACHE}/h${sk}-${d}-${rno}.html.gz`;
   // 前の版（三国だけ）のキャッシュも使う
   const old = `${CACHE}/h-${d}-${rno}.html.gz`;
   if (fs.existsSync(f)) return zlib.gunzipSync(fs.readFileSync(f)).toString("utf8");
   if (+sk === 10 && fs.existsSync(old)) return zlib.gunzipSync(fs.readFileSync(old)).toString("utf8");
+  if (c.stop){ c.left++; return null; }
+  if (overTime()){ c.stop = "時間切れ（もう一度動かすと続きから）"; c.left++; return null; }
   const url = v.url(d, rno);
   const page = await getText(new URL(url).host, url);
-  if (page) fs.writeFileSync(f, zlib.gzipSync(page));
+  c.fetched++;
+  if (page){ fs.writeFileSync(f, zlib.gzipSync(page)); c.fails = 0; }
+  else if (++c.fails >= 40) c.stop = c.pages ? "途中から読めなくなった" : "サイトに届かない";
   return page;
 }
 
@@ -161,18 +170,23 @@ export async function main(){
   for (let d = START; d < today; d = addDays(d, 1)) days.push(d);
   const byDay = new Map();
   for (const d of days) byDay.set(d, await dayRaces(d, keys));
-  const counts = Object.fromEntries(keys.map(k => [k, {name: VENUES[k].name, races: 0, pages: 0, parsed: 0, matched: 0}]));
+  console.log(`turnmark ${days.length}日 そろった（${((Date.now() - T0) / 60e3).toFixed(1)}分）`);
+  // 途中で打ち切っても1〜6月と7月以降の両方が残るように、両端から交互に読む
+  const order = [];
+  for (let i = 0, j = days.length - 1; i <= j; i++, j--){ order.push(days[i]); if (i !== j) order.push(days[j]); }
+  const counts = Object.fromEntries(keys.map(k => [k, {name: VENUES[k].name, races: 0, pages: 0, parsed: 0, matched: 0, fetched: 0, fails: 0, left: 0, stop: null}]));
   const debug = {};
   const rows = [];
   // 場ごとに同時に読む（各場は1秒に1回まで）
   await Promise.all(keys.map(async sk => {
     const v = VENUES[sk], c = counts[sk];
-    for (const d of days){
+    for (const d of order){
       for (const r of (byDay.get(d)[sk] || [])){
         c.races++;
-        const page = await pageOf(sk, d, r.no);
+        const page = await pageOf(sk, d, r.no, c);
         if (!page) continue;
         c.pages++;
+        if (c.pages % 200 === 0) console.log(`${v.name} ${c.pages}ページ（新しく読んだ ${c.fetched}・${((Date.now() - T0) / 60e3).toFixed(0)}分）`);
         const o = parseOrig(page, v);
         if (!o){ if (!debug[sk]){ const i = page.indexOf("col"); debug[sk] = page.slice(Math.max(0, i - 800), i + 2200); } continue; }
         c.parsed++;
@@ -208,6 +222,7 @@ export async function main(){
   }));
   const out = {
     v: 2, built: new Date().toISOString(), from: START, to: addDays(today, -1),
+    minutes: +((Date.now() - T0) / 60e3).toFixed(1), partial: Object.values(counts).some(c => c.left > 0),
     counts, used: rows.length, train: train.length, test: test.length,
     base, feats, all: {beta: bAll, test: evaluate(test, bAll), train: evaluate(train, bAll)},
     perVenue, fullBeta: fit(rows, FEATS),
