@@ -1,90 +1,361 @@
 {
- "v": 1,
- "built": "2026-10-18T15:43:42.813Z",
- "stadium": "三国",
+ "v": 2,
+ "built": "2026-10-19T00:20:14.162Z",
  "from": "2026-01-01",
  "to": "2026-10-18",
- "races": 1796,
- "parsed": 1658,
- "matched": 1658,
- "used": 1658,
- "train": 979,
- "test": 679,
+ "minutes": 2.4,
+ "partial": true,
+ "counts": {
+  "1": {
+   "name": "桐生",
+   "races": 1914,
+   "pages": 1914,
+   "parsed": 1914,
+   "matched": 23,
+   "fetched": 0,
+   "fails": 0,
+   "left": 0,
+   "stop": null
+  },
+  "5": {
+   "name": "多摩川",
+   "races": 1778,
+   "pages": 1778,
+   "parsed": 1774,
+   "matched": 1774,
+   "fetched": 0,
+   "fails": 0,
+   "left": 0,
+   "stop": null
+  },
+  "6": {
+   "name": "浜名湖",
+   "races": 1999,
+   "pages": 1999,
+   "parsed": 1999,
+   "matched": 1999,
+   "fetched": 0,
+   "fails": 0,
+   "left": 0,
+   "stop": null
+  },
+  "10": {
+   "name": "三国",
+   "races": 1808,
+   "pages": 1808,
+   "parsed": 1806,
+   "matched": 1806,
+   "fetched": 0,
+   "fails": 0,
+   "left": 0,
+   "stop": null
+  },
+  "11": {
+   "name": "びわこ",
+   "races": 1834,
+   "pages": 1834,
+   "parsed": 1832,
+   "matched": 1832,
+   "fetched": 0,
+   "fails": 0,
+   "left": 0,
+   "stop": null
+  },
+  "13": {
+   "name": "尼崎",
+   "races": 2179,
+   "pages": 2179,
+   "parsed": 2176,
+   "matched": 2176,
+   "fetched": 0,
+   "fails": 0,
+   "left": 0,
+   "stop": null
+  },
+  "16": {
+   "name": "児島",
+   "races": 2140,
+   "pages": 0,
+   "parsed": 0,
+   "matched": 0,
+   "fetched": 40,
+   "fails": 40,
+   "left": 2100,
+   "stop": "サイトに届かない"
+  },
+  "18": {
+   "name": "徳山",
+   "races": 2053,
+   "pages": 2053,
+   "parsed": 2047,
+   "matched": 2047,
+   "fetched": 0,
+   "fails": 0,
+   "left": 0,
+   "stop": null
+  },
+  "22": {
+   "name": "福岡",
+   "races": 1788,
+   "pages": 1788,
+   "parsed": 1788,
+   "matched": 1788,
+   "fetched": 0,
+   "fails": 0,
+   "left": 0,
+   "stop": null
+  }
+ },
+ "used": 13445,
+ "train": 8130,
+ "test": 5315,
  "base": {
   "train": {
-   "n": 979,
-   "ll": 1.2323,
-   "hit": 0.5342,
-   "bets": 112,
-   "roi": 2.4955
+   "n": 8130,
+   "ll": 1.1296,
+   "hit": 0.5948,
+   "bets": 907,
+   "roi": 2.0624
   },
   "test": {
-   "n": 679,
-   "ll": 1.2186,
-   "hit": 0.5582,
-   "bets": 68,
-   "roi": 1.2853
+   "n": 5315,
+   "ll": 1.1208,
+   "hit": 0.5977,
+   "bets": 478,
+   "roi": 2.3452
   }
  },
  "feats": {
   "lap": {
    "name": "一周",
-   "beta": 0.0139,
+   "beta": 0.108,
    "test": {
-    "n": 679,
-    "ll": 1.2149,
-    "hit": 0.5567,
-    "bets": 66,
-    "roi": 1.3758
+    "n": 5315,
+    "ll": 1.1174,
+    "hit": 0.5972,
+    "bets": 441,
+    "roi": 2.3868
    }
   },
   "turn": {
    "name": "まわり足",
-   "beta": 0.0032,
+   "beta": 0.0401,
    "test": {
-    "n": 679,
-    "ll": 1.2184,
-    "hit": 0.5567,
-    "bets": 67,
-    "roi": 1.3045
+    "n": 5315,
+    "ll": 1.1197,
+    "hit": 0.5966,
+    "bets": 464,
+    "roi": 2.4004
    }
   },
   "straight": {
    "name": "直線",
-   "beta": 0.1495,
+   "beta": 0.1205,
    "test": {
-    "n": 679,
-    "ll": 1.2137,
-    "hit": 0.5567,
-    "bets": 72,
-    "roi": 1.5486
+    "n": 5315,
+    "ll": 1.1204,
+    "hit": 0.5966,
+    "bets": 526,
+    "roi": 2.3342
    }
   }
  },
  "all": {
   "beta": {
-   "lap": 0.0132,
-   "turn": -0.0213,
-   "straight": 0.1207
+   "lap": 0.0912,
+   "turn": 0.0056,
+   "straight": 0.1072
   },
   "test": {
-   "n": 679,
-   "ll": 1.212,
-   "hit": 0.5567,
-   "bets": 73,
-   "roi": 1.5274
+   "n": 5315,
+   "ll": 1.1173,
+   "hit": 0.5968,
+   "bets": 466,
+   "roi": 2.3715
   },
   "train": {
-   "n": 979,
-   "ll": 1.2294,
-   "hit": 0.5342,
-   "bets": 103,
-   "roi": 2.5699
+   "n": 8130,
+   "ll": 1.1235,
+   "hit": 0.5977,
+   "bets": 821,
+   "roi": 2.1312
+  }
+ },
+ "perVenue": {
+  "1": {
+   "name": "桐生",
+   "test": 5,
+   "base": {
+    "n": 5,
+    "ll": 1.5379,
+    "hit": 0.4,
+    "bets": 0,
+    "roi": null
+   },
+   "all": {
+    "n": 5,
+    "ll": 1.5608,
+    "hit": 0.4,
+    "bets": 0,
+    "roi": null
+   }
+  },
+  "5": {
+   "name": "多摩川",
+   "test": 732,
+   "base": {
+    "n": 732,
+    "ll": 1.15,
+    "hit": 0.5833,
+    "bets": 64,
+    "roi": 1.6
+   },
+   "all": {
+    "n": 732,
+    "ll": 1.1428,
+    "hit": 0.5833,
+    "bets": 60,
+    "roi": 2.42
+   }
+  },
+  "6": {
+   "name": "浜名湖",
+   "test": 727,
+   "base": {
+    "n": 727,
+    "ll": 1.144,
+    "hit": 0.5901,
+    "bets": 76,
+    "roi": 3.325
+   },
+   "all": {
+    "n": 727,
+    "ll": 1.1356,
+    "hit": 0.5915,
+    "bets": 76,
+    "roi": 3.5368
+   }
+  },
+  "10": {
+   "name": "三国",
+   "test": 733,
+   "base": {
+    "n": 733,
+    "ll": 1.2174,
+    "hit": 0.5634,
+    "bets": 65,
+    "roi": 1.6846
+   },
+   "all": {
+    "n": 733,
+    "ll": 1.2107,
+    "hit": 0.5607,
+    "bets": 68,
+    "roi": 1.7809
+   }
+  },
+  "11": {
+   "name": "びわこ",
+   "test": 725,
+   "base": {
+    "n": 725,
+    "ll": 1.1625,
+    "hit": 0.5862,
+    "bets": 75,
+    "roi": 2.504
+   },
+   "all": {
+    "n": 725,
+    "ll": 1.1672,
+    "hit": 0.5779,
+    "bets": 77,
+    "roi": 2.2351
+   }
+  },
+  "13": {
+   "name": "尼崎",
+   "test": 856,
+   "base": {
+    "n": 856,
+    "ll": 1.0419,
+    "hit": 0.6063,
+    "bets": 68,
+    "roi": 2.3956
+   },
+   "all": {
+    "n": 856,
+    "ll": 1.0394,
+    "hit": 0.6086,
+    "bets": 67,
+    "roi": 1.303
+   }
+  },
+  "16": {
+   "name": "児島",
+   "test": 0,
+   "base": {
+    "n": 0,
+    "ll": null,
+    "hit": null,
+    "bets": 0,
+    "roi": null
+   },
+   "all": {
+    "n": 0,
+    "ll": null,
+    "hit": null,
+    "bets": 0,
+    "roi": null
+   }
+  },
+  "18": {
+   "name": "徳山",
+   "test": 750,
+   "base": {
+    "n": 750,
+    "ll": 1.0921,
+    "hit": 0.6187,
+    "bets": 73,
+    "roi": 2.1589
+   },
+   "all": {
+    "n": 750,
+    "ll": 1.0869,
+    "hit": 0.6187,
+    "bets": 58,
+    "roi": 2.6759
+   }
+  },
+  "22": {
+   "name": "福岡",
+   "test": 787,
+   "base": {
+    "n": 787,
+    "ll": 1.0544,
+    "hit": 0.6328,
+    "bets": 57,
+    "roi": 2.5982
+   },
+   "all": {
+    "n": 787,
+    "ll": 1.0545,
+    "hit": 0.6328,
+    "bets": 60,
+    "roi": 2.59
+   }
   }
  },
  "fullBeta": {
-  "lap": 0.0275,
-  "turn": -0.0335,
-  "straight": 0.1147
+  "lap": 0.0868,
+  "turn": 0.0163,
+  "straight": 0.0893
+ },
+ "debug": {
+  "5": "<!DOCTYPE html>\n<html lang=\"ja\">\n<head>\n  <meta charset=\"utf-8\">\n  <title>BOAT RACE 多摩川</title>\n  <meta name=\"robots\" content=\"noindex,nofollow\">\n  <link rel=\"stylesheet\" href=\"/common_layout/css/color.css?ver=1.0.15\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/resources/assets/css/reset.css?ver=1.0.15\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/resources/assets/css/main.min.css?ver=1.0.15\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/resources/assets/css/common05.css?ver=1.0.15\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/modules/yosou/css/yosou.css?ver=1.0.15\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/modules/yosou/css/oriten.css?ver=1.0.15\" type=\"text/css\">  <!-- <script type=\"text/javascript\" src=\"//code.jquery.com/jquery-3.6.0.min.js\"></script> -->\n  <script src=\"/resources/assets/js/jquery-3.6.0.min.js\"></script>\n</head>\n<body class=\"in_frame_body\">\n    <div class=\"in_iframe\">\n\t<script type=\"text/javascript\" src=\"/modules/yosou/js/iframeLink.js\"></script>\r\n\t<div class=\"yosou-content\">\r\n\t\t<div class=\"category-oriten\">\r\n\t\t\t\t\t\t<table class=\"par-table01 normal\">\n\r\n\t\t\t\t<thead>\n\r\n\t\t\t\t\t<tr>\n\r\n\t\t\t\t\t\t<th class=\"col1 head_waku\" rowspan=\"2\">枠</th>\n\r\n\t\t\t\t\t\t<th class=\"col2 head_player\" rowspan=\"2\"><span class='head_player__toban'>級別/登録番号</span><span class='head_player__racer'>選手名</span><span class='head_player__shibu'>支部/出身地/年齢</span></th>\n\r\n\t\t\t\t\t\t<th class=\"col3\" rowspan=\"2\">体重</th>\n\r\n\t\t\t\t\t\t<th class=\"col4\" rowspan=\"2\">調整</th>\n\r\n\t\t\t\t\t\t<th class=\"col5\" rowspan=\"2\">チルト</th>\n\r\n\t\t\t\t\t\t<th class=\"col6\" rowspan=\"2\">展示</th>\n\r\n\t\t\t\t\t\t<th class=\"col7-9\" colspan=\"3\">オリジナル展示データ</th>\n\r\n\t\t\t\t\t</tr>\n\r\n\t\t\t\t\t<tr>\n\r\n\t\t\t\t\t\t<th class=\"col7\">一周</th>\n\r\n\t\t\t\t\t\t<th class=\"col8\">まわり足</th>\n\r\n\t\t\t\t\t\t<th class=\"col9\">直線</th>\n\r\n\t\t\t\t\t</tr>\n\r\n\t\t\t\t</thead>\n\r\n\t\t\t\t<tbody>\n\r\n\t\t\t\t\t<tr><td class='col1 waku tei_color1 state-missed oriten_missed'>1</td><td class='col2 tei_sub_color1 com-racer-data'><ul class='com-racer-info'><li class='com-toban'>A1/4083</li><li class='com-rname'><a href='https://www.boatrace.jp/owpc/pc/data/racersearch/profile?toban=4083' target='_blank'>福島　　勇樹</a></li><li class='com-subinfo'><span class='u-accent'>欠　場</span></li></ul></td><td class='col3'></td><td class='col4'></td><td class='col5'></td><td class='col6 '></td><td class='col7-9' colspan='3' rowspan='6'>表示するデータがありません</td></tr><tr><td class='col1 waku tei_color2 '>2</td><td class='col2 tei_sub",
+  "10": "<!DOCTYPE html>\n<html lang=\"ja\">\n<head>\n  <meta charset=\"utf-8\">\n  <title>BOAT RACE 三国</title>\n  <meta name=\"robots\" content=\"noindex,nofollow\">\n  <meta name=\"format-detection\" content=\"telephone=no\" />\n  <link rel=\"stylesheet\" href=\"/common_layout/css/color.css?ver=1.0.16\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/resources/assets/css/reset.css?ver=1.0.16\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/resources/assets/css/main.min.css?ver=1.0.16\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/resources/assets/css/common_parts.css?ver=1.0.16\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/resources/assets/css/common10.css?ver=1.0.16\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/modules/yosou/css/yosou.css?ver=1.0.16\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/modules/yosou/css/group-cyokuzen.css?ver=1.0.16\" type=\"text/css\">  <script src=\"/resources/assets/js/jquery-3.6.0.min.js\"></script>\n</head>\n<body class=\"in_frame_body\">\n    <div class=\"in_iframe\">\n<div class =\"yosou-content\">\r\n    <div class=\"js-sub_tabs sub-tabs \">\r\n\t<ul>\r\n\t\t<li class=\"link\" data-kind=\"0\"><a href=\"javascript:void(0)\" data-kind=\"0\" data-day=\"20260904\" data-race=\"7\" >直前情報・予想</a></li>\r\n\t\t<li class=\"link\" data-kind=\"1\"><a href=\"javascript:void(0)\" data-kind=\"1\" data-day=\"20260904\" data-race=\"7\" >スタート展示</a></li>\r\n\t\t<li class=\"link selected\" data-kind=\"2\"><a href=\"javascript:void(0)\" data-kind=\"2\" data-day=\"20260904\" data-race=\"7\" >オリジナル展示データ</a></li>\r\n\t\t<li class=\"link nouryoku_link\" data-kind=\"3\"><a href=\"javascript:void(0)\" data-kind=\"3\" data-day=\"20260904\" data-race=\"7\" >能力指数</a></li>\r\n\t\t\r\n\t\t\r\n\t</ul>\r\n</div>    \t<script type=\"text/javascript\" src=\"/modules/yosou/js/simple-light-box.js\"></script>\r\n\t<div class=\"yosou-content\">\r\n\t\t<div class=\"category-oriten\">\r\n\t\t\t\t\t\t<table class=\"par-table01 oriten\">\n\r\n\t\t\t\t<thead>\n\r\n\t\t\t\t\t<tr>\n\r\n\t\t\t\t\t\t<th class=\"col1 head_waku\" rowspan=\"2\">枠</th>\n\r\n\t\t\t\t\t\t<th class=\"col2 head_player\" rowspan=\"2\"><span class=\"head_player__toban\">級別/登録番号</span><span class=\"head_player__racer\">選手名</span><span class=\"head_player__shibu\">支部/出身地/年齢</span></th>\n\r\n\t\t\t\t\t\t<th class=\"col3\">体重</th>\n\r\n\t\t\t\t\t\t<th class=\"col4\" rowspan=\"2\">チルト</th>\n\r\n\t\t\t\t\t\t<th class=\"col5\" rowspan=\"2\">展示タイム</th>\n\r\n\t\t\t\t\t\t<th class=\"col6\" rowspan=\"2\">一周</th>\n\r\n\t\t\t\t\t\t<th class=\"col7\" rowspan=\"2\">まわり足</th>\n\r\n\t\t\t\t\t\t<th class=\"col8\" rowspan=\"2\">直線</th>\n\r\n\t\t\t\t\t</tr>\n\r\n\t\t\t\t\t<tr>\n\r\n\t\t\t\t\t\t<th class=\"col3\">調整</th>\n\r\n\t\t\t\t\t</tr>\n\r\n\t\t\t\t</thead>\n\r\n\t\t\t",
+  "11": "bs u-mb_20\">\n\t<ul>\n\t\t<li class=\"link\"><a href=\"/modules/yosou/cyokuzen.php?day=20261007&race=8&if=0&kind=0\"><span>直前情報</span></a></li>\n\t\t<li class=\"link\"><a href=\"/modules/yosou/cyokuzen.php?day=20261007&race=8&if=0&kind=1\"><span>スタート展示</span></a></li>\n\t\t<li class=\"link current\"><a href=\"/modules/yosou/cyokuzen.php?day=20261007&race=8&if=0&kind=2\"><span>オリジナル展示</span></a></li>\n\t</ul>\n\t<div class=\"button u-mt_20\"><a class=\"com-button01\" href=\"javascript:void(0)\" style=\"display: inline-block;\" onclick=\"window.open('https://livebb.jlc.ne.jp/bb_top/new_bb/index.php?tpl=11&ymd=2026-10-07&race=8&md=T','BB_window','width=1000,height=685,resizable=yes' );\"><div>展示リプレイ</div></a></div>\n</div>        <div class=\"cyokuzen oriten\">\t<table class=\"com-table01 oriten\">\r\n\t\t<thead>\r\n\t\t\t<tr>\r\n\t\t\t\t<th class=\"col1\" rowspan=\"2\">枠</th>\r\n\t\t\t\t<th class=\"col2\" rowspan=\"2\"><span class=\"racer-data\">登番<br /><span class=\"racer\">選手名</span><br />級別/支部/出身地/年齢</span></th>\r\n\t\t\t\t<th class=\"col3\" >体重</th>\r\n\t\t\t\t<th class=\"col4\" rowspan=\"2\">チルト</th>\r\n\t\t\t\t<th class=\"col5\" rowspan=\"2\">展示</th>\r\n\t\t\t\t<th class=\"col6\" rowspan=\"2\">一周</th>\r\n\t\t\t\t<th class=\"col7\" rowspan=\"2\">まわり足</th>\r\n\t\t\t\t<th class=\"col8\" rowspan=\"2\">直線</th>\r\n\t\t\t</tr>\r\n\t\t\t<tr>\r\n\t\t\t\t<th class=\"col3 sub-head\">調整</th>\r\n\t\t\t</tr>\r\n\t\t</thead>\r\n\t\t<tbody>\r\n\t\t\t\t\t\t\t<tr class=\"odd\">\r\n\t\t\t\t\t<td class=\"col1 imp-num1 waku border-wh\" rowspan=\"2\">1</td>\r\n\t\t\t\t\t<td class=\"col2 racer-num1 com-racer-data border-wh\" rowspan=\"2\"><ul>\r\n\t\t\t\t<li class='com-toban'>4079</li>\r\n\t\t\t\t<li class='com-rname'>出畑　　孝典</li><li class='com-subinfo'>A2/福　岡/福　岡/47</li></ul></td>\r\n\t\t\t\t\t<td class=\"col3 weight\">52.0</td>\r\n\t\t\t\t\t<td class=\"col4\" rowspan=\"2\">0.0</td>\r\n\t\t\t\t\t<td class=\"col5 rank_1\" rowspan=\"2\">6.56</td>\r\n\t\t\t\t\t<td class='col6-8' colspan='3' rowspan='12'>表示するデータがありません</td>\r\n\t\t\t\t</tr>\r\n\t\t\t\t<tr class=\"odd\">\r\n\t\t\t\t\t<td class=\"col3\"></td>\r\n\t\t\t\t</tr>\t\t\t\t<tr class=\"even\">\r\n\t\t\t\t\t<td class=\"col1 imp-num2 waku border-wh\" rowspan=\"2\">2</td>\r\n\t\t\t\t\t<td class=\"col2 racer-num2 com-racer-data border-wh\" rowspan=\"2\"><ul>\r\n\t\t\t\t<li class='com-toban'>3889</li>\r\n\t\t\t\t<li class='com-rname'>須藤　　隆雄</li><li class='com-subinfo'>B1/群　馬/栃　木/51</li></ul></td>\r\n\t\t\t\t\t<td class=\"col3 weight\">54.4</td>\r\n\t\t\t\t\t<td class=\"col4\" rowspan=\"2\">0.0</td>\r\n\t\t\t\t\t<td class=\"col5\" rowspan=\"2\">6.76</td>\r\n\t\t\t\t\t\r\n\t\t\t\t</tr>\r\n\t\t\t\t<tr class=\"even\">\r\n\t\t\t\t\t<td class=\"col3\"></td>\r\n\t\t\t\t</tr>\t\t\t\t<tr class=\"odd\">\r\n\t\t\t\t\t<td class=\"col1 imp-num3 waku border-wh\" rowspan=\"2\">3</td>\r\n\t\t\t\t\t<td class=\"col2 racer-num3 com-racer-data border-wh\" rowspan=\"2\"><ul>\r\n\t\t\t\t<li class='com-toban'>4382</li>\r\n\t\t\t\t<li class='com-rname'>高山　　智至</li><li class='com-subinfo'>B1/滋　賀/京　都/41</li></ul></td>\r\n\t\t\t\t\t<td class=\"col3 weight\">52.1</td>\r\n\t\t\t\t\t<td class=\"col4\" rowspan=\"2\">0.0</td>\r\n\t\t\t\t\t<td class=\"col5\" rowspan=\"2\">6.74</td>\r\n\t\t\t\t\t\r\n\t\t\t\t</tr>\r\n\t\t\t\t<tr class=\"odd\">\r\n\t\t\t\t\t<td class=\"col3\"></td>\r\n\t\t\t\t</tr>\t\t\t\t<tr class=\"even\">\r\n\t\t\t\t\t<td class=\"col1 imp-num4 waku border-wh\" rowspan=\"2\">4</td>\r\n\t\t\t\t\t<td class=\"col2 racer-num4 com-racer-data bord",
+  "13": "<!DOCTYPE html>\n<html lang=\"ja\">\n<head>\n  <meta charset=\"utf-8\">\n  <title>BOAT RACE 尼崎</title>\n  <meta name=\"robots\" content=\"noindex,nofollow\">\n  <meta name=\"format-detection\" content=\"telephone=no\" />\n  <link rel=\"stylesheet\" href=\"/common_layout/css/color.css?ver=1.0.4\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/resources/assets/css/reset.css?ver=1.0.4\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/resources/assets/css/main.min.css?ver=1.0.4\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/resources/assets/css/common_parts.css?ver=1.0.4\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/resources/assets/css/common13.css?ver=1.0.4\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/modules/yosou/css/yosou.css?ver=1.0.4\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/modules/yosou/css/group-syussou.css?ver=1.0.4\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/modules/yosou/css/group-odds-result.css?ver=1.0.4\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/modules/yosou/css/tokuhayami.css?ver=1.0.4\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/modules/yosou/css/waku10.css?ver=1.0.4\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/modules/yosou/css/group-cyokuzen.css?ver=1.0.4\" type=\"text/css\">  <script src=\"/resources/assets/js/jquery-3.6.0.min.js\"></script>\n</head>\n<body class=\"in_frame_body\">\n    <div class=\"in_iframe\">\n<div class =\"yosou-content\">\r\n    <div class=\"js-sub_tabs sub-tabs has_replaybtn\">\r\n\t<ul>\r\n\t\t<li class=\"link\" data-kind=\"0\"><a href=\"javascript:void(0)\" data-kind=\"0\" data-day=\"20260908\" data-race=\"8\" >直前情報</a></li>\r\n\t\t<li class=\"link\" data-kind=\"1\"><a href=\"javascript:void(0)\" data-kind=\"1\" data-day=\"20260908\" data-race=\"8\" >スタート展示</a></li>\r\n\t\t<li class=\"link selected\" data-kind=\"2\"><a href=\"javascript:void(0)\" data-kind=\"2\" data-day=\"20260908\" data-race=\"8\" >オリジナル展示データ</a></li>\r\n\t\t<li class=\"link nouryoku_link\" data-kind=\"3\"><a href=\"javascript:void(0)\" data-kind=\"3\" data-day=\"20260908\" data-race=\"8\" >能力指数</a></li>\r\n\t\t<div class=\"tenji_button\"><a href=\"javascript:void(0)\" class=\"par-btn02 red-btn\" onclick=\"window.open('https://livebb.jlc.ne.jp/bb_top/new_bb/index.php?tpl=13&ymd=2026-09-08&race=8&md=T','BB_window','width=1000,height=685,resizable=yes' );\">展示リプレイ</a></div>\r\n\t</ul>\r\n</div>    \t<script type=\"text/javascript\" src=\"/modules/yosou/js/simple-light-box.js\"></script>\r\n\t<div class=\"yosou-content\">\r\n\t\t<div class=\"category-oriten\">\r\n\t\t\t\t\t\t<table class=\"par-table01 \">\n\r",
+  "18": "<!DOCTYPE html>\n<html lang=\"ja\">\n<head>\n  <meta charset=\"utf-8\">\n  <title>BOAT RACE 徳山</title>\n  <meta name=\"robots\" content=\"noindex,nofollow\">\n  <link rel=\"stylesheet\" href=\"/themes/tokuyama/css/reset.css?ver=1.0.8\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/common_layout/css/color.css?ver=1.0.8\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/themes/tokuyama/css/common18.css?ver=1.0.8\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/modules/yosou/css/yosou.css?ver=1.0.8\" type=\"text/css\">\n  <link rel=\"stylesheet\" href=\"/modules/yosou/css/tenji.css?ver=1.0.8\" type=\"text/css\">  <script type=\"text/javascript\" src=\"//code.jquery.com/jquery-3.4.1.min.js\"></script>\n</head>\n<body class=\"in_frame_body\">\n    <div class=\"in_iframe\">\n\t\t<div class=\"yosou-content\">\r\n\t\t\t<div class=\"category-tenji\">\r\n\t\t\t\t<script src=\"/modules/yosou/js/iframeLink.js\"></script><div class=\"cyokuzen jyoho\">\t\t\t<div class=\"cyokuzen_block\">\r\n\t\t\t\t<div class=\"block_1\">\r\n\t\t\t\t\t<table class=\"c_table group cyokuzen tbl_1\">\r\n\t\t\t\t\t\t<thead>\r\n\t\t\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t\t\t<th class='col1' rowspan='3'>気<br>配</th>\r\n\t\t\t\t\t\t\t\t<th class='col2 head_waku' rowspan='3'>枠</th>\r\n\t\t\t\t\t\t\t\t<th class ='col3 head_player' rowspan='3'><span class='head_player__toban'>級別/登録番号</span><span class='head_player__racer'>選手名</span><span class='head_player__shibu'>支部/出身地/年齢</span></th>\r\n\t\t\t\t\t\t\t\t<th class=\"col4\" rowspan=\"2\">体重</th>\r\n\t\t\t\t\t\t\t\t<th class=\"col5 adjustment\" rowspan=\"2\">調整</th>\r\n\t\t\t\t\t\t\t\t<th class=\"col6\" colspan=\"2\">モーター</th>\r\n\t\t\t\t\t\t\t\t<th class=\"col7\" rowspan=\"2\">チルト</th>\r\n\t\t\t\t\t\t\t\t<th class=\"col8\" rowspan=\"3\">展示<br>タイム</th>\r\n\t\t\t\t\t\t\t\t<th class=\"col9\" rowspan=\"3\">一周</th>\r\n\t\t\t\t\t\t\t\t<th class=\"col10\" rowspan=\"3\">まわ<br>り足</th>\r\n\t\t\t\t\t\t\t\t<th class=\"col11\" colspan=\"4\">前走成績</th>\r\n\t\t\t\t\t\t\t</tr>\r\n\t\t\t\t\t\t\t<tr>\t\t\t\t\t\t\t\r\n\t\t\t\t\t\t\t\t<th class=\"col6_1\">番号</th>\r\n\t\t\t\t\t\t\t\t<th class=\"col6_2\">2連対率</th>\r\n\t\t\t\t\t\t\t\t<th class=\"col11_1\" rowspan=\"2\">レース</th>\r\n\t\t\t\t\t\t\t\t<th class=\"col11_2\" rowspan=\"2\">コース</th>\r\n\t\t\t\t\t\t\t\t<th class=\"col11_3\" rowspan=\"2\">ST</th>\r\n\t\t\t\t\t\t\t\t<th class=\"col11_4\" rowspan=\"2\">着<br>順</th>\r\n\t\t\t\t\t\t\t</tr>\r\n\t\t\t\t\t\t\t<tr>\r\n\t\t\t\t\t\t\t\t<th class=\"col11\" colspan=\"5\">部品交換</th>\r\n\t\t\t\t\t\t\t</tr>\r\n\t\t\t\t\t\t</thead>\r\n\t\t\t\t\t\t\t<tbody>\r\n\t\t\t\t\t\t\t\t\t\t\t\t<tr>\r\n\t\t\t\t\t<td class=\"col1 \" rowspan=\"2\">B</td>\r\n\t\t\t\t\t<td class=\"col2 tei_color1 waku\" rowspan=\"2\">1</td>\r\n\t\t\t\t\t<td class=\"col4 tei_sub_color1 com-racer-data\" rowspan=\"2\"><ul class='com-racer-info'><li class='com-toban'>A2/3951</li><li class='com-rname'><a href='https://www.boatrace.jp/owpc/pc/data/racersea",
+  "1x": "{\"d\":\"2026-10-18\",\"r\":1,\"page\":[6.69,6.66,6.66,6.69,0.02,0.09],\"tm\":[6.83,6.66,6.69,6.66,6.66,6.69]}"
  }
 }
