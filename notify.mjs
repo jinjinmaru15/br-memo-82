@@ -2,7 +2,7 @@
 //
 // watch.yml から LOOP_MINUTES=55 で起動すると、55分間見続けて、次の実行に引き継ぐ。
 //
-// 締切前と締切直後に公式サイトのオッズを読んで、合言葉-odds のトピックに3分おきにまとめて送る
+// 締切前と締切直後に公式サイトのオッズを読んで、合言葉-odds のトピックに5分おきにまとめて送る
 // （アプリが読み、record.mjs が1日3回キャッシュにためて集計する。ntfy は12時間で消える）
 //   締切7分前・3分半前：単勝だけ
 //   締切2分前・1分前・30秒前：単勝と3連単
@@ -29,7 +29,7 @@ const TARGETS = [
   {m: -2, tri: true, win: 6, fin: true}
 ];
 const API_EVERY = 2 * 60e3;      // レースデータを取り直す間隔
-const ODDS_PUB_EVERY = 3 * 60e3; // オッズを送る間隔（ntfy は1日の通数に上限がある）
+const ODDS_PUB_EVERY = 5 * 60e3; // オッズを送る間隔（ntfy は1日250通まで）
 const GAP = 1000;                // 公式サイトへは1秒に1回まで
 const LOOP_MIN = +(process.env.LOOP_MINUTES || 0);
 
@@ -164,54 +164,57 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
   }
 
   // 今読むべきもの：締切が近いほど先に（締切後の分は最後）
-  function dueList(){
+  function nextJob(){
     const now = clock(), out = [];
     for (const r of races || []){
-      if (!r.closedAt || !r.hasPreview) continue;
+      if (!r.closedAt) continue;
       const left = (r.closedAt - now) / 60000;
-      const st = done.get(r.key) || {i: 0, retry: 0};
-      for (let i = st.i; i < TARGETS.length; i++){
-        const T = TARGETS[i];
+      const st = done.get(r.key) || {i: 0, retry: 0, wait: 0};
+      done.set(r.key, st);
+      if (st.wait && now < st.wait) continue;
+      while (st.i < TARGETS.length){
+        const T = TARGETS[st.i];
         if (left > T.m) break;
-        if (left < T.m - T.win){ st.i = i + 1; continue; }   // 間に合わなかった
-        out.push({r, i, T, left, st});
+        if (left < T.m - T.win){ st.i++; st.retry = 0; continue; }   // 間に合わなかった
+        out.push({r, T, st});
         break;
       }
-      done.set(r.key, st);
     }
-    return out.sort((x, y) => (x.T.fin ? 1 : 0) - (y.T.fin ? 1 : 0) || x.T.m - y.T.m || x.r.closedAt - y.r.closedAt);
+    out.sort((x, y) => (x.T.fin ? 1 : 0) - (y.T.fin ? 1 : 0) || x.T.m - y.T.m || x.r.closedAt - y.r.closedAt);
+    return out[0] || null;
   }
   // 次に何かを読むべき時刻
   function nextAt(){
     let best = Infinity;
     for (const r of races || []){
-      if (!r.closedAt || !r.hasPreview) continue;
-      const st = done.get(r.key) || {i: 0};
+      if (!r.closedAt) continue;
+      const st = done.get(r.key) || {i: 0, wait: 0};
       const T = TARGETS[st.i];
-      if (T) best = Math.min(best, r.closedAt - T.m * 60000);
+      if (T) best = Math.min(best, Math.max(r.closedAt - T.m * 60000, st.wait || 0));
     }
     return best;
   }
 
-  async function snap(job){
-    const {r, i, T, st} = job;
+  async function snap({r, T, st}){
     const left = (r.closedAt - clock()) / 60000;
     const wp = await getPage("oddstf", r);
     const w = parseWinOdds(wp), u = oddsTime(wp);
+    // 締切後に読んで、まだ締切時のオッズになっていなければ1分半後にもう一度（2回まで）
+    if (T.fin && u !== "締切" && st.retry < 2){ st.retry++; st.wait = clock() + 90e3; return; }
     let q = null, uq = null;
     if (T.tri){
       const tp = await getPage("odds3t", r);
       q = winProbFromTri(parseTrifecta(tp)); uq = oddsTime(tp);
       if (q) triOK++;
     }
-    // 締切後に読んで、まだ締切時のオッズになっていなければ2分後にもう一度
-    if (T.fin && u !== "締切" && st.retry < 1){ st.retry++; st.i = i; T.retryAt = clock() + 2 * 60e3; job.later = true; }
-    if (!w){ if (!job.later) st.i = i + 1; return; }
-    if (job.later && T.fin){ st.i = i; st.wait = clock() + 2 * 60e3; return; }
-    st.i = i + 1;
-    if (M.formFor && stats && !r.form) r.form = M.formFor(r, stats, races);
-    const pr = M.predict(r, s, M.slitAlerts(r, s), false, stats);
-    const e = {k: r.key, w: Object.fromEntries(w), t: hms(clock()), m: +left.toFixed(2), p: Object.fromEntries(pr.F.map(f => [f.b.no, +f.p1.toFixed(3)]))};
+    st.i++; st.retry = 0; st.wait = 0;
+    if (!w) return;
+    const e = {k: r.key, w: Object.fromEntries(w), t: hms(clock()), m: +left.toFixed(2)};
+    if (r.hasPreview){
+      if (M.formFor && stats && !r.form) r.form = M.formFor(r, stats, races);
+      const pr = M.predict(r, s, M.slitAlerts(r, s), false, stats);
+      e.p = Object.fromEntries(pr.F.map(f => [f.b.no, +f.p1.toFixed(3)]));
+    }
     if (u) e.u = u;
     if (q){ e.q = q; if (uq && uq !== u) e.uq = uq; }
     pending.push(e);
@@ -221,24 +224,17 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
   while (true){
     if (clock() - lastApi >= API_EVERY){
       const x = await loadRaces();
-      if (x){
-        // 読み直しても、どこまで読んだかは引き継ぐ
-        races = x;
-      }
+      if (x) races = x;   // どこまで読んだかはレースの番号ごとに覚えているので、読み直しても続きから
       lastApi = clock();
     }
-    for (const job of dueList()){
-      const st = job.st;
-      if (st.wait && clock() < st.wait) continue;
-      await snap(job);
-    }
+    // 1件ずつ、そのつど一番急ぐものを選んで読む
+    for (let job; (job = nextJob()); ) await snap(job);
     if (clock() - lastPub >= ODDS_PUB_EVERY) await flushOdds();
 
-    const elapsed = clock() - t0;
-    const allDone = races && races.length && races.every(r => !r.closedAt || r.closedAt + 8 * 60e3 <= clock());
+    const allDone = races && races.length && races.every(r => !r.closedAt || +r.closedAt + 8 * 60e3 <= clock());
     if (allDone){ console.log("今日のレースは全部終わりました"); break; }
-    if (elapsed >= LOOP_MIN * 60e3) break;
-    // 次に読む時刻まで待つ（最長20秒・API の読み直しにも間に合うように）
+    if (clock() - t0 >= LOOP_MIN * 60e3) break;
+    // 次に読む時刻まで待つ（最長20秒）
     const until = Math.min(nextAt(), lastApi + API_EVERY, lastPub + ODDS_PUB_EVERY, t0 + LOOP_MIN * 60e3);
     await wait(Math.max(300, Math.min(20e3, until - clock())));
   }
