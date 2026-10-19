@@ -19,7 +19,7 @@ const BANDS = [[1, 3], [3, 6], [6, 10], [10, 20], [20, 1e9]];
 const html = fs.readFileSync("index.html", "utf8");
 const ia = html.indexOf("/* ---------- 定数 ---------- */"), ib = html.indexOf("/* ---------- 状態 ---------- */");
 if (ia < 0 || ib < 0) throw new Error("index.html から判定コードを見つけられませんでした");
-const M = new Function(html.slice(ia, ib) + "\nreturn {parseV1, predict, slitAlerts, prepStats, oddsOf, DEFAULTS, PAYKEY, formFromList: typeof formFromList === 'function' ? formFromList : null};")();
+const M = new Function(html.slice(ia, ib) + "\nreturn {parseV1, predict, slitAlerts, prepStats, oddsOf, DEFAULTS, PAYKEY, impliedWin: typeof impliedWin === 'function' ? impliedWin : null, formFromList: typeof formFromList === 'function' ? formFromList : null};")();
 
 const addDays = (d, n) => { const t = new Date(d + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
 const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
@@ -94,7 +94,7 @@ export async function main(fetcher = fetch){
   await Promise.all([worker(), worker(), worker(), worker()]);
 
   const s = {...M.DEFAULTS, w: {...M.DEFAULTS.w}};
-  const cand = [], alertAll = [], alertEV = [];
+  const cand = [], alertAll = [], alertEV = [], finalWin = [];
   // 信頼度（◎の1着率）ごとの成績：アプリの「信頼度」と同じ区切り
   const CONF = [[0.65, "高"], [0.5, "中"], [0.35, "低"], [0, "混戦"]];
   const z = () => ({n: 0, hit: 0, ret: 0});
@@ -137,12 +137,20 @@ export async function main(fetcher = fetch){
           const p = (r.result.payouts[M.PAYKEY[t]] || []).find(x => String(x.combination) === comb);
           return p ? (+p.amount || 0) : 0;
         };
+        // 単勝は、買う前に見えるオッズ（3連単から推定）で選び、実際の払戻で数える
+        // （確定の単勝オッズで選ぶと200%近く出るが、買う時点では確定オッズはわからないので参考だけ）
+        const iw = M.impliedWin ? M.impliedWin(r.odds, pr.F.map(f => f.b.no)) : null;
+        const winOd = no => iw ? iw[no] || null : null;
         const add = (t, c, p) => {
           if (p < GRID_P[0]) return;
-          const od = M.oddsOf(r.odds, t, c);
+          const od = t === "win" ? winOd(c[0]) : M.oddsOf(r.odds, t, c);
           if (!od || p * od < GRID_EV[0]) return;
           cand.push({t, p, od, ev: p * od, pay: payOf(t, c), m: mon});
         };
+        for (const f of pr.F){
+          const od = M.oddsOf(r.odds, "win", [f.b.no]);
+          if (od && f.p1 >= MAIN.minP && f.p1 * od >= MAIN.ev) finalWin.push({p: f.p1, od, pay: payOf("win", [f.b.no])});
+        }
         pr.F.forEach(f => add("win", [f.b.no], f.p1));
         pr.exAll.forEach(x => add("ex", x.c, x.p));
         pr.triAll.forEach(x => add("tri", x.c, x.p));
@@ -153,7 +161,7 @@ export async function main(fetcher = fetch){
         C.races++;
         put(C.top, 1, pr.top.b.no === win ? payOf("win", [win]) : 0);
         for (const f of pr.F){
-          const od = M.oddsOf(r.odds, "win", [f.b.no]);
+          const od = winOd(f.b.no);
           if (od && f.p1 >= MAIN.minP && f.p1 * od >= MAIN.ev) put(C.rec, 1, f.b.no === win ? payOf("win", [win]) : 0);
         }
         const e1 = pr.exAll[0];
@@ -165,7 +173,7 @@ export async function main(fetcher = fetch){
         for (const a of alerts){
           if (a.type !== "nobi" || a.level !== 2) continue;
           const f = pr.F.find(g => g.b.no === a.boat);
-          const od = M.oddsOf(r.odds, "win", [a.boat]);
+          const od = winOd(a.boat);
           if (!f || !od) continue;
           const x = {p: f.p1, od, pay: payOf("win", [a.boat])};
           alertAll.push(x);
@@ -178,9 +186,9 @@ export async function main(fetcher = fetch){
   const pick = (t, ev, minP) => cand.filter(x => x.t === t && x.ev >= ev - 1e-9 && x.p >= minP - 1e-9);
   const main = pick("win", MAIN.ev, MAIN.minP);
   const out = {
-    v: 1, built: today, from: START, to: lastDay, races: N, oddsRaces,
+    v: 2, sel: "tri", built: today, from: START, to: lastDay, races: N, oddsRaces,
     base: {hit1: N ? hit1 / N : 0, c1Win: N ? c1Win / N : 0, ll: N ? ll / N : 0, llBase: N ? llBase / N : 0, bins},
-    main: {...MAIN, win: agg(main)},
+    main: {...MAIN, win: agg(main), finalWin: agg(finalWin)},
     grid: GRID_EV.flatMap(ev => GRID_P.map(minP => ({ev, minP, win: agg(pick("win", ev, minP)), ex: agg(pick("ex", ev, minP)), tri: agg(pick("tri", ev, minP))}))),
     monthly: months.map(m => ({m, ...perMonth[m], ...agg(main.filter(x => x.m === m))})),
     bands: BANDS.map(([from, to]) => ({from, to, ...agg(main.filter(x => x.od >= from && x.od < to))})),

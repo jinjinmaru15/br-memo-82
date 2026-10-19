@@ -45,7 +45,12 @@ const isTest = process.env.GITHUB_EVENT_NAME === "workflow_dispatch";
 const line = p => Math.ceil(BUY_EV / p * 10) / 10;
 const circ = s => [...String(s)].map(ch => CIRCLED.indexOf(ch)).filter(n => n > 0);
 
+// 通知（予告・買い・見送り・スリットアラート）は止めている（2026-10-19）。
+// 締切前の単勝オッズは投票が少なく当てにならず、買う前に見えるオッズで検証すると回収率は約75%だったため。
+// オッズの記録（合言葉-odds）は続ける。もう一度通知したいときは SEND_ALERTS=1
+const ALERTS = process.env.SEND_ALERTS === "1";
 async function publish(title, message, priority = 4, topic = TOPIC, extra = {}){
+  if (topic === TOPIC && !ALERTS){ console.log(`（通知は止めています）${title}`); return true; }
   const body = {topic, title, message, priority, ...extra};
   if (topic === TOPIC){ body.tags = ["motorboat"]; if (site) body.click = site; }
   try {

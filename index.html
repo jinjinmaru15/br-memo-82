@@ -397,21 +397,21 @@ table.tk-t2 td.tot small{display:inline;font-size:12px}
     <div class="srow"><label for="s-w-trait">選手の特徴<small>まくり屋・ST安定・当地成績など</small></label><output id="o-w-trait"></output><input type="range" id="s-w-trait" min="0" max="2.5" step="0.25"></div>
     <div class="srow"><label for="s-w-form">今節の調子<small>同じ場で6日以内の着順</small></label><output id="o-w-form"></output><input type="range" id="s-w-form" min="0" max="2.5" step="0.25"></div>
     <div class="hr"></div>
-    <h2>買い候補の条件（単勝）</h2>
+    <h2>期待値の条件（単勝・参考）</h2>
     <div class="srow">
       <label for="s-ev">期待値<small>1着率 × オッズ</small></label><output id="o-ev"></output>
       <input type="range" id="s-ev" min="1" max="3" step="0.1">
-      <p>1.00を超えると、予想の確率どおりなら長い目で見てプラスです。締切までにオッズが下がることに備えて、2.0がおすすめです。</p>
+      <p>単勝は締切前の投票がとても少なく、締切でオッズが大きく下がります。買う前に見えるオッズ（投票の多い3連単から推定）で検証すると回収率は約75%で、期待値で選んでも長期で勝てる根拠は見つかっていません。目安として表示しています。</p>
     </div>
     <div class="srow">
       <label for="s-minp">1着率</label><output id="o-minp"></output>
       <input type="range" id="s-minp" min="1" max="30" step="1">
-      <p>1着率がこれより低い大穴は、期待値が高くても候補に入れません。おすすめは10%です。</p>
+      <p>1着率がこれより低い大穴は、期待値が高くても表示しません。</p>
     </div>
     <div class="srow">
       <label for="s-topic">通知の合言葉<small>ntfyのトピック名</small></label>
       <input type="text" id="s-topic" class="tin" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="例：srad-xxxxxxxxxx">
-      <p>入れておくと、通知の仕組みが締切前に見に行った単勝オッズがアプリにも届き、今日のレースの買い候補が出ます。ホーム画面のアプリとSafariでは別々に入れてください。</p>
+      <p>入れておくと、見張りの仕組みが締切前に見に行った単勝オッズがアプリにも届きます（通知は止めています）。ホーム画面のアプリとSafariでは別々に入れてください。</p>
     </div>
     <div class="hr"></div>
     <h2>アラートと候補のしきい値</h2>
@@ -450,7 +450,7 @@ table.tk-t2 td.tot small{display:inline;font-size:12px}
 <div class="bar">
   <div class="gut">
     <div class="tabs" role="tablist" aria-label="表示するレース">
-      <button class="tab" role="tab" data-tab="value" type="button"><span class="n" id="n-value">0</span>買い候補</button>
+      <button class="tab" role="tab" data-tab="value" type="button"><span class="n" id="n-value">0</span>期待値</button>
       <button class="tab" role="tab" data-tab="alert" type="button"><span class="n" id="n-alert">0</span>スリット</button>
       <button class="tab" role="tab" data-tab="honmei" type="button"><span class="n" id="n-honmei">0</span>鉄板</button>
       <button class="tab" role="tab" data-tab="ana" type="button"><span class="n" id="n-ana">0</span>穴</button>
@@ -775,8 +775,7 @@ async function loadDay(date){
     races.forEach(r => { if (!r.odds && m.has(r.key)){ r.odds = m.get(r.key); r.oddsLabel = "オッズ"; } });
   }
   const live = await liveP;
-  // 締切1分半前より前のオッズは「予告」（通知も1分半前に最終判断する）
-  races.forEach(r => { const x = live.get(r.key); if (!r.odds && x){ r.odds = {win: x.win}; r.oddsLabel = x.m != null && x.m > 1.85 ? `予告：${x.at}時点のオッズ` : `${x.at}時点のオッズ`; } });
+  races.forEach(r => { const x = live.get(r.key); if (!r.odds && x){ r.odds = {win: x.win}; r.oddsLabel = x.m != null ? `締切${x.m.toFixed(1)}分前（${x.at}）のオッズ` : `${x.at}時点のオッズ`; } });
   state.liveOdds = {date, status: live.status, n: live.size, at: [...live.values()].reduce((m, x) => x.at > m ? x.at : m, "")};
   return races;
 }
@@ -1238,6 +1237,21 @@ function oddsOf(o, t, c){
   return x > 0 ? x : null;
 }
 
+// 3連単のオッズから「買う人たちが見ている1着の確率」を出して、単勝オッズに直す（還元率75%）
+// 単勝は締切前の投票がとても少なく、締切で大きく動くので当てにならない。3連単は投票が多く、締切前でもほぼ動かない
+// 検証はこれで選ぶ（確定の単勝オッズで選ぶのは、買う時点ではできない）
+function impliedWin(o, nos){
+  if (!o || !o.trifecta) return null;
+  const q = {}; let tot = 0, cnt = 0;
+  for (const a of nos) for (const b of nos) for (const c of nos){
+    if (a === b || b === c || a === c) continue;
+    const od = oddsOf(o, "tri", [a, b, c]);
+    if (od > 0){ q[a] = (q[a] || 0) + 1 / od; tot += 1 / od; cnt++; }
+  }
+  if (cnt < 60 || !tot) return null;
+  return Object.fromEntries(nos.filter(n => q[n] > 0).map(n => [n, +(0.75 * tot / q[n]).toFixed(1)]));
+}
+
 function valueBets(r, pr, s){
   if (!r.odds) return [];
   const out = [], minP = s.minP / 100;
@@ -1294,7 +1308,9 @@ function evaluate(data, s, stats){
     pr.F.forEach(f => { const bi = Math.min(4, Math.floor(f.p1 * 5)); bins[bi].n++; bins[bi].p += f.p1; if (f.b.no === win) bins[bi].w++; });
     if (r.odds){
       oddsN++;
-      for (const v of valueBets(r, pr, s)){
+      // 買う艇は3連単から推定した単勝オッズで選ぶ（確定の単勝オッズは買う時点ではわからない）
+      const iw = impliedWin(r.odds, pr.F.map(f => f.b.no));
+      for (const v of (iw ? valueBets({...r, odds: {...r.odds, win: iw}}, pr, s) : [])){
         const st = ev[v.t]; st.n++;
         const pay = payOf(r, v.t, v.c);
         if (pay){ st.hit++; st.ret += pay; }
@@ -1396,7 +1412,7 @@ function badgeHTML(r, an){
   an.alerts.filter(a => a.type === "attack").forEach(a => out.push(`<span class="bdg alert">${bn(a.boat)}ST攻め・${a.tactic} <span class="num">+${f2(a.diff).slice(1)}</span>${a.fHolder ? " F持ち" : ""}</span>`));
   an.alerts.filter(a => a.type === "dent").forEach(a => out.push(`<span class="bdg alert">${bn(a.boat)}ST凹み → ${bn(a.next)}に展開</span>`));
   an.alerts.filter(a => a.type === "exf").forEach(a => out.push(`<span class="bdg mute">${bn(a.boat)}展示F<span class="num">.${String(Math.round(a.diff * 100)).padStart(2, "0")}</span>（点数に入れない）</span>`));
-  if (an.isValue) out.push(`<span class="bdg val">買い候補 ${an.value.map(x => bn(x.c[0])).join("")}単勝</span>`);
+  if (an.isValue) out.push(`<span class="bdg val">期待値 ${an.value.map(x => bn(x.c[0])).join("")}単勝</span>`);
   if (an.isHonmei) out.push(`<span class="bdg solid">鉄板 ${bn(an.top.b.no)}<span class="num">${pct(an.top.p1)}%</span></span>`);
   if (an.isAna) out.push(`<span class="bdg ana">穴 1コース<span class="num">${pct(an.c1.p1)}%</span></span>`);
   if (r.result){
@@ -1407,7 +1423,7 @@ function badgeHTML(r, an){
 }
 
 const lineOf = p => Math.ceil(settings.ev / p * 10) / 10;
-// このレースの結論：信頼度（◎がそのまま勝つ確率）と推奨の買い目
+// このレースの結論：信頼度（◎がそのまま勝つ確率）・期待値（参考）・軸と消し・当てにいく買い目
 // 1〜10月の4万4千レースで、◎の1着率の予想と実際はほぼ一致（例：予想60%→実際60.5%、予想75%→実際74%）
 const AXIS_P = 0.85, CUT_P = 0.15;
 const AXIS_NOTE = "7〜10月の検証：軸は90%で3着以内、消しも10回に1回は3着以内に来た。軸から消しを抜いて3連複を買っても回収率76%（マイナス）なので、点数を絞る目安に";
@@ -1416,16 +1432,16 @@ function verdictHTML(r, an){
   if (!r.hasPreview && !r.odds) return "";
   const top = an.top, cf = CONF.find(([t]) => top.p1 >= t);
   const won = r.result ? r.result.order : null;
-  // 推奨（期待値で選ぶ単勝。長期検証でプラスだったのはこれだけ）
+  // 期待値（単勝）。締切前の単勝オッズは投票が少なく当てにならず、長期で勝てる根拠もないので参考だけ
   let rec;
+  const REC_NOTE = "締切前の単勝は投票が少なく、締切でオッズが大きく下がるので参考まで";
   if (an.value.length){
-    const pre = /^予告/.test(r.oddsLabel || "");
     const res = won ? (an.value.some(x => x.c[0] === won[0]) ? `<em class="hit">的中</em>` : `<em class="miss">ハズレ</em>`) : "";
-    rec = `<div class="vd-rec go"><span class="vd-k">推奨</span><span class="vd-v">${an.value.map(x => `単勝 ${chip(x.c[0])}<small>${lineOf(x.p).toFixed(1)}倍以上なら</small>`).join(" ")}${res}</span>${pre ? `<span class="vd-n">予告の段階です。1分半前のオッズで最終判断します</span>` : ""}</div>`;
+    rec = `<div class="vd-rec"><span class="vd-k">期待値</span><span class="vd-v">${an.value.map(x => `単勝 ${chip(x.c[0])}<small>${lineOf(x.p).toFixed(1)}倍以上なら${settings.ev.toFixed(1)}超</small>`).join(" ")}${res}</span><span class="vd-n">${REC_NOTE}</span></div>`;
   } else if (r.odds){
-    rec = `<div class="vd-rec"><span class="vd-k">推奨</span><span class="vd-v">見送り</span><span class="vd-n">${esc(r.oddsLabel || "オッズ")}では、期待値${settings.ev.toFixed(1)}以上の艇がありません</span></div>`;
+    rec = `<div class="vd-rec"><span class="vd-k">期待値</span><span class="vd-v">高い艇なし</span><span class="vd-n">${esc(r.oddsLabel || "オッズ")}では、期待値${settings.ev.toFixed(1)}以上の艇がありません</span></div>`;
   } else {
-    rec = `<div class="vd-rec"><span class="vd-k">推奨</span><span class="vd-v">オッズ待ち</span><span class="vd-n">締切7分前ごろから判定します。下の「単勝の買いライン」以上のオッズなら買い候補です</span></div>`;
+    rec = `<div class="vd-rec"><span class="vd-k">期待値</span><span class="vd-v">オッズ待ち</span><span class="vd-n">締切7分前ごろからオッズが入ります</span></div>`;
   }
   // 参考：当てにいく買い目（2連単1点・3連単は確率の高い順に合計25%まで最大5点）
   const ex = an.exAll[0];
@@ -1455,9 +1471,9 @@ function valueHTML(r, an){
   if (!an.value.length) return buyLineHTML(r, an);
   const won = r.result ? r.result.order[0] : null;
   const rows = an.value.map(x => `<div class="vrow"><span class="k">${chip(x.c[0])}</span><span class="vt">単勝${won != null ? (won === x.c[0] ? " 的中" : " ハズレ") : ""}</span><span class="vp num">1着率 ${pct(x.p)}%</span><span class="vo num">${x.od.toFixed(1)}倍</span><span class="ve num">${x.ev.toFixed(2)}</span></div>
-      <div class="vline">買いライン <b>${lineOf(x.p).toFixed(1)}倍以上</b></div>`).join("");
+      <div class="vline">期待値${settings.ev.toFixed(1)}のライン <b>${lineOf(x.p).toFixed(1)}倍以上</b></div>`).join("");
   return `<div class="vblock">
-    <div class="probs-h"><span>買い候補（${esc(r.oddsLabel || "オッズ")}）</span><span>期待値</span></div>
+    <div class="probs-h"><span>期待値が高い艇（${esc(r.oddsLabel || "オッズ")}・参考）</span><span>期待値</span></div>
     ${rows}
   </div>`;
 }
@@ -1465,8 +1481,8 @@ function buyLineHTML(r, an){
   if (!r.hasPreview && !r.odds) return "";
   const list = [...an.F].filter(f => f.p1 * 100 >= settings.minP).sort((a, b) => b.p1 - a.p1);
   if (!list.length) return "";
-  const msg = r.odds ? `${esc(r.oddsLabel || "オッズ")}では条件を満たす艇はありません。` : "オッズを見て、この倍率以上なら単勝の買い候補です。";
-  return `<div class="bline"><span class="bl-h">単勝の買いライン</span><span class="bl-l">${list.map(f => `<span>${chip(f.b.no)}<b class="num">${lineOf(f.p1).toFixed(1)}</b>倍〜</span>`).join("")}</span><span class="note">${msg}</span></div>`;
+  const msg = r.odds ? `${esc(r.oddsLabel || "オッズ")}では条件を満たす艇はありません。` : `この倍率以上なら期待値${settings.ev.toFixed(1)}以上（締切前の単勝オッズは当てにならないので参考）。`;
+  return `<div class="bline"><span class="bl-h">単勝の期待値ライン</span><span class="bl-l">${list.map(f => `<span>${chip(f.b.no)}<b class="num">${lineOf(f.p1).toFixed(1)}</b>倍〜</span>`).join("")}</span><span class="note">${msg}</span></div>`;
 }
 
 function probsHTML(r, an){
@@ -1717,7 +1733,7 @@ function combosHTML(r, an){
       ${groups.map(([t, list]) => `<div class="cgrp">${TYPES[t]}</div>` + list.map(x => row(t, x)).join("")).join("")}
     </div>
     <p class="note">${has
-      ? `${esc(r.oddsLabel)}で計算しています。期待値が${settings.ev.toFixed(2)}以上なら緑になります。2連単・3連単は長期検証でマイナスだったので、買い候補には入れていません。`
+      ? `${esc(r.oddsLabel)}で計算しています。期待値が${settings.ev.toFixed(2)}以上なら緑になります。期待値で選んでも、長期でプラスになる根拠は見つかっていません（参考）。`
       : `オッズの欄に実際のオッズを入れると期待値を計算します。${settings.ev.toFixed(2)}以上で緑になります。「損益ゼロ」はこれ以上のオッズなら期待値プラスになる目安です。`}</p>
     <div class="links note">公式のオッズ：
       <a href="${oddsLink(r, "oddstf")}" target="_blank" rel="noopener">単勝</a>
@@ -1785,7 +1801,7 @@ function oddsStatusHTML(){
   const L = state.liveOdds;
   if (!L || L.date !== state.date || state.date !== jstNowDate() || state.mode === "sample") return "";
   const [cls, t] = L.status === "none" ? ["", "設定で通知の合言葉を入れると、締切7分前ごろからオッズが入ります"]
-    : L.status === "ng" ? ["ng", "読み込めませんでした（通知は届きます。買いラインと見比べてください）"]
+    : L.status === "ng" ? ["ng", "読み込めませんでした"]
     : L.n ? ["ok", `${L.n}レース分（最新 ${L.at}）`] : ["", "まだ届いていません（締切7分前ごろから入ります）"];
   return `<p class="odds-l${cls ? " " + cls : ""}">締切前のオッズ：${esc(t)}</p>`;
 }
@@ -1840,10 +1856,10 @@ function render(){
       honmei: "鉄板のレースはありません。設定で「鉄板」のしきい値を下げると増えます。",
       ana: "穴のレースはありません。設定で「穴」のしきい値を上げると増えます。",
       value: anyOdds
-        ? "今のオッズでは、条件を満たす買い候補はありません。オッズは締切が近づくにつれて届きます。"
+        ? "今のオッズでは、期待値が条件を超える艇はありません。（締切前の単勝オッズは当てにならないので参考です）"
         : (loadTopic()
-          ? "今日のオッズはまだ届いていません。締切の7分前ごろから、通知の仕組みが見に行ったオッズが届き始めます。それまでは「全て」のタブで各レースの買いラインを見てください。"
-          : "今日のオッズがありません。設定の「通知の合言葉」にntfyのトピック名を入れると、締切前のオッズが届いて買い候補が出ます。それまでは「全て」のタブで各レースの買いラインを見てください。"),
+          ? "今日のオッズはまだ届いていません。締切の7分前ごろから、見張りの仕組みが見に行ったオッズが届き始めます。"
+          : "今日のオッズがありません。設定の「通知の合言葉」にntfyのトピック名を入れると、締切前のオッズが届きます。"),
       all: "表示できるレースがありません。"
     }[state.tab];
     html = `<div class="empty">${msg}${useUpcoming && state.tab !== "value" ? "<br>「締切前のみ」を外すと締切済みのレースも見られます。" : ""}</div>`;
@@ -1892,13 +1908,13 @@ function paperHTML(P){
   return `${head}
     <p class="lead">${esc(P.from)}〜${esc(P.to)}に見張りが見た締切前のオッズで、条件（単勝・1着率${Math.round(P.rule.minP * 100)}%以上・期待値${P.rule.ev.toFixed(1)}以上）を満たした艇を各100円で買ったつもりにして、結果と照らし合わせています。<b>回収率は実際の払戻金（確定オッズ）で計算</b>しているので、本当に買った場合と同じ成績です。「確定オッズでの期待値」は、確定オッズで見直すと期待値がいくつだったかで、回収率よりぶれが小さい目安です（確定オッズは翌日に入ります）。</p>
     <div class="stats">
-      ${box("1分半前のオッズで決める（今の通知）", f)}
+      ${box("1分半前のオッズで決める", f)}
       ${box("3分前のオッズで決めると", t3)}
       ${box("7分前のオッズで決めると", e7)}
     </div>
     <p class="note">数百点たまるまでは、数字は大きくぶれます。2週間ほど見てから判断してください。</p>
     ${P.byConf && P.byConf[P.betsRule || "t1"] ? `<div><h3>信頼度ごと（${P.betsRule === "t3" ? "3分前" : "1分半前"}のオッズ・実際の払戻）</h3><div class="tbl"><table class="lft2">
-      <thead><tr><th>信頼度</th><th>レース</th><th>◎の単勝</th><th>推奨</th></tr></thead>
+      <thead><tr><th>信頼度</th><th>レース</th><th>◎の単勝</th><th>期待値で選ぶ</th></tr></thead>
       <tbody>${confRows(P.byConf[P.betsRule || "t1"], [["top", "hit"], ["rec", "n"]])}</tbody></table></div></div>` : ""}
     <div><h3>日ごと</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>日</th><th>点数</th><th>的中</th><th>1分半前</th><th>3分前</th><th>7分前</th></tr></thead><tbody>${days}</tbody></table></div>
@@ -1908,14 +1924,15 @@ function paperHTML(P){
     <div><h3>締切前のオッズで選ぶと、本当の回収率は</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>いつのオッズ</th><th>期待値</th><th>点数</th><th>回収率</th><th>確定での期待値</th></tr></thead>
       <tbody>${cal}</tbody></table></div>
-      <p class="note">1着率${Math.round(P.rule.minP * 100)}%以上の艇を、その時点のオッズでの期待値で選んだときの成績です（通知していない艇も含む）。「確定での期待値」が2を大きく下回るなら、買いラインを上げる必要があります。</p></div>
+      <p class="note">1着率${Math.round(P.rule.minP * 100)}%以上の艇を、その時点のオッズでの期待値で選んだときの成績です。「確定での期待値」が1を下回るなら、その時点のオッズで選んでも勝てていないということです。</p></div>
     <div><h3>締切前→確定でオッズはどう動くか</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>締切前のオッズ</th>${dk.map(k => `<th>${LBL[k]}→確定</th>`).join("")}</tr></thead><tbody>${dr}</tbody></table></div>
       <p class="note">真ん中の値です。×0.85なら、確定オッズはだいたい15%下がります。確定オッズは翌日に入ります。</p></div>`;
 }
 
 function longHTML(L){
-  const head = `<h2>長期検証（参考：確定オッズで選んだ場合）</h2>`;
+  const real = L && L.sel === "tri";
+  const head = `<h2>長期検証（${real ? "買う前に見えるオッズで選んだ場合" : "参考：確定オッズで選んだ場合"}）</h2>`;
   if (!L) return `${head}<p class="btmsg">${bt.longTried && !bt.long ? "まだ計算されていません。" : "読み込み中…"}GitHubのアクションで「backtest」を一度動かすと、2026年1月からの全レースで検証した結果がここに出ます。</p>`;
   const P = v => Math.round(v * 100) + "%";
   const rng = a => a.n ? `${P(Math.max(0, a.lo))}〜${P(a.hi)}` : "-";
@@ -1929,11 +1946,13 @@ function longHTML(L){
   const months = L.monthly.filter(m => m.races).map(m => `<tr><td>${+m.m.slice(5)}月${m.statsRaces ? "" : "＊"}</td><td>${m.odds}</td><td>${m.n}</td><td>${hitR(m)}</td><td class="${m.roi >= 1 && m.n ? "plus" : ""}">${m.n ? P(m.roi) : "-"}</td><td>${m.n ? yen(m.ret - 100 * m.n) : "-"}</td></tr>`).join("");
   const bands = L.bands.map(b => `<tr><td>${b.to > 1e8 ? b.from + "倍以上" : b.from + "〜" + b.to + "倍"}</td><td>${b.n}</td><td>${hitR(b)}</td><td class="${good(b)}">${b.n ? P(b.roi) : "-"}</td><td>${rng(b)}</td></tr>`).join("");
   return `${head}
-    <p class="lead">${esc(L.from)}〜${esc(L.to)}の${L.races}レース（オッズあり ${L.oddsRaces}）を、アプリと同じ計算で予想し直した結果です。<b>買う艇を確定オッズで選んでいるので、実際（締切前のオッズで選ぶ）よりかなり有利な数字です。</b>予想の当たり具合や、条件どうしの比べに使ってください。本当の回収率は上の「買ったつもりの成績」です。</p>
+    <p class="lead">${esc(L.from)}〜${esc(L.to)}の${L.races}レース（オッズあり ${L.oddsRaces}）を、アプリと同じ計算で予想し直した結果です。${real
+      ? `<b>単勝は締切前の投票が少なく当てにならないので、投票の多い3連単のオッズから単勝オッズを推定して買う艇を選び、実際の払戻で数えています</b>（買う前に見えるものに近い）。${L.main.finalWin && L.main.finalWin.n ? `参考：確定の単勝オッズで選ぶと${P(L.main.finalWin.roi)}（${L.main.finalWin.n}点）になりますが、確定オッズは買う時点ではわからないので、実際にはできない買い方です。` : ""}`
+      : `<b>買う艇を確定オッズで選んでいるので、実際（締切前のオッズで選ぶ）よりかなり有利な数字です。</b>予想の当たり具合や、条件どうしの比べに使ってください。本当の回収率は上の「買ったつもりの成績」です。`}</p>
     <div class="stats">
       <div class="stat"><span>単勝・期待値${L.main.ev.toFixed(2)}以上・確率${Math.round(L.main.minP * 100)}%以上</span><b class="${good(w)}">${w.n ? P(w.roi) : "-"}</b><small>95%の範囲 ${rng(w)}・${w.n}点・的中${hitR(w)}</small></div>
       <div class="stat"><span>その収支（各100円）</span><b class="${w.ret - 100 * w.n >= 0 && w.n ? "plus" : ""}">${w.n ? yen(w.ret - 100 * w.n) : "-"}</b><small>1日あたり約${Math.round(w.n / Math.max(1, L.monthly.filter(m => m.races).length) / 30)}点</small></div>
-      <div class="stat"><span>通知どおり（アラート強×期待値${L.main.ev.toFixed(2)}以上）</span><b class="${good(al)}">${al.n ? P(al.roi) : "-"}</b><small>95%の範囲 ${rng(al)}・${al.n}点</small></div>
+      <div class="stat"><span>スリットアラート強×期待値${L.main.ev.toFixed(2)}以上</span><b class="${good(al)}">${al.n ? P(al.roi) : "-"}</b><small>95%の範囲 ${rng(al)}・${al.n}点</small></div>
       <div class="stat"><span>◎の1着率</span><b>${(L.base.hit1 * 100).toFixed(1)}%</b><small>1コースが勝った率 ${(L.base.c1Win * 100).toFixed(1)}%</small></div>
     </div>
     <p class="note">${verdict}スリットアラート強の艇を期待値を見ずに全部買うと、回収率は${aa.n ? P(aa.roi) : "-"}（${aa.n}点）でした。</p>
@@ -1941,9 +1960,9 @@ function longHTML(L){
       <thead><tr><th>期待値</th><th>確率</th><th>単勝の点数</th><th>単勝</th><th>95%の範囲</th><th>2連単</th><th>3連単</th></tr></thead>
       <tbody>${grid}</tbody></table></div></div>
     ${L.byConf ? `<div><h3>信頼度ごとの成績</h3><div class="tbl"><table class="lft2">
-      <thead><tr><th>信頼度</th><th>レース</th><th>◎の単勝</th><th>推奨</th><th>2連単1点</th><th>3連単（参考）</th></tr></thead>
+      <thead><tr><th>信頼度</th><th>レース</th><th>◎の単勝</th><th>期待値で選ぶ</th><th>2連単1点</th><th>3連単（参考）</th></tr></thead>
       <tbody>${confRows(L.byConf, [["top", "hit"], ["rec", "n"], ["ex1", "hit"], ["tri", "hit"]])}</tbody></table></div>
-      <p class="note">◎の単勝は◎を毎回100円、推奨は期待値で選ぶ単勝、2連単1点と3連単はカードの「参考」の買い方です（3連単は合計25%まで最大5点）。小さい数字は的中率か点数です。推奨は確定オッズで選んでいるので、実際より有利です。</p></div>` : ""}
+      <p class="note">◎の単勝は◎を毎回100円、「期待値で選ぶ」は期待値の条件を満たす単勝、2連単1点と3連単はカードの「参考」の買い方です（3連単は合計25%まで最大5点）。小さい数字は的中率か点数です。${real ? "" : "期待値で選ぶ単勝は確定オッズで選んでいるので、実際より有利です。"}</p></div>` : ""}
     <div><h3>月ごとの成績（単勝・期待値${L.main.ev.toFixed(2)}以上・確率${Math.round(L.main.minP * 100)}%以上）</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>月</th><th>レース</th><th>点数</th><th>的中率</th><th>回収率</th><th>収支</th></tr></thead>
       <tbody>${months}</tbody></table></div>
@@ -1951,7 +1970,7 @@ function longHTML(L){
     <div><h3>単勝オッズの帯ごとの成績（同じ条件）</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>単勝オッズ</th><th>点数</th><th>的中率</th><th>回収率</th><th>95%の範囲</th></tr></thead>
       <tbody>${bands}</tbody></table></div></div>
-    <p class="note">コース別成績は、検証する月より前のデータだけで作っています。ただし買う艇を確定オッズで選んでいるので、締切前のオッズを見て買う実際の場面より有利な結果です。実際の場面でどうなるかは、上の「買ったつもりの成績」で確かめています。「95%の範囲」は、偶然のブレを考えると本当の回収率がだいたいこの間にある、という目安です。</p>`;
+    <p class="note">コース別成績は、検証する月より前のデータだけで作っています。${real ? "2連単・3連単は確定オッズで選んでいるので、少し有利な数字です。" : "ただし買う艇を確定オッズで選んでいるので、締切前のオッズを見て買う実際の場面より有利な結果です。"}実際の場面でどうなるかは、上の「買ったつもりの成績」で確かめています。「95%の範囲」は、偶然のブレを考えると本当の回収率がだいたいこの間にある、という目安です。</p>`;
 }
 
 function renderBT(){
@@ -1978,7 +1997,7 @@ function renderBT(){
       <div class="stat"><span>コースだけの予想との差</span><b>${gain >= 0 ? "+" : "−"}${Math.abs(gain).toFixed(1)}%</b><small>確率の当てはまり（対数損失）の改善率</small></div>
     </div>
     <p class="note">${bt.stats ? `コース別成績は${esc(bt.stats.to || "")}までの集計を使っています（検証する期間より前のデータだけなので、答えを先に見ていません）。` : "コース別成績の集計がまだないので、コース実績なしで検証しています。"}</p>`;
-    h += `<div><h3>買い候補の条件で単勝を買った場合（期待値${settings.ev.toFixed(1)}以上・1着率${settings.minP}%以上、各100円）</h3>`;
+    h += `<div><h3>期待値の条件で単勝を買った場合（期待値${settings.ev.toFixed(1)}以上・1着率${settings.minP}%以上、各100円）</h3>`;
     if (x.oddsN){
       const rows = ["win"].map(t => {
         const e = x.ev[t];
@@ -1986,7 +2005,7 @@ function renderBT(){
         return `<tr><td>${TYPES[t]}</td><td>${e.n}</td><td>${e.n ? pct(e.hit / e.n, 1) + "%" : "-"}</td><td class="${roi >= 1 ? "plus" : ""}">${e.n ? pct(roi) + "%" : "-"}</td><td class="${roi >= 1 ? "plus" : ""}">${e.n ? yen(e.ret - 100 * e.n) : "-"}</td></tr>`;
       }).join("");
       h += `<div class="tbl"><table class="lft2"><thead><tr><th>賭式</th><th>点数</th><th>的中率</th><th>回収率</th><th>収支</th></tr></thead><tbody>${rows}</tbody></table></div>
-        <p class="note">オッズ付きのレース${x.oddsN}件で計算。確定オッズを使っているので、締切前に見るオッズとは少しずれます。実際に買うと、この成績より下がることがあります。設定の「買い候補の条件」を動かすと、この表もすぐ計算し直します。</p>`;
+        <p class="note">オッズ付きのレース${x.oddsN}件で計算。単勝は締切前の投票が少なく当てにならないので、投票の多い3連単のオッズから単勝オッズを推定して買う艇を選び、実際の払戻で数えています（買う前に見えるものに近い）。設定の「期待値の条件」を動かすと、この表もすぐ計算し直します。</p>`;
     } else {
       h += `<p class="btmsg">この期間のオッズが取得できませんでした。</p>`;
     }
