@@ -5,6 +5,7 @@
 //   1. 買ったつもりの成績（通知どおりに単勝を100円ずつ買ったら。見送り通知に従った場合と、従わなかった場合）
 //   2. 締切前のオッズで「期待値いくつ以上」なら、確定オッズで払い戻されたとき本当にプラスか
 //   3. 締切前のオッズが確定オッズでどのくらい動くか
+//   4. 締切2分前・1分前・30秒前に「単勝が3連単から見て何倍お得か」で買っていたら（2026-10-19〜）
 // を paper.json に書き出す（アプリの「検証」で見られる）。
 // 元のオッズはキャッシュにだけ置き、公開リポジトリには集計と買い目の記録だけを置く。
 import fs from "node:fs";
@@ -29,7 +30,11 @@ const M = new Function(html.slice(a, b) + "\nreturn {parseV1, slitAlerts, predic
 
 const addDays = (d, n) => { const t = new Date(d + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
 const ymd = d => [d.slice(0, 4), d.replace(/-/g, "")];
-const toMin = hm => { const [h, m] = String(hm).split(":").map(Number); return h * 60 + m; };
+const toMin = hm => { const [h, m, sec] = String(hm).split(":").map(Number); return h * 60 + m + (sec || 0) / 60; };
+// 締切直前の記録：単勝オッズと、3連単から出した1着の確率（q）を比べる
+const LATE = [["t2", 2], ["t1", 1], ["t05", 0.5]];
+const KS = [1.3, 1.5, 2, 3];
+const LATE_MAX_IMP = 50;   // 3連単から見て50倍以上の大穴は数えない
 
 async function getJSON(url, fetcher){
   try {
@@ -51,7 +56,12 @@ async function readSnaps(fetcher){
         const m = JSON.parse(line);
         if (m.event !== "message") continue;
         const d = JSON.parse(m.message);
-        for (const e of d.r || []) if (e && e.k && e.w) out.push({d: d.d, k: e.k, t: e.t || d.at, m: e.m ?? null, w: e.w, p: e.p || null});
+        for (const e of d.r || []) if (e && e.k && e.w){
+          const x = {d: d.d, k: e.k, t: e.t || d.at, m: e.m ?? null, w: e.w, p: e.p || null};
+          if (e.q) x.q = e.q;
+          if (e.u) x.u = e.u;
+          out.push(x);
+        }
       } catch (e) {}
     }
   } catch (e) {}
@@ -144,6 +154,7 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
   const CONF = [[0.65, "高"], [0.5, "中"], [0.35, "低"], [0, "混戦"]];
   const byConf = Object.fromEntries(["t1", "t3"].map(k => [k, CONF.map(([from, label]) => ({from, label, races: 0, top: [], rec: []}))]));
   const rules = {t1: [], t3: [], t7: []}, points = [], drift = Object.fromEntries(PHASES.map(([k]) => [k, BANDS.map(() => [])]));
+  const late = {t2: [], t1: [], t05: [], fin: []}, lateRaces = {t2: 0, t1: 0, t05: 0, fin: 0};
   for (const [id, list] of byRace){
     const R = log.races[id];
     if (!R || R.pay == null || R.void) continue;   // 結果がまだ（または中止）
@@ -166,6 +177,31 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
           if (bi >= 0) drift[phase][bi].push(R.fin[no] / od);
         }
       }
+    }
+    // 締切直前：単勝のオッズ ÷ 3連単から出した単勝のオッズ（還元率75%）＝「何倍お得か」
+    {
+      const fin = list.find(x => x.q && x.m != null && x.m < 0 && x.u === "締切");
+      const finOd = no => fin ? fin.w[no] : R.fin ? R.fin[no] : null;
+      const pick = T => {
+        let best = null;
+        for (const x of list) if (x.q && x.m > 0 && Math.abs(x.m - T) <= 0.35 && (!best || Math.abs(x.m - T) < Math.abs(best.m - T))) best = x;
+        return best;
+      };
+      const put = (key, x) => {
+        if (!x) return;
+        lateRaces[key]++;
+        for (const [no, od] of Object.entries(x.w)){
+          const q = x.q[no];
+          if (!(od > 0) || !(q > 0)) continue;
+          const imp = 0.75 / q;
+          if (imp >= LATE_MAX_IMP) continue;
+          const fo = finOd(no);
+          late[key].push({d: R.d, gap: od / imp, od, pay: payOf(+no), fin: fo > 0 ? fo : null,
+            finGap: fin && fin.q && fin.q[no] > 0 && fin.w[no] > 0 ? fin.w[no] * fin.q[no] / 0.75 : null});
+        }
+      };
+      for (const [key, T] of LATE) put(key, pick(T));
+      put("fin", fin);
     }
     const meets = (x, no) => x.pp && x.pp[no] >= BUY_P && x.w[no] > 0 && x.pp[no] * x.w[no] >= BUY_EV;
     const boatsOf = x => x ? Object.keys(x.w).filter(no => meets(x, no)).map(Number) : [];
@@ -194,6 +230,12 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
     const fe = sel.map(x => x.finEv).filter(v => v != null);
     return {ev, ...agg(sel), finEv: fe.length ? +(fe.reduce((s, v) => s + v, 0) / fe.length).toFixed(3) : null};
   });
+  const lateSum = list => KS.map(k => {
+    const sel = list.filter(b => b.gap >= k);
+    const f = sel.filter(b => b.fin > 0), g = sel.map(b => b.finGap).filter(v => v != null);
+    return {k, ...agg(sel), drop: f.length ? +median(f.map(b => b.fin / b.od)).toFixed(3) : null, finGap: g.length ? +median(g).toFixed(3) : null};
+  });
+  const lateDays = [...new Set(late.t05.map(b => b.d))].sort().slice(-30).map(d => ({d, t1: agg(late.t1.filter(b => b.d === d && b.gap >= 1.5)), t05: agg(late.t05.filter(b => b.d === d && b.gap >= 1.5))}));
   const out = {
     v: 1, built: new Date().toISOString(), today,
     from: days[0] || null, to: days[days.length - 1] || null,
@@ -201,6 +243,7 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
     paper: {follow: aggF(follow), t3: aggF(rules.t3), early: aggF(rules.t7)},
     betsRule: rules.t1.length ? "t1" : "t3",
     byConf: Object.fromEntries(Object.entries(byConf).map(([k, list]) => [k, list.map(c => ({from: c.from, label: c.label, races: c.races, top: agg(c.top), rec: agg(c.rec)}))])),
+    late: {K: KS, maxImp: LATE_MAX_IMP, races: lateRaces, sum: Object.fromEntries(Object.entries(late).map(([k, list]) => [k, lateSum(list)])), days: lateDays},
     days: dayList.slice(-30),
     bets: bets.slice(-150),
     calib: Object.fromEntries(PHASES.map(([k]) => [k, calib(k)])),
@@ -209,7 +252,9 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
   fs.writeFileSync("paper.json", JSON.stringify(out));
   console.log(`締切前オッズ：新しく${added}件（全${Object.keys(log.snaps).length}件）、結果のわかったレース${[...byRace.keys()].filter(id => log.races[id] && log.races[id].pay != null && !log.races[id].void).length}件`);
   const P = a => `${a.n}点 回収率${(a.roi * 100).toFixed(1)}%`;
-  console.log(`買ったつもり：1分半前で決める ${P(out.paper.follow)}｜3分前 ${P(out.paper.t3)}｜7分前 ${P(out.paper.early)}`);
+  console.log(`買ったつもり：1分前で決める ${P(out.paper.follow)}｜3分前 ${P(out.paper.t3)}｜7分前 ${P(out.paper.early)}`);
+  const L = out.late.sum;
+  console.log(`締切直前のズレ1.5倍以上：2分前 ${P(L.t2[1])}｜1分前 ${P(L.t1[1])}｜30秒前 ${P(L.t05[1])}｜締切時（参考） ${P(L.fin[1])}`);
   return out;
 }
 

@@ -775,7 +775,8 @@ async function loadDay(date){
     races.forEach(r => { if (!r.odds && m.has(r.key)){ r.odds = m.get(r.key); r.oddsLabel = "オッズ"; } });
   }
   const live = await liveP;
-  races.forEach(r => { const x = live.get(r.key); if (!r.odds && x){ r.odds = {win: x.win}; r.oddsLabel = x.m != null ? `締切${x.m.toFixed(1)}分前（${x.at}）のオッズ` : `${x.at}時点のオッズ`; } });
+  const lbl = x => x.m == null ? `${x.at.slice(0, 5)}時点のオッズ` : x.m < 0 ? "締切時のオッズ" : x.m < 0.95 ? `締切${Math.round(x.m * 60)}秒前のオッズ` : `締切${x.m.toFixed(1)}分前のオッズ`;
+  races.forEach(r => { const x = live.get(r.key); if (!r.odds && x){ r.odds = {win: x.win}; r.oddsLabel = lbl(x); } });
   state.liveOdds = {date, status: live.status, n: live.size, at: [...live.values()].reduce((m, x) => x.at > m ? x.at : m, "")};
   return races;
 }
@@ -1793,8 +1794,8 @@ function cardHTML(r, an, now){
 function condHTML(){
   ensurePaper();
   const pp = bt.paper && bt.paper.paper;
-  const pf = pp && (pp.follow && pp.follow.n ? [pp.follow, "1分半前で決めた"] : pp.t3 && pp.t3.n ? [pp.t3, "3分前で決めた"] : null);
-  return `<p class="cond-l">条件：単勝・1着率${settings.minP}%以上・期待値${settings.ev.toFixed(1)}以上${pf ? `<span class="${pf[0].roi >= 1 ? "" : "neg"}">実際の回収率 ${Math.round(pf[0].roi * 100)}%（${pf[1]}場合・${pf[0].n}点・実際の払戻で計算）</span>` : ""}</p>`;
+  const pf = pp && (pp.follow && pp.follow.n ? [pp.follow, "1分前で決めた"] : pp.t3 && pp.t3.n ? [pp.t3, "3分前で決めた"] : null);
+  return `<p class="cond-l">条件：単勝・1着率${settings.minP}%以上・期待値${settings.ev.toFixed(1)}以上${pf ? `<span class="${pf[0].roi >= 1 ? "" : "neg"}">実際の回収率 ${Math.round(pf[0].roi * 100)}%（${pf[1]}場合・${pf[0].n}点・実際の払戻で計算${pf[0].n < 300 ? "・まだ点数が少なくブレが大きい" : ""}）</span>` : ""}</p>`;
 }
 // 締切前のオッズが通知の仕組みから届いているか（今日だけ）
 function oddsStatusHTML(){
@@ -1899,26 +1900,34 @@ function paperHTML(P){
   const box = (label, a) => `<div class="stat"><span>${label}</span><b class="${a.roi >= 1 && a.n ? "plus" : ""}">${a.n ? Pc(a.roi) : "-"}</b><small>${a.n}点・的中${a.hit || 0}${a.n ? "・収支" + yen(a.ret - 100 * a.n) : ""}${a.nFin ? `<br>確定オッズでの期待値 ${a.finEv.toFixed(2)}（決めた時 ${a.ev.toFixed(2)}）<br>オッズは確定までに ×${a.drop.toFixed(2)}（${a.nFin}点）` : ""}</small></div>`;
   const days = P.days.slice().reverse().map(d => `<tr><td>${md(d.d)}</td><td>${d.n}</td><td>${d.hit}</td><td class="${d.roi >= 1 && d.n ? "plus" : ""}">${d.n ? Pc(d.roi) : "-"}</td><td class="zr">${d.t3 && d.t3.n ? Pc(d.t3.roi) + `<small>${d.t3.n}点</small>` : "-"}</td><td class="zr">${d.early && d.early.n ? Pc(d.early.roi) + `<small>${d.early.n}点</small>` : "-"}</td></tr>`).join("");
   const bets = P.bets.slice(-20).reverse().map(x => `<tr><td class="zr">${esc(x.close)}<small>${md(x.d)}</small></td><td class="feat">${esc(x.name)}</td><td>${chip(x.no)}</td><td>${(+x.od).toFixed(1)}</td><td>${x.fin ? (+x.fin).toFixed(1) : "-"}</td><td>${Math.round(x.p * 100)}%</td><td class="${x.pay > 0 ? "plus" : ""}">${x.pay > 0 ? x.pay + "円" : "×"}</td></tr>`).join("");
-  const LBL = {t7: "7分前", t3: "3分前", t1: "1分半前"};
+  const LBL = {t7: "7分前", t3: "3分前", t1: "1分前"};
   const cal = ["t7", "t3", "t1"].filter(k => P.calib && P.calib[k]).map(k => P.calib[k].map(c => `<tr><td>${LBL[k]}</td><td>${c.ev.toFixed(1)}以上</td><td>${c.n}</td><td class="${c.roi >= 1 && c.n ? "plus" : ""}">${c.n ? Pc(c.roi) : "-"}</td><td>${c.finEv != null ? c.finEv.toFixed(2) : "-"}</td></tr>`).join("")).join("");
   const dk = ["t7", "t3", "t1"].filter(k => P.drift && P.drift[k]);
   const cell = x => `<td class="zr">${x.med != null ? "×" + x.med.toFixed(2) : "-"}<small>${x.n}件</small></td>`;
   const dr = dk.length ? P.drift[dk[0]].map((x, i) => `<tr><td>${x.hi ? `${x.lo}〜${x.hi}倍` : `${x.lo}倍以上`}</td>${dk.map(k => cell(P.drift[k][i])).join("")}</tr>`).join("") : "";
-  const bl = P.betsRule === "t1" ? "1分半前で決める" : "3分前で決める。1分半前の記録がまだないため";
+  const bl = P.betsRule === "t1" ? "1分前で決める" : "3分前で決める。1分前の記録がまだないため";
+  // 締切直前の「単勝 vs 3連単」のズレ（2026-10-19から記録）
+  const LT = P.late;
+  const LK = [["t2", "2分前"], ["t1", "1分前"], ["t05", "30秒前"], ["fin", "締切時（参考）"]];
+  const lateHTML = LT && LT.sum ? `<div><h3>締切直前の「単勝のお得さ」で買ったら（記録中）</h3><div class="tbl"><table class="lft2">
+      <thead><tr><th>いつ見て</th>${LT.K.map(k => `<th>${k}倍以上</th>`).join("")}<th>確定まで</th></tr></thead>
+      <tbody>${LK.map(([k, lb]) => { const v = LT.sum[k] || [], i15 = v.findIndex(x => x.k === 1.5); return `<tr><td>${lb}<small>${(LT.races || {})[k] || 0}R</small></td>${v.map(x => `<td class="zr ${x.roi >= 1 && x.n ? "plus" : ""}">${x.n ? Pc(x.roi) : "-"}<small>${x.n}点</small></td>`).join("")}<td>${i15 >= 0 && v[i15].drop != null ? "×" + v[i15].drop.toFixed(2) : "-"}</td></tr>`; }).join("")}</tbody></table></div>
+      <p class="note">「お得さ」＝単勝のオッズが、投票の多い3連単のオッズから計算した単勝のオッズの何倍か。それ以上の艇を各100円で買ったとして、実際の払戻で計算しています（予想は使っていない・3連単から見て${LT.maxImp}倍以上の大穴は除く）。締切時は締切後にわかるオッズで選んでいるので実際には買えない参考です。2分前→30秒前と締切に近づくほど締切時の数字に近づくなら、ギリギリで買えば勝てる見込みがあります。「確定まで」は1.5倍以上の艇の単勝オッズが確定までに何倍になったか（真ん中の値）。2週間ほどで判断できます。</p></div>` : "";
   return `${head}
     <p class="lead">${esc(P.from)}〜${esc(P.to)}に見張りが見た締切前のオッズで、条件（単勝・1着率${Math.round(P.rule.minP * 100)}%以上・期待値${P.rule.ev.toFixed(1)}以上）を満たした艇を各100円で買ったつもりにして、結果と照らし合わせています。<b>回収率は実際の払戻金（確定オッズ）で計算</b>しているので、本当に買った場合と同じ成績です。「確定オッズでの期待値」は、確定オッズで見直すと期待値がいくつだったかで、回収率よりぶれが小さい目安です（確定オッズは翌日に入ります）。</p>
     <div class="stats">
-      ${box("1分半前のオッズで決める", f)}
+      ${box("1分前のオッズで決める", f)}
       ${box("3分前のオッズで決めると", t3)}
       ${box("7分前のオッズで決めると", e7)}
     </div>
     <p class="note">数百点たまるまでは、数字は大きくぶれます。2週間ほど見てから判断してください。</p>
-    ${P.byConf && P.byConf[P.betsRule || "t1"] ? `<div><h3>信頼度ごと（${P.betsRule === "t3" ? "3分前" : "1分半前"}のオッズ・実際の払戻）</h3><div class="tbl"><table class="lft2">
+    ${lateHTML}
+    ${P.byConf && P.byConf[P.betsRule || "t1"] ? `<div><h3>信頼度ごと（${P.betsRule === "t3" ? "3分前" : "1分前"}のオッズ・実際の払戻）</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>信頼度</th><th>レース</th><th>◎の単勝</th><th>期待値で選ぶ</th></tr></thead>
       <tbody>${confRows(P.byConf[P.betsRule || "t1"], [["top", "hit"], ["rec", "n"]])}</tbody></table></div></div>` : ""}
     <div><h3>日ごと</h3><div class="tbl"><table class="lft2">
-      <thead><tr><th>日</th><th>点数</th><th>的中</th><th>1分半前</th><th>3分前</th><th>7分前</th></tr></thead><tbody>${days}</tbody></table></div>
-      <p class="note">点数・的中は1分半前で決めた場合です。</p></div>
+      <thead><tr><th>日</th><th>点数</th><th>的中</th><th>1分前</th><th>3分前</th><th>7分前</th></tr></thead><tbody>${days}</tbody></table></div>
+      <p class="note">点数・的中は1分前で決めた場合です（10/18までは1分半前）。</p></div>
     <div><h3>最近の買い目（${bl}）</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>締切</th><th>レース</th><th>艇</th><th>決めた時</th><th>確定</th><th>1着率</th><th>結果</th></tr></thead><tbody>${bets}</tbody></table></div></div>
     <div><h3>締切前のオッズで選ぶと、本当の回収率は</h3><div class="tbl"><table class="lft2">
