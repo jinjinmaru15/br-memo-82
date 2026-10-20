@@ -10,11 +10,15 @@ import {compact as compactStats, build} from "./build-stats.mjs";
 const SRC = "https://turnmark.github.io/api/v1";
 const START = "2026-01-01";
 const CACHE = "btcache";
-const PREFIX = "b2-";
+const PREFIX = "b4-";
 const GRID_EV = [1.2, 1.3, 1.5, 2.0];
 const GRID_P = [0.02, 0.05, 0.10];
 const MAIN = {ev: 2.0, minP: 0.10};
 const BANDS = [[1, 3], [3, 6], [6, 10], [10, 20], [20, 1e9]];
+// 開催日ごと。2026-10-17 以降は、条件を探すのに使っていない新しいレース（ここで本物かどうかを確かめる）
+const FRESH = "2026-10-17";
+const DAYB = [["初日", r => r.day === 1 && !r.lastDay], ["2日目", r => r.day === 2 && !r.lastDay], ["3日目", r => r.day === 3 && !r.lastDay],
+  ["4日目以降", r => r.day >= 4 && !r.lastDay], ["最終日", r => r.lastDay]];
 
 const html = fs.readFileSync("index.html", "utf8");
 const ia = html.indexOf("/* ---------- 定数 ---------- */"), ib = html.indexOf("/* ---------- 状態 ---------- */");
@@ -30,14 +34,14 @@ const keepFrom = addDays(today, -3);
 function mini(r){
   const o = r.odds;
   return {
-    s: r.stadium, no: r.no, hp: r.hasPreview, wind: r.cond ? r.cond.wind : null, wd: r.cond ? r.cond.wd : null, wave: r.cond ? r.cond.wave : null,
-    boats: r.boats.map(b => ({no: b.no, reg: b.reg, cls: b.cls, win: b.win, local: b.local, avgST: b.avgST, F: b.F, motor2: b.motor2, boat2: b.boat2, course: b.course, exST: b.exST, exF: b.exF, exTime: b.exTime, tilt: b.tilt, prop: b.prop, parts: b.parts, wt: b.wt, wtAdj: b.wtAdj})),
+    s: r.stadium, no: r.no, hp: r.hasPreview, day: r.day ?? null, last: !!r.lastDay, wind: r.cond ? r.cond.wind : null, wd: r.cond ? r.cond.wd : null, wave: r.cond ? r.cond.wave : null,
+    boats: r.boats.map(b => ({no: b.no, reg: b.reg, cls: b.cls, win: b.win, local: b.local, top2: b.top2, top3: b.top3, ltop2: b.ltop2, ltop3: b.ltop3, motor3: b.motor3, boat3: b.boat3, avgST: b.avgST, F: b.F, motor2: b.motor2, boat2: b.boat2, course: b.course, exST: b.exST, exF: b.exF, exTime: b.exTime, tilt: b.tilt, prop: b.prop, parts: b.parts, wt: b.wt, wtAdj: b.wtAdj})),
     order: r.result.order,
     pay: {win: r.result.payouts.win || [], exacta: r.result.payouts.exacta || [], trifecta: r.result.payouts.trifecta || []},
     odds: o ? {win: o.win, exacta: o.exacta, trifecta: o.trifecta} : null
   };
 }
-const race = m => ({stadium: m.s, no: m.no, hasPreview: m.hp, cond: m.wind == null ? null : {wind: m.wind, wd: m.wd, wave: m.wave}, boats: m.boats, odds: m.odds, result: {order: m.order, payouts: m.pay}});
+const race = m => ({stadium: m.s, no: m.no, hasPreview: m.hp, day: m.day ?? null, lastDay: !!m.last, cond: m.wind == null ? null : {wind: m.wind, wd: m.wd, wave: m.wave}, boats: m.boats, odds: m.odds, result: {order: m.order, payouts: m.pay}});
 
 export async function getDay(d, fetcher = fetch){
   const f = `${CACHE}/${PREFIX}${d}.json.gz`;
@@ -99,6 +103,8 @@ export async function main(fetcher = fetch){
   const CONF = [[0.65, "高"], [0.5, "中"], [0.35, "低"], [0, "混戦"]];
   const z = () => ({n: 0, hit: 0, ret: 0});
   const byConf = CONF.map(([from, label]) => ({from, label, races: 0, top: z(), rec: z(), ex1: z(), tri: z()}));
+  const dayBlank = () => DAYB.map(([label]) => ({label, races: 0, top: z(), rec: z(), tri: z(), kon: z()}));
+  const byDay = {known: dayBlank(), fresh: dayBlank()};
   const months = [...new Set(days.map(d => d.slice(0, 7)))];
   const perMonth = {};
   let N = 0, oddsRaces = 0, hit1 = 0, c1Win = 0, ll = 0, llBase = 0;
@@ -170,6 +176,26 @@ export async function main(fetcher = fetch){
         for (const t of pr.triAll){ if (picks.length >= 5 || cum >= 0.25) break; picks.push(t); cum += t.p; }
         const th = picks.find(t => t.c[0] === order[0] && t.c[1] === order[1] && t.c[2] === order[2]);
         C.tri.n += picks.length; if (th){ C.tri.hit++; C.tri.ret += payOf("tri", th.c); }
+        // 開催日ごと：◎の単勝・期待値で選ぶ単勝・3連単（期待値1.5以上・確率1%以上）・混戦レースの3連単（期待値2以上・確率1%以上）
+        const di = DAYB.findIndex(([, f]) => f(r));
+        if (di >= 0){
+          const D = (d >= FRESH ? byDay.fresh : byDay.known)[di];
+          D.races++;
+          put(D.top, 1, pr.top.b.no === win ? payOf("win", [win]) : 0);
+          for (const f of pr.F){
+            const od = winOd(f.b.no);
+            if (od && f.p1 >= MAIN.minP && f.p1 * od >= MAIN.ev) put(D.rec, 1, f.b.no === win ? payOf("win", [win]) : 0);
+          }
+          const kon = pr.top.p1 < 0.35;
+          for (const t of pr.triAll){
+            if (t.p < 0.01) continue;
+            const od = M.oddsOf(r.odds, "tri", t.c);
+            if (!od) continue;
+            const pay = t.c[0] === order[0] && t.c[1] === order[1] && t.c[2] === order[2] ? payOf("tri", t.c) : 0;
+            if (t.p * od >= 1.5) put(D.tri, 1, pay);
+            if (kon && t.p * od >= 2) put(D.kon, 1, pay);
+          }
+        }
         for (const a of alerts){
           if (a.type !== "nobi" || a.level !== 2) continue;
           const f = pr.F.find(g => g.b.no === a.boat);
@@ -193,7 +219,8 @@ export async function main(fetcher = fetch){
     monthly: months.map(m => ({m, ...perMonth[m], ...agg(main.filter(x => x.m === m))})),
     bands: BANDS.map(([from, to]) => ({from, to, ...agg(main.filter(x => x.od >= from && x.od < to))})),
     alert: {all: agg(alertAll), ev: agg(alertEV)},
-    byConf: byConf.map(c => ({...c, ...Object.fromEntries(["top", "rec", "ex1", "tri"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))}))
+    byConf: byConf.map(c => ({...c, ...Object.fromEntries(["top", "rec", "ex1", "tri"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))})),
+    byDay: {from: FRESH, ...Object.fromEntries(["known", "fresh"].map(g => [g, byDay[g].map(c => ({...c, ...Object.fromEntries(["top", "rec", "tri", "kon"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))}))]))}
   };
   fs.writeFileSync("backtest.json", JSON.stringify(out));
   const w = out.main.win;

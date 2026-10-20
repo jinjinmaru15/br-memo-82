@@ -645,6 +645,8 @@ function parseV1(j, date){
             name: String(x.name || "").replace(/[\s　]+/g, " ").trim(),
             cls: CLASSES[x.rank_number] || "-",
             win: num(x.national_win_rate), top2: num(x.national_top_2_percent), local: num(x.local_win_rate),
+            top3: num(x.national_top_3_percent), ltop2: num(x.local_top_2_percent), ltop3: num(x.local_top_3_percent),
+            motor3: num(x.motor_top_3_percent), boat3: num(x.boat_top_3_percent),
             avgST: num(x.average_start_timing), F: num(x.flying_count) || 0, L: num(x.late_count) || 0,
             motor2: num(x.motor_top_2_percent), boat2: num(x.boat_top_2_percent),
             course: num(q.course_number),
@@ -663,6 +665,7 @@ function parseV1(j, date){
           key: sk + "-" + rk, stadium: +sk, no: +rk, date: R.date || date,
           closedAt: parseJST(R.closed_at),
           grade: GRADES[R.grade_number] || "",
+          day: num(R.day_number), lastDay: R.day_number_source === "最終日",
           title: R.title || "", subtitle: R.subtitle || "",
           cond: hasPreview ? {wind: num(pv.wind_speed), wd: num(pv.wind_direction_number), wave: num(pv.wave_height), weather: pv.weather_number, temp: num(pv.air_temperature), water: num(pv.water_temperature)} : null,
           boats, hasPreview,
@@ -697,6 +700,8 @@ async function loadV2(date){
         no: b.racer_boat_number, reg: num(b.racer_number), name: String(b.racer_name || "").replace(/[\s　]+/g, " ").trim(),
         cls: CLASSES[b.racer_class_number] || "-", win: num(b.racer_national_top_1_percent), top2: num(b.racer_national_top_2_percent),
         local: num(b.racer_local_top_1_percent), avgST: num(b.racer_average_start_timing), F: b.racer_flying_count || 0, L: b.racer_late_count || 0,
+        top3: num(b.racer_national_top_3_percent), ltop2: num(b.racer_local_top_2_percent), ltop3: num(b.racer_local_top_3_percent),
+        motor3: num(b.racer_assigned_motor_top_3_percent), boat3: num(b.racer_assigned_boat_top_3_percent),
         motor2: num(b.racer_assigned_motor_top_2_percent), boat2: num(b.racer_assigned_boat_top_2_percent),
         course: num(q.racer_course_number), exST: raw == null ? null : Math.abs(raw), exF: raw != null && raw < 0,
         exTime: num(q.racer_exhibition_time) > 0 ? num(q.racer_exhibition_time) : null
@@ -975,8 +980,37 @@ function formFor(r, stats, sameDay){
   }
   return out;
 }
-const FORM_PLACE = [0.86, 0.96];   // 2着・3着への効き
-const PLACE_TEMP = [0.90, 0.84];   // 2着・3着の分布のならし具合（1より小さいほど平ら）
+// 2着・3着に来る力（勝ち切る力とは別）：全国・当地の2連率・3連率、コース別の2着率・3着率、モーター・ボートの3連率、勝率
+// 1〜6月で決めて7〜10月で確認：2着の当たり具合 +9.1‰、3着 +19.4‰（本命の的中 2着41.4→41.9%、3着39.7→40.9%。オッズは43.3%・42.4%）
+const PLACE_B2 = {cr1: -0.09, cr2: 0.07, cr3: 0.07, t2: 0.06, t3: 0.01, l2: 0.03, l3: 0.03, m3: 0.05, b3: 0, win: 0.76};
+const PLACE_B3 = {cr1: -0.14, cr2: 0.11, cr3: -0.04, t2: -0.16, t3: 0.28, l2: 0.01, l3: 0.05, m3: 0.06, b3: -0.01, win: 0.98};
+function placeFeats(f, stats){
+  const lg = p => { p = Math.min(0.99, Math.max(0.01, p)); return Math.log(p / (1 - p)); };
+  const b = f.b, x = {};
+  const a = f.cs, nb = stats && stats.nat ? stats.nat[f.course - 1] : null;
+  if (Array.isArray(nb) && nb[0] > 0){
+    const a0 = a ? a[0] || 0 : 0;
+    for (const [k, q] of [["cr1", 1], ["cr2", 2], ["cr3", 3]]) x[k] = Math.log(((a ? a[q] || 0 : 0) + 10 * nb[q] / nb[0]) / (a0 + 10));
+  }
+  if (b.top2 > 0) x.t2 = lg(b.top2 / 100);
+  if (b.top3 > 0) x.t3 = lg(b.top3 / 100);
+  const l2 = b.ltop2 > 0 ? b.ltop2 : b.top2, l3 = b.ltop3 > 0 ? b.ltop3 : b.top3;
+  if (l2 > 0) x.l2 = lg(l2 / 100);
+  if (l3 > 0) x.l3 = lg(l3 / 100);
+  if (b.motor3 > 0) x.m3 = lg(b.motor3 / 100);
+  if (b.boat3 > 0) x.b3 = lg(b.boat3 / 100);
+  if (b.win > 0) x.win = b.win / 10;
+  return x;
+}
+// レース内で、値がない艇はほかの艇の平均にする（効きをゼロにする）
+function placeScores(F, stats, B){
+  const X = F.map(f => placeFeats(f, stats));
+  const mean = {};
+  for (const k of Object.keys(B)){ const v = X.map(x => x[k]).filter(v => v != null); mean[k] = v.length ? v.reduce((s, y) => s + y, 0) / v.length : 0; }
+  return X.map(x => Object.entries(B).reduce((s, [k, beta]) => s + beta * ((x[k] ?? mean[k]) - mean[k]), 0));
+}
+const FORM_PLACE = [0.70, 0.80];   // 2着・3着への効き（2着・3着に来る力を入れたあとで調整）
+const PLACE_TEMP = [0.89, 0.78];   // 2着・3着の分布のならし具合（1より小さいほど平ら）
 const formFeat = fm => fm && fm.n >= 1 ? (3.5 - fm.avg) / 2.5 * Math.min(fm.n, 6) / 6 : 0;
 // 過去のレースの一覧だけから今節の調子を付ける（検証用。一覧より前の日は数えない）
 function formFromList(list, targets = list){
@@ -1184,6 +1218,12 @@ function predict(r, s, alerts, lite, stats = STATS){
   for (let i = 0; i < n; i++){
     P2[i] = adj(P2[i], e2, PLACE_TEMP[0]);
     for (let j = 0; j < n; j++) if (P3[i][j]) P3[i][j] = adj(P3[i][j], e3, PLACE_TEMP[1]);
+  }
+  // 2着・3着に来る力を最後に掛ける
+  const s2 = placeScores(F, stats, PLACE_B2).map(Math.exp), s3 = placeScores(F, stats, PLACE_B3).map(Math.exp);
+  for (let i = 0; i < n; i++){
+    P2[i] = adj(P2[i], s2, 1);
+    for (let j = 0; j < n; j++) if (P3[i][j]) P3[i][j] = adj(P3[i][j], s3, 1);
   }
   const exAll = [], triAll = [];
   for (let i = 0; i < n; i++) for (let j = 0; j < n; j++){
@@ -1909,10 +1949,16 @@ function paperHTML(P){
   // 締切直前の「単勝 vs 3連単」のズレ（2026-10-19から記録）
   const LT = P.late;
   const LK = [["t2", "2分前"], ["t1", "1分前"], ["t05", "30秒前"], ["fin", "締切時（参考）"]];
+  const DG = P.diag;
+  const diagHTML = DG && DG.byDay ? (() => {
+    const days = Object.entries(DG.byDay).slice(-4).map(([d, v]) => `${md(d)} ${v.snaps}件（3連単つき${v.tri}・締切時${v.fin}）`).join("　");
+    const last = DG.runs && DG.runs.length ? DG.runs[DG.runs.length - 1] : null;
+    return `<p class="note">見張りの記録：${days || "まだなし"}${last ? `<br>最後の見張り ${md(last.d)} ${esc(last.at)}：公式サイト ${last.ok}/${last.pages}ページ読めた・記録${last.snaps}件${last.err ? `・最後のエラー「${esc(last.err)}」` : ""}` : ""}</p>`;
+  })() : "";
   const lateHTML = LT && LT.sum ? `<div><h3>締切直前の「単勝のお得さ」で買ったら（記録中）</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>いつ見て</th>${LT.K.map(k => `<th>${k}倍以上</th>`).join("")}<th>確定まで</th></tr></thead>
       <tbody>${LK.map(([k, lb]) => { const v = LT.sum[k] || [], i15 = v.findIndex(x => x.k === 1.5); return `<tr><td>${lb}<small>${(LT.races || {})[k] || 0}R</small></td>${v.map(x => `<td class="zr ${x.roi >= 1 && x.n ? "plus" : ""}">${x.n ? Pc(x.roi) : "-"}<small>${x.n}点</small></td>`).join("")}<td>${i15 >= 0 && v[i15].drop != null ? "×" + v[i15].drop.toFixed(2) : "-"}</td></tr>`; }).join("")}</tbody></table></div>
-      <p class="note">「お得さ」＝単勝のオッズが、投票の多い3連単のオッズから計算した単勝のオッズの何倍か。それ以上の艇を各100円で買ったとして、実際の払戻で計算しています（予想は使っていない・3連単から見て${LT.maxImp}倍以上の大穴は除く）。締切時は締切後にわかるオッズで選んでいるので実際には買えない参考です。2分前→30秒前と締切に近づくほど締切時の数字に近づくなら、ギリギリで買えば勝てる見込みがあります。「確定まで」は1.5倍以上の艇の単勝オッズが確定までに何倍になったか（真ん中の値）。2週間ほどで判断できます。</p></div>` : "";
+      <p class="note">「お得さ」＝単勝のオッズが、投票の多い3連単のオッズから計算した単勝のオッズの何倍か。それ以上の艇を各100円で買ったとして、実際の払戻で計算しています（予想は使っていない・3連単から見て${LT.maxImp}倍以上の大穴は除く）。締切時は締切後にわかるオッズで選んでいるので実際には買えない参考です。2分前→30秒前と締切に近づくほど締切時の数字に近づくなら、ギリギリで買えば勝てる見込みがあります。「確定まで」は1.5倍以上の艇の単勝オッズが確定までに何倍になったか（真ん中の値）。2週間ほどで判断できます。</p>${diagHTML}</div>` : diagHTML;
   return `${head}
     <p class="lead">${esc(P.from)}〜${esc(P.to)}に見張りが見た締切前のオッズで、条件（単勝・1着率${Math.round(P.rule.minP * 100)}%以上・期待値${P.rule.ev.toFixed(1)}以上）を満たした艇を各100円で買ったつもりにして、結果と照らし合わせています。<b>回収率は実際の払戻金（確定オッズ）で計算</b>しているので、本当に買った場合と同じ成績です。「確定オッズでの期待値」は、確定オッズで見直すと期待値がいくつだったかで、回収率よりぶれが小さい目安です（確定オッズは翌日に入ります）。</p>
     <div class="stats">
@@ -1972,6 +2018,17 @@ function longHTML(L){
       <thead><tr><th>信頼度</th><th>レース</th><th>◎の単勝</th><th>期待値で選ぶ</th><th>2連単1点</th><th>3連単（参考）</th></tr></thead>
       <tbody>${confRows(L.byConf, [["top", "hit"], ["rec", "n"], ["ex1", "hit"], ["tri", "hit"]])}</tbody></table></div>
       <p class="note">◎の単勝は◎を毎回100円、「期待値で選ぶ」は期待値の条件を満たす単勝、2連単1点と3連単はカードの「参考」の買い方です（3連単は合計25%まで最大5点）。小さい数字は的中率か点数です。${real ? "" : "期待値で選ぶ単勝は確定オッズで選んでいるので、実際より有利です。"}</p></div>` : ""}
+    ${L.byDay ? (() => {
+      const md = x => `${+x.slice(5, 7)}/${+x.slice(8)}`;
+      const rowsOf = list => list.map(c => `<tr><td>${c.label}</td><td>${c.races}</td>${["top", "rec", "tri", "kon"].map(k => { const v = c[k] || {n: 0}; return `<td class="zr ${v.roi >= 1 && v.n ? "plus" : ""}">${v.n ? P(v.roi) : "-"}<small>${v.n}点</small></td>`; }).join("")}</tr>`).join("");
+      const head = `<thead><tr><th>開催日</th><th>レース</th><th>◎の単勝</th><th>期待値で選ぶ単勝</th><th>3連単</th><th>混戦の3連単</th></tr></thead>`;
+      return `<div><h3>開催日ごとの成績</h3>
+        <p class="note"><b>${md(L.byDay.from || "2026-10-17")}以降の新しいレース</b>（条件を探すのに使っていない）</p>
+        <div class="tbl"><table class="lft2">${head}<tbody>${rowsOf(L.byDay.fresh)}</tbody></table></div>
+        <p class="note">それより前のレース（ここで条件を探した）</p>
+        <div class="tbl"><table class="lft2">${head}<tbody>${rowsOf(L.byDay.known)}</tbody></table></div>
+        <p class="note">3連単は期待値1.5以上・確率1%以上の目、混戦の3連単は◎の1着率35%未満のレースで期待値2以上・確率1%以上の目（どちらも確定オッズで選んでいるので少し有利）。それより前のレースでは「初日の混戦」が150〜200%でしたが、当たりは6回ずつで偶然の可能性が高いので、新しいレースでも続くかを見ています。数百点たまるまでは判断できません。</p></div>`;
+    })() : ""}
     <div><h3>月ごとの成績（単勝・期待値${L.main.ev.toFixed(2)}以上・確率${Math.round(L.main.minP * 100)}%以上）</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>月</th><th>レース</th><th>点数</th><th>的中率</th><th>回収率</th><th>収支</th></tr></thead>
       <tbody>${months}</tbody></table></div>

@@ -119,7 +119,7 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
   const pending = [];
   const t0 = clock();
   let races = null, lastApi = -Infinity, lastPub = t0, lastFetch = -Infinity;
-  let pages = 0, pagesOK = 0, snaps = 0, oddsMsgs = 0, triOK = 0;
+  let pages = 0, pagesOK = 0, snaps = 0, oddsMsgs = 0, triOK = 0, lastErr = "";
 
   const wait = async ms => { if (ms > 0) await sleep(ms); };
   const hms = t => new Date(t + 9 * 3600e3).toISOString().slice(11, 19);
@@ -139,27 +139,31 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
     lastFetch = clock();
     pages++;
     try {
-      const res = await fetch(url, {headers: {"Accept-Language": "ja", "Cache-Control": "no-cache"}, signal: AbortSignal.timeout(8000)});
-      if (!res.ok){ console.log("公式サイト:", res.status, url); return null; }
+      // 前の見張り（10/19昼まで動いていた）と同じ頼み方にする。応答が遅くても25秒までは待つ
+      const res = await fetch(url, {headers: {"Accept-Language": "ja"}, signal: AbortSignal.timeout(25000)});
+      if (!res.ok){ lastErr = `HTTP ${res.status}`; console.log("公式サイト:", res.status, url); return null; }
+      const text = await res.text();
       pagesOK++;
-      return await res.text();
-    } catch (e){ console.log("公式サイトを読めませんでした:", e.message); return null; }
+      return text;
+    } catch (e){ lastErr = String(e.message || e).slice(0, 80); console.log("公式サイトを読めませんでした:", e.message); return null; }
   }
 
-  async function flushOdds(){
-    if (!pending.length) return;
+  // 見張りの調子（record.mjs が paper.json に残す。動いているかを確かめるため）
+  const status = () => ({v: "late1", pages, ok: pagesOK, snaps, tri: triOK, err: lastErr || undefined, races: races ? races.length : 0});
+  async function flushOdds(force = false){
+    if (!pending.length && !force) return;
     // 1通4096バイトまでなので小分けにする
     let chunk = [];
-    const send = async () => {
-      if (!chunk.length) return;
-      if (await publish("odds", JSON.stringify({d: today, at: M.hhmm(new Date(clock())), r: chunk}), 1, TOPIC + "-odds")) oddsMsgs++;
+    const send = async (always = false) => {
+      if (!chunk.length && !always) return;
+      if (await publish("odds", JSON.stringify({d: today, at: M.hhmm(new Date(clock())), r: chunk, st: status()}), 1, TOPIC + "-odds")) oddsMsgs++;
       chunk = [];
     };
     for (const e of pending.splice(0)){
       chunk.push(e);
-      if (JSON.stringify(chunk).length > 3300){ chunk.pop(); await send(); chunk.push(e); }
+      if (JSON.stringify(chunk).length > 3200){ chunk.pop(); await send(); chunk.push(e); }
     }
-    await send();
+    await send(force);
     lastPub = clock();
   }
 
@@ -229,7 +233,7 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
     }
     // 1件ずつ、そのつど一番急ぐものを選んで読む
     for (let job; (job = nextJob()); ) await snap(job);
-    if (clock() - lastPub >= ODDS_PUB_EVERY) await flushOdds();
+    if (clock() - lastPub >= ODDS_PUB_EVERY){ await flushOdds(); console.log(`${hms(clock())} 公式サイト ${pagesOK}/${pages}・記録 ${snaps}件（3連単 ${triOK}）${lastErr ? "・最後のエラー " + lastErr : ""}`); }
 
     const allDone = races && races.length && races.every(r => !r.closedAt || +r.closedAt + 8 * 60e3 <= clock());
     if (allDone){ console.log("今日のレースは全部終わりました"); break; }
@@ -238,7 +242,7 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
     const until = Math.min(nextAt(), lastApi + API_EVERY, lastPub + ODDS_PUB_EVERY, t0 + LOOP_MIN * 60e3);
     await wait(Math.max(300, Math.min(20e3, until - clock())));
   }
-  await flushOdds();
+  await flushOdds(true);
   console.log(`公式サイト ${pages}ページ（取得 ${pagesOK}）、記録 ${snaps}件（3連単あり ${triOK}）、送信 ${oddsMsgs}通`);
 }
 

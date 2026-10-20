@@ -45,7 +45,7 @@ async function getJSON(url, fetcher){
 }
 
 // ntfy から締切前オッズの記録を読む
-async function readSnaps(fetcher){
+async function readSnaps(fetcher, runs = []){
   const out = [];
   if (!TOPIC) return out;
   try {
@@ -56,6 +56,7 @@ async function readSnaps(fetcher){
         const m = JSON.parse(line);
         if (m.event !== "message") continue;
         const d = JSON.parse(m.message);
+        if (d.st) runs.push({d: d.d, at: d.at, ...d.st});
         for (const e of d.r || []) if (e && e.k && e.w){
           const x = {d: d.d, k: e.k, t: e.t || d.at, m: e.m ?? null, w: e.w, p: e.p || null};
           if (e.q) x.q = e.q;
@@ -87,7 +88,10 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
   const log = fs.existsSync(LOG) ? JSON.parse(fs.readFileSync(LOG, "utf8")) : {v: 1, snaps: {}, races: {}};
 
   // 1. 新しい締切前オッズを足す（同じレース・同じ時刻は1つにまとめる）
-  const fresh = await readSnaps(fetcher);
+  const runs = [];
+  const fresh = await readSnaps(fetcher, runs);
+  // 見張りの調子（最後の30件）
+  log.runs = [...(log.runs || []), ...runs].filter((x, i, a) => a.findIndex(y => y.d === x.d && y.at === x.at) === i).slice(-30);
   let added = 0;
   for (const x of fresh){
     const id = `${x.d}|${x.k}|${x.t}`;
@@ -243,6 +247,10 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
     paper: {follow: aggF(follow), t3: aggF(rules.t3), early: aggF(rules.t7)},
     betsRule: rules.t1.length ? "t1" : "t3",
     byConf: Object.fromEntries(Object.entries(byConf).map(([k, list]) => [k, list.map(c => ({from: c.from, label: c.label, races: c.races, top: agg(c.top), rec: agg(c.rec)}))])),
+    diag: {runs: (log.runs || []).slice(-10), byDay: Object.fromEntries([...new Set(Object.values(log.snaps).map(x => x.d))].sort().slice(-7).map(d => {
+      const v = Object.values(log.snaps).filter(x => x.d === d);
+      return [d, {snaps: v.length, tri: v.filter(x => x.q).length, fin: v.filter(x => x.u === "締切").length}];
+    }))},
     late: {K: KS, maxImp: LATE_MAX_IMP, races: lateRaces, sum: Object.fromEntries(Object.entries(late).map(([k, list]) => [k, lateSum(list)])), days: lateDays},
     days: dayList.slice(-30),
     bets: bets.slice(-150),
