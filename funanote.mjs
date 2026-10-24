@@ -1,5 +1,9 @@
 // 「データ攻め」（https://funanote-k7q2xm.pages.dev/・運営 あべけんさん）のデータを取り込む
-// 運営の方の許可を得て取り込んでいる（2026-10-25）。
+// 運営の方の許可を得て取り込んでいる（2026-10-25。リポジトリに置くことも含めて許可済み）。
+//
+// FUNA_EXPORT=all  ：見つけたデータファイル（.json/.csv）を全部 funadata/ に gzip で書き出す（手動で動かすとき）
+// FUNA_EXPORT=daily：毎日変わる小さいもの（荒れスコア・検証のまとめ）だけ書き出す（毎朝の定期実行）
+//   荒れスコアは funadata/arare/YYYYMMDD.json に日ごとに残す（あとで「当たっていたか」を確かめるため）
 //
 // 1回目は「どんなデータがどこにあるか」を調べる：
 //   サイト内のページ・スクリプト・データファイル（.json/.csv）をたどって全部読み、
@@ -9,12 +13,16 @@
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
+import {execSync} from "node:child_process";
 
 const BASE = "https://funanote-k7q2xm.pages.dev";
 const CACHE = "funacache";
 const MAX_FETCH = +(process.env.FUNA_MAX || 1500);
 const GAP = 1000;
 const UA = "Mozilla/5.0 (compatible; slit-radar-import/1.0; with permission of the site operator)";
+const EXPORT = process.env.FUNA_EXPORT || "all";
+const DAILY = ["/data/arare.json", "/data/verify_summary.json"];
+const FRESH_H = 20;   // これより新しいキャッシュは読み直さない（サイトは毎朝4時ごろ更新）
 const SEEDS = ["/", "/racers/", "/highlights/", "/results/", "/motor/", "/players/", "/players/card.html", "/stadium/", "/payouts/",
   "/motor-maintenance/", "/kensho/", "/kensho/tilt/", "/glossary/", "/fan/", "/announcers/", "/uranai/", "/updates/", "/torisetsu/"];
 
@@ -37,7 +45,9 @@ async function get(p){
   const f = fileOf(p);
   if (fs.existsSync(f)){
     const meta = JSON.parse(fs.readFileSync(f + ".meta", "utf8"));
-    return {...meta, body: zlib.gunzipSync(fs.readFileSync(f)).toString("utf8"), cached: true};
+    const fresh = meta.at && Date.now() - meta.at < FRESH_H * 3600e3;
+    // 画像・フォント・CSS は変わらないので読み直さない。データとページは毎日読み直す
+    if (fresh || /image|font|css/.test(meta.type || "") || fetched >= MAX_FETCH) return {...meta, body: zlib.gunzipSync(fs.readFileSync(f)).toString("utf8"), cached: true};
   }
   if (fetched >= MAX_FETCH) return null;
   const wait = last + GAP - Date.now();
@@ -46,7 +56,7 @@ async function get(p){
   try {
     const r = await fetch(BASE + p, {headers: {"User-Agent": UA, "Accept-Language": "ja"}, signal: AbortSignal.timeout(30000), redirect: "follow"});
     const body = await r.text();
-    const meta = {status: r.status, type: r.headers.get("content-type") || "", bytes: Buffer.byteLength(body)};
+    const meta = {status: r.status, type: r.headers.get("content-type") || "", bytes: Buffer.byteLength(body), at: Date.now()};
     if (r.ok){
       fs.mkdirSync(path.dirname(f), {recursive: true});
       fs.writeFileSync(f, zlib.gzipSync(body));
@@ -131,6 +141,31 @@ export async function main(){
     patterns, files: manifest
   };
   fs.writeFileSync("funanote-manifest.json", JSON.stringify(out, null, 1));
+  // リポジトリに書き出す
+  const clean = p => p.replace(/^\//, "").replace(/\?.*$/, "").replace(/\//g, "__");
+  const ex = [];
+  fs.mkdirSync("funadata/arare", {recursive: true});
+  for (const e of manifest){
+    if (e.status !== 200 || !["json", "csv"].includes(e.kind)) continue;
+    const base = e.path.replace(/\?.*$/, "");
+    if (EXPORT !== "all" && !DAILY.includes(base)) continue;
+    const f = fileOf(e.path);
+    if (!fs.existsSync(f)) continue;
+    const name = clean(e.path);
+    if (ex.includes(name)) continue;   // ?_= つきと同じもの
+    fs.copyFileSync(f, `funadata/${name}.gz`);
+    ex.push(name);
+    if (base === "/data/arare.json"){
+      try {
+        const j = JSON.parse(zlib.gunzipSync(fs.readFileSync(f)).toString("utf8"));
+        const hd = Object.values(j.races || {})[0]?.hd || new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10).replace(/-/g, "");
+        fs.writeFileSync(`funadata/arare/${hd}.json`, JSON.stringify(j));
+      } catch (err){}
+    }
+  }
+  fs.writeFileSync("funadata/README.md", `# データ攻めのデータ\n\nhttps://funanote-k7q2xm.pages.dev/ （運営：あべけんさん）のデータを、運営の方の許可を得て置いています。\n各ファイルは gzip。最終取得：${new Date().toISOString()}\n`);
+  try { execSync("git add funadata", {stdio: "ignore"}); } catch (err){}
+  console.log(`書き出し ${ex.length}ファイル（${EXPORT}）`);
   console.log(`読んだ ${fetched}件（全 ${manifest.length}件・まだ ${out.notYet}件）`, JSON.stringify(out.byKind));
   return out;
 }
