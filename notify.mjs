@@ -37,7 +37,10 @@ const html = fs.readFileSync("index.html", "utf8");
 const a = html.indexOf("/* ---------- 定数 ---------- */");
 const b = html.indexOf("/* ---------- 状態 ---------- */");
 if (a < 0 || b < 0) throw new Error("index.html から判定コードを見つけられませんでした");
-const M = new Function(html.slice(a, b) + "\nreturn {parseV1, slitAlerts, predict, prepStats, DEFAULTS, STADIUMS, jstNowDate, hhmm, formFor: typeof formFor === 'function' ? formFor : null};")();
+const M = new Function(html.slice(a, b) + "\nreturn {parseV1, slitAlerts, predict, prepStats, DEFAULTS, STADIUMS, jstNowDate, hhmm, formFor: typeof formFor === 'function' ? formFor : null, setMotorEx: typeof setMotorEx === 'function' ? setMotorEx : null};")();
+
+// モーターの展示の速さ（毎朝 funadata/motor.json に書かれる）も、アプリと同じように予想に入れる
+try { if (M.setMotorEx && fs.existsSync("funadata/motor.json")) M.setMotorEx(JSON.parse(fs.readFileSync("funadata/motor.json", "utf8"))); } catch (e){}
 
 async function publish(title, message, priority, topic){
   try {

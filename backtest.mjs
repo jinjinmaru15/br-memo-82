@@ -6,11 +6,17 @@
 import fs from "node:fs";
 import zlib from "node:zlib";
 import {compact as compactStats, build} from "./build-stats.mjs";
+import {motorIndex, motorEx, renewMap} from "./motorex.mjs";
 
 const SRC = "https://turnmark.github.io/api/v1";
 const START = "2026-01-01";
 const CACHE = "btcache";
 const PREFIX = "b4-";
+// モーターの展示の速さ（データ攻めのモーターカルテ・7/15から）を使う日は、モーター番号を入れた b5- で持つ
+const MOTOR_FROM = "2026-07-15";
+const pfx = d => d >= MOTOR_FROM ? "b5-" : PREFIX;
+const FUNA = "https://funanote-k7q2xm.pages.dev/data/";
+const UA = "Mozilla/5.0 (compatible; slit-radar-import/1.0; with permission of the site operator)";
 const GRID_EV = [1.2, 1.3, 1.5, 2.0];
 const GRID_P = [0.02, 0.05, 0.10];
 const MAIN = {ev: 2.0, minP: 0.10};
@@ -35,7 +41,7 @@ function mini(r){
   const o = r.odds;
   return {
     s: r.stadium, no: r.no, hp: r.hasPreview, day: r.day ?? null, last: !!r.lastDay, wind: r.cond ? r.cond.wind : null, wd: r.cond ? r.cond.wd : null, wave: r.cond ? r.cond.wave : null,
-    boats: r.boats.map(b => ({no: b.no, reg: b.reg, cls: b.cls, win: b.win, local: b.local, top2: b.top2, top3: b.top3, ltop2: b.ltop2, ltop3: b.ltop3, motor3: b.motor3, boat3: b.boat3, avgST: b.avgST, F: b.F, motor2: b.motor2, boat2: b.boat2, course: b.course, exST: b.exST, exF: b.exF, exTime: b.exTime, tilt: b.tilt, prop: b.prop, parts: b.parts, wt: b.wt, wtAdj: b.wtAdj})),
+    boats: r.boats.map(b => ({no: b.no, reg: b.reg, cls: b.cls, win: b.win, local: b.local, top2: b.top2, top3: b.top3, ltop2: b.ltop2, ltop3: b.ltop3, motor3: b.motor3, boat3: b.boat3, avgST: b.avgST, F: b.F, motor2: b.motor2, boat2: b.boat2, mno: b.motorNo ?? null, course: b.course, exST: b.exST, exF: b.exF, exTime: b.exTime, tilt: b.tilt, prop: b.prop, parts: b.parts, wt: b.wt, wtAdj: b.wtAdj})),
     order: r.result.order,
     pay: {win: r.result.payouts.win || [], exacta: r.result.payouts.exacta || [], trifecta: r.result.payouts.trifecta || []},
     odds: o ? {win: o.win, exacta: o.exacta, trifecta: o.trifecta} : null
@@ -44,7 +50,7 @@ function mini(r){
 const race = m => ({stadium: m.s, no: m.no, hasPreview: m.hp, day: m.day ?? null, lastDay: !!m.last, cond: m.wind == null ? null : {wind: m.wind, wd: m.wd, wave: m.wave}, boats: m.boats, odds: m.odds, result: {order: m.order, payouts: m.pay}});
 
 export async function getDay(d, fetcher = fetch){
-  const f = `${CACHE}/${PREFIX}${d}.json.gz`;
+  const f = `${CACHE}/${pfx(d)}${d}.json.gz`;
   if (fs.existsSync(f)) return JSON.parse(zlib.gunzipSync(fs.readFileSync(f)).toString("utf8"));
   const url = `${SRC}/${d.slice(0, 4)}/${d.replace(/-/g, "")}.json`;
   for (let attempt = 0; attempt < 3; attempt++){
@@ -79,8 +85,30 @@ function agg(list){
   return {n, hit, ret, roi: +roi.toFixed(4), lo: +(roi - 1.96 * se).toFixed(4), hi: +(roi + 1.96 * se).toFixed(4)};
 }
 
+// モーターカルテ（データ攻め・許可を得て使用）。サイトから読めなければ、リポジトリに置いた写し（funadata/）を使う
+async function loadMotor(){
+  const get = async name => {
+    try {
+      const r = await fetch(FUNA + name, {headers: {"User-Agent": UA, "Accept-Language": "ja"}, signal: AbortSignal.timeout(60000)});
+      await new Promise(ok => setTimeout(ok, 1000));
+      if (r.ok) return await r.json();
+    } catch (e){}
+    try {
+      const f = `funadata/data__${name}.gz`;
+      if (fs.existsSync(f)) return JSON.parse(zlib.gunzipSync(fs.readFileSync(f)).toString("utf8"));
+    } catch (e){}
+    return null;
+  };
+  const karte = await get("motorKarte.json");
+  if (!karte || !karte.records){ console.warn("モーターカルテを読めませんでした（展示の速さなしで検証します）"); return null; }
+  const idx = motorIndex(karte, renewMap(await get("motorReplace.json"), await get("motorUsage.json")));
+  console.log(`モーターカルテ：記録は ${idx.last} まで`);
+  return idx;
+}
+
 export async function main(fetcher = fetch){
   fs.mkdirSync(CACHE, {recursive: true});
+  const motor = await loadMotor();
   const days = [];
   for (let d = START; d <= lastDay; d = addDays(d, 1)) days.push(d);
 
@@ -120,6 +148,9 @@ export async function main(fetcher = fetch){
     for (const d of days.filter(x => x.startsWith(mon))){
       const list = fresh.has(d) ? fresh.get(d) : (await getDay(d, fetcher)).races;
       const dayRaces = list.map(m => ({...race(m), date: d}));
+      // モーターの展示の速さ：その日より前の記録だけで計算（答えを先に見ない）
+      const ymd = d.replace(/-/g, "");
+      for (const r of dayRaces) for (const b of r.boats) b.mx = motor && b.mno != null ? motorEx(motor, r.stadium, b.mno, ymd).mx : 0;
       recent = recent.filter(x => x.date >= addDays(d, -6)).concat(dayRaces);
       if (M.formFromList) M.formFromList(recent, dayRaces);
       for (const r of dayRaces){
@@ -212,7 +243,7 @@ export async function main(fetcher = fetch){
   const pick = (t, ev, minP) => cand.filter(x => x.t === t && x.ev >= ev - 1e-9 && x.p >= minP - 1e-9);
   const main = pick("win", MAIN.ev, MAIN.minP);
   const out = {
-    v: 2, sel: "tri", built: today, from: START, to: lastDay, races: N, oddsRaces,
+    v: 2, sel: "tri", built: today, from: START, to: lastDay, races: N, oddsRaces, motor: motor ? motor.last : null,
     base: {hit1: N ? hit1 / N : 0, c1Win: N ? c1Win / N : 0, ll: N ? ll / N : 0, llBase: N ? llBase / N : 0, bins},
     main: {...MAIN, win: agg(main), finalWin: agg(finalWin)},
     grid: GRID_EV.flatMap(ev => GRID_P.map(minP => ({ev, minP, win: agg(pick("win", ev, minP)), ex: agg(pick("ex", ev, minP)), tri: agg(pick("tri", ev, minP))}))),

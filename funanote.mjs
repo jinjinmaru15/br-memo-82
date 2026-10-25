@@ -4,6 +4,7 @@
 // FUNA_EXPORT=all  ：見つけたデータファイル（.json/.csv）を全部 funadata/ に gzip で書き出す（手動で動かすとき）
 // FUNA_EXPORT=daily：毎日変わる小さいもの（荒れスコア・検証のまとめ）だけ書き出す（毎朝の定期実行）
 //   荒れスコアは funadata/arare/YYYYMMDD.json に日ごとに残す（あとで「当たっていたか」を確かめるため）
+//   モーターカルテから「モーターの展示の速さ」を計算して funadata/motor.json に書く（アプリの予想に使う・motorex.mjs）
 //
 // 1回目は「どんなデータがどこにあるか」を調べる：
 //   サイト内のページ・スクリプト・データファイル（.json/.csv）をたどって全部読み、
@@ -14,6 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
 import {execSync} from "node:child_process";
+import {MEX, motorIndex, motorSnapshot, renewMap} from "./motorex.mjs";
 
 const BASE = "https://funanote-k7q2xm.pages.dev";
 const CACHE = "funacache";
@@ -163,7 +165,19 @@ export async function main(){
       } catch (err){}
     }
   }
-  fs.writeFileSync("funadata/README.md", `# データ攻めのデータ\n\nhttps://funanote-k7q2xm.pages.dev/ （運営：あべけんさん）のデータを、運営の方の許可を得て置いています。\n各ファイルは gzip。最終取得：${new Date().toISOString()}\n`);
+  // アプリ用：モーターの展示の速さ（今日のレースに使う。今日より前の記録だけで計算）→ funadata/motor.json
+  try {
+    const rd = p => { const f = fileOf(p); return fs.existsSync(f) ? JSON.parse(zlib.gunzipSync(fs.readFileSync(f)).toString("utf8")) : null; };
+    const karte = rd("/data/motorKarte.json");
+    if (karte && karte.records){
+      const idx = motorIndex(karte, renewMap(rd("/data/motorReplace.json"), rd("/data/motorUsage.json")));
+      const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+      const m = motorSnapshot(idx, today);
+      fs.writeFileSync("funadata/motor.json", JSON.stringify({built: new Date().toISOString(), from: today, last: idx.last, karteUpdated: karte.updated || "", W: MEX.W, K: MEX.K, m}));
+      console.log(`モーターの展示の速さ：${Object.keys(m).length}基（記録は ${idx.last} まで）`);
+    } else console.warn("モーターカルテがまだありません");
+  } catch (err){ console.warn("モーターの展示の速さを作れませんでした:", err.message); }
+  fs.writeFileSync("funadata/README.md", `# データ攻めのデータ\n\nhttps://funanote-k7q2xm.pages.dev/ （運営：あべけんさん）のデータを、運営の方の許可を得て置いています。\n各ファイルは gzip。最終取得：${new Date().toISOString()}\n\nmotor.json はモーターカルテから計算した「モーターの展示の速さ」（アプリの予想に使う・作り方は motorex.mjs）。\n`);
   try { execSync("git add funadata", {stdio: "ignore"}); } catch (err){}
   console.log(`書き出し ${ex.length}ファイル（${EXPORT}）`);
   console.log(`読んだ ${fetched}件（全 ${manifest.length}件・まだ ${out.notYet}件）`, JSON.stringify(out.byKind));

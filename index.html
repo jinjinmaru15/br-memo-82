@@ -276,6 +276,7 @@ table.lft2 th:first-child,table.lft2 td:first-child{text-align:left;font-family:
 td.nm{font-family:var(--f-body);font-size:13px;font-weight:500}
 td.nm small{display:block;font-size:11px;color:var(--muted);font-weight:400}
 td .best{color:var(--accent);font-weight:700}
+td small.mx{display:block;font-size:10.5px;font-weight:700;line-height:1.2;white-space:nowrap}td small.mx.up{color:var(--val)}td small.mx.dn{color:var(--muted);font-weight:400}
 td .neg{color:var(--muted)}
 td.tot{font-weight:700}
 .chipb{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:5px;font-family:var(--f-num);font-weight:700;font-size:15px;box-shadow:inset 0 0 0 1px var(--hull-stroke)}
@@ -391,7 +392,7 @@ table.tk-t2 td.tot small{display:inline;font-size:12px}
     <p class="lead">1.00が標準です。0にするとその要素を使わず、上げるほど期待度への影響が大きくなります。</p>
     <div class="srow"><label for="s-w-skill">実力・腕<small>全国勝率・当地勝率</small></label><output id="o-w-skill"></output><input type="range" id="s-w-skill" min="0" max="2.5" step="0.25"></div>
     <div class="srow"><label for="s-w-start">スタート力<small>平均ST・F持ち・展示ST</small></label><output id="o-w-start"></output><input type="range" id="s-w-start" min="0" max="2.5" step="0.25"></div>
-    <div class="srow"><label for="s-w-motor">モーター・ボート<small>2連率</small></label><output id="o-w-motor"></output><input type="range" id="s-w-motor" min="0" max="2.5" step="0.25"></div>
+    <div class="srow"><label for="s-w-motor">モーター・ボート<small>2連率・展示の速さ</small></label><output id="o-w-motor"></output><input type="range" id="s-w-motor" min="0" max="2.5" step="0.25"></div>
     <div class="srow"><label for="s-w-ex">展示タイム<small>そのレースの中での速さ</small></label><output id="o-w-ex"></output><input type="range" id="s-w-ex" min="0" max="2.5" step="0.25"></div>
     <div class="srow"><label for="s-w-course">コース実績<small>その選手がそのコースで勝っている率</small></label><output id="o-w-course"></output><input type="range" id="s-w-course" min="0" max="2.5" step="0.25"><p id="stats-info"></p></div>
     <div class="srow"><label for="s-w-seibi">整備・チルト<small>チルト角度・部品交換</small></label><output id="o-w-seibi"></output><input type="range" id="s-w-seibi" min="0" max="2.5" step="0.25"></div>
@@ -647,7 +648,7 @@ function parseV1(j, date){
             cls: CLASSES[x.rank_number] || "-",
             win: num(x.national_win_rate), top2: num(x.national_top_2_percent), local: num(x.local_win_rate),
             top3: num(x.national_top_3_percent), ltop2: num(x.local_top_2_percent), ltop3: num(x.local_top_3_percent),
-            motor3: num(x.motor_top_3_percent), boat3: num(x.boat_top_3_percent),
+            motor3: num(x.motor_top_3_percent), boat3: num(x.boat_top_3_percent), motorNo: num(x.motor_number),
             avgST: num(x.average_start_timing), F: num(x.flying_count) || 0, L: num(x.late_count) || 0,
             motor2: num(x.motor_top_2_percent), boat2: num(x.boat_top_2_percent),
             course: num(q.course_number),
@@ -703,7 +704,7 @@ async function loadV2(date){
         local: num(b.racer_local_top_1_percent), avgST: num(b.racer_average_start_timing), F: b.racer_flying_count || 0, L: b.racer_late_count || 0,
         top3: num(b.racer_national_top_3_percent), ltop2: num(b.racer_local_top_2_percent), ltop3: num(b.racer_local_top_3_percent),
         motor3: num(b.racer_assigned_motor_top_3_percent), boat3: num(b.racer_assigned_boat_top_3_percent),
-        motor2: num(b.racer_assigned_motor_top_2_percent), boat2: num(b.racer_assigned_boat_top_2_percent),
+        motor2: num(b.racer_assigned_motor_top_2_percent), boat2: num(b.racer_assigned_boat_top_2_percent), motorNo: num(b.racer_assigned_motor_number),
         course: num(q.racer_course_number), exST: raw == null ? null : Math.abs(raw), exF: raw != null && raw < 0,
         exTime: num(q.racer_exhibition_time) > 0 ? num(q.racer_exhibition_time) : null
       };
@@ -957,6 +958,21 @@ function seibiOf(b, course){
   return v;
 }
 
+// モーターの展示の速さ：前の日までの展示タイムが、同じレースの平均よりどれだけ速かったか（モーターごとに直近60走・少ないうちは0に寄せる・×10）
+// データ攻め（運営 あべけんさん・許可を得て使用）のモーターカルテから毎朝計算する（funadata/motor.json・作り方は motorex.mjs）
+// 7/15〜9/10で決めて9/11〜10/16で確かめた：1着の当たり具合 +3.2‰（オッズに足しても +2.4‰＝オッズも織り込みきれていない）
+const MEX_B = 0.55;
+const MEX_MARK = 0.15;   // 表で「展示速」「展示遅」を付ける目安（それぞれ全体の約15%）
+let MOTOR_EX = null;
+function setMotorEx(j){ MOTOR_EX = j && j.m && j.from ? j : null; }
+function motorExOf(r, b){
+  if (b.mx != null) return b.mx;
+  const M = MOTOR_EX;
+  if (!M || b.motorNo == null || !r.date || r.date < M.from) return 0;   // 計算した日より前のレースには使わない（答えを先に見ない）
+  const v = M.m[String(r.stadium).padStart(2, "0") + "_" + b.motorNo];
+  return v ? v[0] : 0;
+}
+
 // 今節の調子：同じ場で6日以内（同じ日の先のレースも含む）に走ったレースの平均着順。失格・欠場などは6.5着として数える
 // 1〜6月の2.2万レースで効き方を決め、7〜10月の1.7万レースで精度が上がることを確かめた（それまで予想に入っていなかった情報）
 const dayGap = (a, b) => Math.round((new Date(a + "T00:00:00Z") - new Date(b + "T00:00:00Z")) / 86400000);
@@ -1114,6 +1130,7 @@ function predict(r, s, alerts, lite, stats = STATS){
       winEff: b.win == null ? 4.5 : (b.local > 0 ? 0.75 * b.win + 0.25 * b.local : b.win),
       st: (stv != null ? (0.16 - stv) / 0.02 : 0) - (b.F > 0 ? 0.8 : 0),
       mo: BASE.motor * (b.motor2 > 0 ? (b.motor2 - 35) / 10 : 0) + BASE.boat * (b.boat2 > 0 ? (b.boat2 - 35) / 20 : 0),
+      mx: motorExOf(r, b),
       ex: b.exTime != null ? -b.exTime / 0.05 : null,
       es: predST != null ? -predST / 0.05 : null, zure, predST,
       crs, sb: seibiOf(b, course),
@@ -1123,7 +1140,7 @@ function predict(r, s, alerts, lite, stats = STATS){
   });
   const avg = k => { const v = F.map(f => f[k]).filter(x => x != null); return v.length ? v.reduce((a, c) => a + c, 0) / v.length : 0; };
   F.forEach(f => { f.tx = stats ? traitFx(f.traits, f.b, f.course) : 0; f.fm = formFeat(f.form); });
-  const M = {winEff: avg("winEff"), st: avg("st"), mo: avg("mo"), ex: avg("ex"), es: avg("es"), sb: avg("sb"), tx: avg("tx"), fm: avg("fm")};
+  const M = {winEff: avg("winEff"), st: avg("st"), mo: avg("mo"), mx: avg("mx"), ex: avg("ex"), es: avg("es"), sb: avg("sb"), tx: avg("tx"), fm: avg("fm")};
   const wind = r.cond && r.cond.wind;
   const windF = wind >= 5 ? Math.max(0.75, 1 - 0.03 * (wind - 4)) : 1;
   const wc = w.course ?? 0;
@@ -1132,7 +1149,7 @@ function predict(r, s, alerts, lite, stats = STATS){
     const parts = {
       skill: w.skill * BASE.skill * (f.winEff - M.winEff),
       start: w.start * (BASE.avgst * (f.st - M.st) + (f.es == null ? 0 : BASE.exst * clamp(f.es - M.es, -3, 3))),
-      motor: w.motor * (f.mo - M.mo),
+      motor: w.motor * (f.mo - M.mo + MEX_B * (f.mx - M.mx)),
       ex: f.ex == null ? 0 : w.ex * BASE.ex * clamp(f.ex - M.ex, -4, 4),
       course: wc * BASE.course * clamp(f.crs, -2.5, 2.5),
       seibi: (w.seibi ?? 1) * BASE.seibi * (f.sb - M.sb),
@@ -1591,7 +1608,7 @@ function partsHTML(an){
   return `<div><h3>期待度の内訳（0がこのレースの平均）</h3><div class="tbl"><table class="lft2">
     <thead><tr><th>艇</th><th>実力</th><th>スタート</th><th>モーター</th><th>展示</th><th>コース</th><th>整備</th><th>特徴</th><th>調子</th><th>合計</th><th>コース基本</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
-    <p class="note">合計が+7ならコースの基本確率のおよそ2倍、−7ならおよそ半分になります。</p></div>`;
+    <p class="note">合計が+7ならコースの基本確率のおよそ2倍、−7ならおよそ半分になります。モーターには、2連率に加えてモーターの展示の速さ（出走表の「展示速・展示遅」）も入っています。</p></div>`;
 }
 
 function tenkaiHTML(an){
@@ -1770,14 +1787,16 @@ function tableHTML(an){
   const bestT = Math.min(...an.F.map(f => f.b.exTime ?? 99));
   const stv = b => b.exST == null ? 99 : (b.exF ? -b.exST : b.exST);
   const bestS = Math.min(...an.F.map(f => stv(f.b)));
-  const rows = an.F.map(({b}) => `<tr>
+  const mxTag = v => v >= MEX_MARK ? `<small class="mx up">展示速</small>` : v <= -MEX_MARK ? `<small class="mx dn">展示遅</small>` : "";
+  const hasMx = an.F.some(f => f.mx);
+  const rows = an.F.map(({b, mx}) => `<tr>
     <td>${b.course ?? "-"}</td>
     <td>${chip(b.no)}</td>
     <td class="nm">${esc(b.name)}<small>${esc(b.cls)}${b.F ? ` · F${b.F}` : ""}${b.L ? ` · L${b.L}` : ""}</small></td>
     <td>${f2(b.win)}</td>
     <td>${b.local > 0 ? f2(b.local) : "-"}</td>
     <td>${f2(b.avgST)}</td>
-    <td>${b.motor2 == null ? "-" : b.motor2.toFixed(1)}</td>
+    <td>${b.motor2 == null ? "-" : b.motor2.toFixed(1)}${mxTag(mx || 0)}</td>
     <td>${b.exTime == null ? "-" : `<span class="${b.exTime === bestT ? "best" : ""}">${b.exTime.toFixed(2)}</span>`}</td>
     <td>${b.exST == null ? "-" : `<span class="${stv(b) === bestS ? "best" : ""}">${fST(b.exST, b.exF)}</span>`}</td>
     <td>${b.tilt == null ? "-" : (b.tilt > 0 ? "+" : "") + b.tilt.toFixed(1)}</td>
@@ -1785,7 +1804,7 @@ function tableHTML(an){
   </tr>`).join("");
   return `<div><h3>出走表と直前情報</h3><div class="tbl"><table class="lft">
     <thead><tr><th>進入</th><th>艇</th><th>選手</th><th>勝率</th><th>当地</th><th>平均ST</th><th>モ2連</th><th>展示T</th><th>展示ST</th><th>チルト</th><th>部品交換</th></tr></thead>
-    <tbody>${rows}</tbody></table></div></div>`;
+    <tbody>${rows}</tbody></table></div>${hasMx ? `<p class="note">展示速・展示遅：このモーターの前の日までの展示タイムが、いつも速い・遅い（それぞれ全体の約15%）。オッズにも入りきっていない差なので、予想にも入れています（データ：データ攻めのモーターカルテ）。</p>` : ""}</div>`;
 }
 
 function combosHTML(r, an){
@@ -1897,6 +1916,13 @@ function ensureLong(){
   if (bt.longTried) return;
   bt.longTried = true;
   loadJSONFile("backtest.json").then(j => { bt.long = j && j.v && j.main ? j : null; renderBT(); safeRender(); });
+}
+// モーターの展示の速さ（毎朝 GitHub で計算した funadata/motor.json）。古ければ1時間ごとに読み直す
+function ensureMotor(){
+  if (MOTOR_EX && MOTOR_EX.from >= jstNowDate()) return;
+  if (state.motorTried && Date.now() - state.motorTried < 3600e3) return;
+  state.motorTried = Date.now();
+  loadJSONFile("funadata/motor.json").then(j => { if (j && j.m){ setMotorEx(j); safeRender(); } });
 }
 
 function render(){
@@ -2153,7 +2179,7 @@ async function load(){
     const races = await loadDay(state.date);
     state.races = races; state.mode = "live"; state.updatedAt = new Date(); state.note = races.length ? "" : "この日の出走表はありません。";
     $("notice").hidden = true;
-    ensureLong();
+    ensureLong(); ensureMotor();
     if (!state.statsTried || (STATS && STATS.built < jstNowDate() && Date.now() - state.statsTried > 3600e3)){
       state.statsTried = Date.now();
       loadStatsFile("stats.json").then(st => { if (st){ STATS = st; } updateStatsInfo(); safeRender(); });
