@@ -1,8 +1,8 @@
 {
- "built": "2026-10-25T00:04:50.890Z",
+ "built": "2026-10-25T00:25:00.975Z",
  "base": "https://funanote-k7q2xm.pages.dev",
- "minutes": 0.2,
- "fetchedThisRun": 15,
+ "minutes": 1.2,
+ "fetchedThisRun": 70,
  "total": 218,
  "notYet": 0,
  "byKind": {
@@ -15,6 +15,21 @@
   "font/woff2": 1,
   "image/jpeg": 29,
   "image/webp": 1
+ },
+ "cards": {
+  "ver": "20261017",
+  "key": "p2",
+  "fetched": 53,
+  "have": {
+   "p": 27,
+   "h2h": 27
+  },
+  "of": 27,
+  "code": [
+   "async function h2hFor(no){const k=Number(no)%64;if(!(k in H2H)){try{const r=await fetch(`card/h2h/${k}.json`);H2H[k]=r.ok?await r.json():{};}catch(e){H2H[k]={};}}",
+   "  if(!H2Hmeta){try{H2Hmeta=await (await fetch(\"card/h2h/meta.json\")).json();}catch(e){H2Hmeta={};}}return H2H[k][no]||{};}",
+   "async function loadP(no){if(!no)return;const k=Number(no)%64;if(!LOADED[k])LOADED[k]=fetch(`card/p/${k}.json`).then(r=>r.json()).then(o=>{for(const [t,v] of Object.entries(o)){D.players[t]=v;AY[t]=v.ay||{};}}).catch(()=>{delete LOADED[k];});await LOADED[k];}"
+  ]
  },
  "patterns": {
   "/highlights/": [
