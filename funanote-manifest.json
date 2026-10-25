@@ -1,8 +1,8 @@
 {
- "built": "2026-10-25T20:00:08.362Z",
+ "built": "2026-10-25T23:27:26.182Z",
  "base": "https://funanote-k7q2xm.pages.dev",
- "minutes": 2.7,
- "fetchedThisRun": 161,
+ "minutes": 2.4,
+ "fetchedThisRun": 143,
  "total": 218,
  "notYet": 0,
  "byKind": {
@@ -18,13 +18,13 @@
  },
  "cards": {
   "ver": "20261017",
-  "key": "p2",
-  "fetched": 0,
+  "key": "mod64",
+  "fetched": 128,
   "have": {
-   "p": 27,
-   "h2h": 27
+   "p": 1636,
+   "h2h": 1636
   },
-  "of": 27,
+  "of": 1636,
   "code": [
    "async function h2hFor(no){const k=Number(no)%64;if(!(k in H2H)){try{const r=await fetch(`card/h2h/${k}.json`);H2H[k]=r.ok?await r.json():{};}catch(e){H2H[k]={};}}",
    "  if(!H2Hmeta){try{H2Hmeta=await (await fetch(\"card/h2h/meta.json\")).json();}catch(e){H2Hmeta={};}}return H2H[k][no]||{};}",
