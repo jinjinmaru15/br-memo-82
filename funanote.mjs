@@ -5,7 +5,7 @@
 // FUNA_EXPORT=daily：毎日変わる小さいもの（荒れスコア・検証のまとめ）だけ書き出す（毎朝の定期実行）
 //   荒れスコアは funadata/arare/YYYYMMDD.json に日ごとに残す（あとで「当たっていたか」を確かめるため）
 //   モーターカルテから「モーターの展示の速さ」を計算して funadata/motor.json に書く（アプリの予想に使う・motorex.mjs）
-//   選手カード（特徴タグなど・対戦成績）は1人ずつのファイルなので、選手一覧から読みに行く（importCards）
+//   選手カード（特徴タグなど・対戦成績）は、登録番号を64で割った余りごとのファイルなので、全部読みに行く（importCards）
 //
 // 1回目は「どんなデータがどこにあるか」を調べる：
 //   サイト内のページ・スクリプト・データファイル（.json/.csv）をたどって全部読み、
@@ -90,12 +90,12 @@ function findLinks(body, from, type){
   return {links: [...out], patterns: [...patterns]};
 }
 
-// 選手カード（選手ごとのファイル：特徴タグなどの p と、対戦成績の h2h）
-// ページのスクリプトが card/p/${k}.json のように1人ずつ読むので、リンクをたどるだけでは見つからない。
-// card/index.json の選手一覧から1人ずつ読む。サイトがカードを作り直したとき（集計期間の終わりが変わったとき）だけ読み直す。
-// 1回の実行で CARD_MAX 件まで。続きは次の実行で読む（1秒に1回まで）。
-const CARD_MAX = +(process.env.FUNA_CARDS || 1200);
-const CARD_KEYS = {full: t => t, p2: t => t.slice(0, 2), p3: t => t.slice(0, 3), p1: t => t.slice(0, 1)};
+// 選手カード（特徴タグなどの p と、対戦成績の h2h）
+// ページのスクリプトは、登録番号を64で割った余りごとのファイル（card/p/0.json〜63.json）にまとめて置いている
+//   例：const k=Number(no)%64; fetch(`card/p/${k}.json`)
+// リンクをたどるだけでは見つからないので、ページのスクリプトから割る数を読んで、全部のファイルを読む（p と h2h で約130件）。
+// サイトがカードを作り直したとき（集計期間の終わりが変わったとき）だけ読み直す。
+const CARD_MAX = +(process.env.FUNA_CARDS || 400);
 const CARD_STATE = path.join(CACHE, "cards-state.json");
 const readCached = p => { const f = fileOf(p); try { return fs.existsSync(f) ? zlib.gunzipSync(fs.readFileSync(f)).toString("utf8") : null; } catch (e){ return null; } };
 const readJSON = p => { const s = readCached(p); try { return s ? JSON.parse(s) : null; } catch (e){ return null; } };
@@ -107,43 +107,41 @@ async function importCards(){
   const code = [...html.matchAll(/[^\n]{0,200}card\/(?:p|h2h)\/[^\n]{0,160}/g)].map(m => m[0].slice(0, 360)).slice(0, 4);
   if (!ix) return {err: "選手の一覧（card/index.json）がまだありません", code};
   const ver = String((common && common.win && common.win.y1 && common.win.y1.to) || (meta && meta.to) || "");
+  // 割る数（見つからなければ、前に見た64）
+  const mm = code.join("\n").match(/Number\([^)]*\)\s*%\s*(\d+)/) || html.match(/Number\([^)]*\)\s*%\s*(\d+)\s*;[^\n]{0,120}card\/p\//);
+  const mod = mm ? +mm[1] : 64;
+  const key = "mod" + mod;
   let st = {};
   try { st = JSON.parse(fs.readFileSync(CARD_STATE, "utf8")); } catch (e){}
-  if (st.ver !== ver) st = {ver, key: st.key || null, done: {p: [], h2h: []}};
-  const tobans = Object.keys(ix).sort();
-  // ファイル名の形（登録番号そのまま／先頭の桁）を最初の選手で確かめる
-  if (!st.key){
-    for (const [name, fn] of Object.entries(CARD_KEYS)){
-      const r = await get(`/players/card/p/${fn(tobans[0])}.json`, 0);
-      if (r && r.status === 200 && /^\s*[\[{]/.test(r.body || "")){ st.key = name; st.done.p.push(fn(tobans[0])); break; }
-    }
-  }
-  if (!st.key){ fs.writeFileSync(CARD_STATE, JSON.stringify(st)); return {err: "選手カードのファイルの場所がわかりませんでした", code}; }
-  const keys = [...new Set(tobans.map(CARD_KEYS[st.key]))];
+  if (st.ver !== ver || st.key !== key) st = {ver, key, done: {p: [], h2h: []}};
+  const keys = [...Array(mod).keys()].map(String);
   let n = 0, miss = 0;
   for (const kind of ["p", "h2h"]){
     const done = new Set(st.done[kind]);
     for (const k of keys){
-      if (done.has(k) || n >= CARD_MAX || miss >= 30) continue;
+      if (done.has(k) || n >= CARD_MAX || miss >= 10) continue;
       const r = await get(`/players/card/${kind}/${k}.json`, 0);
       n++;
       if (r && r.status === 200){ done.add(k); miss = 0; }
-      else if (r && r.status === 404) done.add(k);   // ない選手は飛ばす
+      else if (r && r.status === 404) done.add(k);   // その余りの選手がいない
       else miss++;
     }
     st.done[kind] = [...done];
   }
   fs.writeFileSync(CARD_STATE, JSON.stringify(st));
-  // 書き出し：種類ごとに1つのファイルにまとめる
+  // 書き出し：種類ごとに1つのファイル（登録番号 → その選手のカード）
   const have = {};
   fs.mkdirSync("funadata", {recursive: true});
   for (const kind of ["p", "h2h"]){
     const all = {};
-    for (const k of keys){ const j = readJSON(`/players/card/${kind}/${k}.json`); if (j) all[k] = j; }
+    for (const k of keys){
+      const j = readJSON(`/players/card/${kind}/${k}.json`);
+      if (j && typeof j === "object") for (const [t, v] of Object.entries(j)) if (+t % mod === +k) all[t] = v;
+    }
     have[kind] = Object.keys(all).length;
-    if (have[kind]) fs.writeFileSync(`funadata/players__card__${kind}.json.gz`, zlib.gzipSync(JSON.stringify({ver, key: st.key, n: have[kind], of: keys.length, cards: all})));
+    if (have[kind]) fs.writeFileSync(`funadata/players__card__${kind}.json.gz`, zlib.gzipSync(JSON.stringify({ver, mod, n: have[kind], of: Object.keys(ix).length, cards: all})));
   }
-  return {ver, key: st.key, fetched: n, have, of: keys.length, code};
+  return {ver, key, fetched: n, have, of: Object.keys(ix).length, code};
 }
 
 // JSON の形の要約（どんな項目が何件あるか、先頭を少しだけ）
