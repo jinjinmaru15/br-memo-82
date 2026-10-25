@@ -5,6 +5,7 @@
 // FUNA_EXPORT=daily：毎日変わる小さいもの（荒れスコア・検証のまとめ）だけ書き出す（毎朝の定期実行）
 //   荒れスコアは funadata/arare/YYYYMMDD.json に日ごとに残す（あとで「当たっていたか」を確かめるため）
 //   モーターカルテから「モーターの展示の速さ」を計算して funadata/motor.json に書く（アプリの予想に使う・motorex.mjs）
+//   選手カード（特徴タグなど・対戦成績）は1人ずつのファイルなので、選手一覧から読みに行く（importCards）
 //
 // 1回目は「どんなデータがどこにあるか」を調べる：
 //   サイト内のページ・スクリプト・データファイル（.json/.csv）をたどって全部読み、
@@ -43,11 +44,11 @@ function norm(u, from){
 }
 const fileOf = p => path.join(CACHE, "raw", (p === "/" ? "/index" : p).replace(/[?&=]/g, "_").replace(/\/$/, "/index")) + ".gz";
 
-async function get(p){
+async function get(p, freshH = FRESH_H){
   const f = fileOf(p);
   if (fs.existsSync(f)){
     const meta = JSON.parse(fs.readFileSync(f + ".meta", "utf8"));
-    const fresh = meta.at && Date.now() - meta.at < FRESH_H * 3600e3;
+    const fresh = meta.at && Date.now() - meta.at < freshH * 3600e3;
     // 画像・フォント・CSS は変わらないので読み直さない。データとページは毎日読み直す
     if (fresh || /image|font|css/.test(meta.type || "") || fetched >= MAX_FETCH) return {...meta, body: zlib.gunzipSync(fs.readFileSync(f)).toString("utf8"), cached: true};
   }
@@ -87,6 +88,62 @@ function findLinks(body, from, type){
   // テンプレート文字列（日付や場の番号を埋め込む URL）は、そのまま記録して後で調べる
   for (const m of body.matchAll(/`([^`]*\$\{[^`]*\.(?:json|csv)[^`]*)`/g)) patterns.add(m[1].slice(0, 200));
   return {links: [...out], patterns: [...patterns]};
+}
+
+// 選手カード（選手ごとのファイル：特徴タグなどの p と、対戦成績の h2h）
+// ページのスクリプトが card/p/${k}.json のように1人ずつ読むので、リンクをたどるだけでは見つからない。
+// card/index.json の選手一覧から1人ずつ読む。サイトがカードを作り直したとき（集計期間の終わりが変わったとき）だけ読み直す。
+// 1回の実行で CARD_MAX 件まで。続きは次の実行で読む（1秒に1回まで）。
+const CARD_MAX = +(process.env.FUNA_CARDS || 1200);
+const CARD_KEYS = {full: t => t, p2: t => t.slice(0, 2), p3: t => t.slice(0, 3), p1: t => t.slice(0, 1)};
+const CARD_STATE = path.join(CACHE, "cards-state.json");
+const readCached = p => { const f = fileOf(p); try { return fs.existsSync(f) ? zlib.gunzipSync(fs.readFileSync(f)).toString("utf8") : null; } catch (e){ return null; } };
+const readJSON = p => { const s = readCached(p); try { return s ? JSON.parse(s) : null; } catch (e){ return null; } };
+async function importCards(){
+  const ix = readJSON("/players/card/index.json");
+  const common = readJSON("/players/card/common.json"), meta = readJSON("/players/card/h2h/meta.json");
+  // 確認用：選手カードのページで、ファイル名を作っているところ
+  const html = readCached("/players/card.html") || "";
+  const code = [...html.matchAll(/[^\n]{0,200}card\/(?:p|h2h)\/[^\n]{0,160}/g)].map(m => m[0].slice(0, 360)).slice(0, 4);
+  if (!ix) return {err: "選手の一覧（card/index.json）がまだありません", code};
+  const ver = String((common && common.win && common.win.y1 && common.win.y1.to) || (meta && meta.to) || "");
+  let st = {};
+  try { st = JSON.parse(fs.readFileSync(CARD_STATE, "utf8")); } catch (e){}
+  if (st.ver !== ver) st = {ver, key: st.key || null, done: {p: [], h2h: []}};
+  const tobans = Object.keys(ix).sort();
+  // ファイル名の形（登録番号そのまま／先頭の桁）を最初の選手で確かめる
+  if (!st.key){
+    for (const [name, fn] of Object.entries(CARD_KEYS)){
+      const r = await get(`/players/card/p/${fn(tobans[0])}.json`, 0);
+      if (r && r.status === 200 && /^\s*[\[{]/.test(r.body || "")){ st.key = name; st.done.p.push(fn(tobans[0])); break; }
+    }
+  }
+  if (!st.key){ fs.writeFileSync(CARD_STATE, JSON.stringify(st)); return {err: "選手カードのファイルの場所がわかりませんでした", code}; }
+  const keys = [...new Set(tobans.map(CARD_KEYS[st.key]))];
+  let n = 0, miss = 0;
+  for (const kind of ["p", "h2h"]){
+    const done = new Set(st.done[kind]);
+    for (const k of keys){
+      if (done.has(k) || n >= CARD_MAX || miss >= 30) continue;
+      const r = await get(`/players/card/${kind}/${k}.json`, 0);
+      n++;
+      if (r && r.status === 200){ done.add(k); miss = 0; }
+      else if (r && r.status === 404) done.add(k);   // ない選手は飛ばす
+      else miss++;
+    }
+    st.done[kind] = [...done];
+  }
+  fs.writeFileSync(CARD_STATE, JSON.stringify(st));
+  // 書き出し：種類ごとに1つのファイルにまとめる
+  const have = {};
+  fs.mkdirSync("funadata", {recursive: true});
+  for (const kind of ["p", "h2h"]){
+    const all = {};
+    for (const k of keys){ const j = readJSON(`/players/card/${kind}/${k}.json`); if (j) all[k] = j; }
+    have[kind] = Object.keys(all).length;
+    if (have[kind]) fs.writeFileSync(`funadata/players__card__${kind}.json.gz`, zlib.gzipSync(JSON.stringify({ver, key: st.key, n: have[kind], of: keys.length, cards: all})));
+  }
+  return {ver, key: st.key, fetched: n, have, of: keys.length, code};
 }
 
 // JSON の形の要約（どんな項目が何件あるか、先頭を少しだけ）
@@ -136,11 +193,13 @@ export async function main(){
     }
     manifest.push(e);
   }
+  let cards = null;
+  try { cards = await importCards(); } catch (err){ cards = {err: String(err.message || err).slice(0, 200)}; }
   const out = {
     built: new Date().toISOString(), base: BASE, minutes: +((Date.now() - T0) / 60e3).toFixed(1),
     fetchedThisRun: fetched, total: manifest.length, notYet: manifest.filter(x => String(x.status).startsWith("未取得")).length,
     byKind: manifest.reduce((a, x) => { a[x.kind || "?"] = (a[x.kind || "?"] || 0) + 1; return a; }, {}),
-    patterns, files: manifest
+    cards, patterns, files: manifest
   };
   fs.writeFileSync("funanote-manifest.json", JSON.stringify(out, null, 1));
   // リポジトリに書き出す
@@ -181,6 +240,7 @@ export async function main(){
   try { execSync("git add funadata", {stdio: "ignore"}); } catch (err){}
   console.log(`書き出し ${ex.length}ファイル（${EXPORT}）`);
   console.log(`読んだ ${fetched}件（全 ${manifest.length}件・まだ ${out.notYet}件）`, JSON.stringify(out.byKind));
+  console.log("選手カード", JSON.stringify(cards ? {...cards, code: cards.code ? cards.code.length + "か所" : 0} : null));
   return out;
 }
 
