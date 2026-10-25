@@ -1490,7 +1490,7 @@ const lineOf = p => Math.ceil(settings.ev / p * 10) / 10;
 // このレースの結論：信頼度（◎がそのまま勝つ確率）・期待値（参考）・軸と消し・当てにいく買い目
 // 1〜10月の4万4千レースで、◎の1着率の予想と実際はほぼ一致（例：予想60%→実際60.5%、予想75%→実際74%）
 const AXIS_P = 0.85, CUT_P = 0.15;
-const AXIS_NOTE = "7〜10月の検証：軸は90%で3着以内、消しも10回に1回は3着以内に来た。軸から消しを抜いて3連複を買っても回収率76%（マイナス）なので、点数を絞る目安に";
+const AXIS_NOTE = "7〜10月の検証：軸は90%・2番手は66%で3着以内に来た（2番手の予想67%とほぼ同じ）。消しも10回に1回は3着以内。軸・2番手で3連複・3連単・ワイドを買っても回収率75〜85%（マイナス）なので、点数を絞る目安に";
 const CONF = [[0.65, "高", "lv4", "4回に3回は◎が勝つ"], [0.5, "中", "lv3", "2回に1回強は◎"], [0.35, "低", "lv2", "◎でも半分以下"], [0, "混戦", "lv1", "どの艇にもチャンス"]];
 // アプリの自信：このレースが「読める」か。一番ありそうな3艇で1〜3着が決まる確率（順番は問わない）
 // 7〜10月の1.7万レースで、かたい（30%以上）35%・ふつう（20〜30%）25%・荒れそう（20%未満）16% が実際に当たった（予想どおり）
@@ -1551,13 +1551,17 @@ function verdictHTML(r, an){
   const ref = `<div class="vd-ref"><span class="vd-k">参考</span><span class="vd-v">2連単 ${comb(ex.c)}<small>${pct(ex.p)}%・${(1 / ex.p).toFixed(1)}倍〜</small>${hitMark(ex.c)}</span>
     <span class="vd-v">3連単 ${picks.map(t => comb(t.c) + hitMark(t.c)).join("・")}<small>${picks.length}点で${pct(cum)}%</small></span>
     <span class="vd-n">当てにいくならの目安。長期の回収率は約80%（マイナス）なので楽しむ分だけ。「〜倍」はこれ以上なら損しないオッズ</span></div>`;
-  // 軸（3着以内に来る確率85%以上）と消し（15%未満）。舟券を絞る目安で、これだけで勝てるわけではない
+  // 軸（3着以内に来る確率85%以上）と2番手（◎と軸以外で、3着以内に一番来やすい艇）と消し（15%未満）。舟券を絞る目安で、これだけで勝てるわけではない
+  // 2番手：2〜10月の3.9万レースで、予想67%→実際66%（7〜10月）。◎と両方3着以内は予想56%→実際55%
   const t3 = won ? won.slice(0, 3) : null;
   const ax = [...an.F].sort((x, y) => y.p3 - x.p3)[0];
   const axOk = ax.p3 >= AXIS_P;
-  const cuts = an.F.filter(f => f !== ax && f.p3 < CUT_P).sort((x, y) => x.b.no - y.b.no);
+  const sec = [...an.F].filter(f => f !== top && !(axOk && f === ax)).sort((x, y) => y.p3 - x.p3)[0];
+  const both = sec ? an.triAll.reduce((a, t) => a + (t.c.includes(top.b.no) && t.c.includes(sec.b.no) ? t.p : 0), 0) : 0;
+  const cuts = an.F.filter(f => f !== ax && f !== sec && f.p3 < CUT_P).sort((x, y) => x.b.no - y.b.no);
   const mark = (f, good) => t3 ? (t3.includes(f.b.no) === good ? " ✓" : " ✗") : "";
   const axl = `<div class="vd-ax"><span class="vd-k">軸・消し</span><span class="vd-v">${axOk ? `軸 ${chip(ax.b.no)}<small>3着以内${pct(ax.p3)}%</small>${mark(ax, true)}` : `軸なし<small>3着以内が${Math.round(AXIS_P * 100)}%以上の艇がいない</small>`}</span>
+    ${sec ? `<span class="vd-v">2番手 ${chip(sec.b.no)}<small>3着以内${pct(sec.p3)}%・◎${chip(top.b.no)}と両方${pct(both)}%</small>${mark(sec, true)}</span>` : ""}
     <span class="vd-v">${cuts.length ? `消し ${cuts.map(f => chip(f.b.no) + `<small>${pct(f.p3)}%</small>` + mark(f, false)).join(" ")}` : `消しなし<small>${Math.round(CUT_P * 100)}%未満の艇がいない</small>`}</span>
     <span class="vd-n">${AXIS_NOTE}</span></div>`;
   return `<div class="verdict">
