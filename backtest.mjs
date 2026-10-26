@@ -11,8 +11,8 @@ import {motorIndex, motorEx, renewMap} from "./motorex.mjs";
 const SRC = "https://turnmark.github.io/api/v1";
 const START = "2026-01-01";
 const CACHE = "btcache";
-// b6：モーター番号（モーターの展示の速さ用）と3連複の払戻（自信ごとの成績用）も持つ。前の形（b1〜b5）は消す
-const PREFIX = "b6-";
+// b7：モーター番号（モーターの展示の速さ用）と3連複・複勝の払戻（自信ごと・◎単勝候補の成績用）も持つ。前の形は消す
+const PREFIX = "b7-";
 const pfx = d => PREFIX;
 const FUNA = "https://funanote-k7q2xm.pages.dev/data/";
 const UA = "Mozilla/5.0 (compatible; slit-radar-import/1.0; with permission of the site operator)";
@@ -25,6 +25,9 @@ const FRESH = "2026-10-17";
 // アプリの「自信」と同じ決め方：一番ありそうな3艇で1〜3着が決まる確率（順番なし）が30%以上「かたい」、20%以上「ふつう」、それ未満「荒れそう」。
 // オッズ（3連単から出した1着の確率）と意見が大きく割れる（KL 0.07超）ときは一段下げる
 const JISHIN = [[0.30, "かたい"], [0.20, "ふつう"], [0, "荒れそう"]];
+// ◎単勝候補：信頼度「低」（◎の1着率35〜50%）×自信「かたい」。2〜10/25の約1,700レースで◎単勝の回収率は約99%（とんとん）。
+// 見つけたあと（2026-10-26〜）の新しいレースで、本当にプラスかを確かめる
+const CAND = {lo: 0.35, hi: 0.50, from: "2026-10-26"};
 const DAYB = [["初日", r => r.day === 1 && !r.lastDay], ["2日目", r => r.day === 2 && !r.lastDay], ["3日目", r => r.day === 3 && !r.lastDay],
   ["4日目以降", r => r.day >= 4 && !r.lastDay], ["最終日", r => r.lastDay]];
 
@@ -45,7 +48,7 @@ function mini(r){
     s: r.stadium, no: r.no, hp: r.hasPreview, day: r.day ?? null, last: !!r.lastDay, wind: r.cond ? r.cond.wind : null, wd: r.cond ? r.cond.wd : null, wave: r.cond ? r.cond.wave : null,
     boats: r.boats.map(b => ({no: b.no, reg: b.reg, cls: b.cls, win: b.win, local: b.local, top2: b.top2, top3: b.top3, ltop2: b.ltop2, ltop3: b.ltop3, motor3: b.motor3, boat3: b.boat3, avgST: b.avgST, F: b.F, motor2: b.motor2, boat2: b.boat2, mno: b.motorNo ?? null, course: b.course, exST: b.exST, exF: b.exF, exTime: b.exTime, tilt: b.tilt, prop: b.prop, parts: b.parts, wt: b.wt, wtAdj: b.wtAdj})),
     order: r.result.order,
-    pay: {win: r.result.payouts.win || [], exacta: r.result.payouts.exacta || [], trifecta: r.result.payouts.trifecta || [], trio: r.result.payouts.trio || []},
+    pay: {win: r.result.payouts.win || [], place: r.result.payouts.place || [], exacta: r.result.payouts.exacta || [], trifecta: r.result.payouts.trifecta || [], trio: r.result.payouts.trio || []},
     odds: o ? {win: o.win, exacta: o.exacta, trifecta: o.trifecta} : null
   };
 }
@@ -138,6 +141,8 @@ export async function main(fetcher = fetch){
   const byDay = {known: dayBlank(), fresh: dayBlank()};
   const jBlank = () => JISHIN.map(([from, label]) => ({label, from, races: 0, hit3: 0, top: z(), ex1: z(), tri: z(), trio: z()}));
   const byJishin = {known: jBlank(), fresh: jBlank()};
+  const cBlank = () => ({races: 0, top: z(), place: z()});
+  const kouho = {known: cBlank(), fresh: cBlank(), recent: []};
   const months = [...new Set(days.map(d => d.slice(0, 7)))];
   const perMonth = {};
   let N = 0, oddsRaces = 0, hit1 = 0, c1Win = 0, ll = 0, llBase = 0;
@@ -245,6 +250,14 @@ export async function main(fetcher = fetch){
             const kl = pr.F.reduce((a, f) => { const m = (q[f.b.no] || 0) / qt; return a + (f.p1 > 0 && m > 0 ? f.p1 * Math.log(f.p1 / m) : 0); }, 0);
             if (kl > 0.07) li = Math.min(JISHIN.length - 1, li + 1);
           }
+          // ◎単勝候補（信頼度「低」×自信「かたい」）：◎の単勝と複勝
+          if (stats && li === 0 && pr.top.p1 >= CAND.lo && pr.top.p1 < CAND.hi){   // 1月はコース実績がなく予想の形が違うので数えない
+            const G = d >= CAND.from ? kouho.fresh : kouho.known, A = pr.top.b.no;
+            const wp = win === A ? payOf("win", [A]) : 0;
+            const pl = order.slice(0, 2).includes(A) ? (+((r.result.payouts.place || []).find(x => String(x.combination) === String(A)) || {}).amount || 0) : 0;
+            G.races++; put(G.top, 1, wp); put(G.place, 1, pl);
+            if (d >= CAND.from) kouho.recent.push({d, s: r.stadium, no: r.no, A, p1: +pr.top.p1.toFixed(3), res: order.slice(0, 3), win: wp, place: pl});
+          }
           const J = (d >= FRESH ? byJishin.fresh : byJishin.known)[li];
           J.races++;
           put(J.top, 1, pr.top.b.no === win ? payOf("win", [win]) : 0);
@@ -284,6 +297,7 @@ export async function main(fetcher = fetch){
     alert: {all: agg(alertAll), ev: agg(alertEV)},
     byConf: byConf.map(c => ({...c, ...Object.fromEntries(["top", "rec", "ex1", "tri"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))})),
     byDay: {from: FRESH, ...Object.fromEntries(["known", "fresh"].map(g => [g, byDay[g].map(c => ({...c, ...Object.fromEntries(["top", "rec", "tri", "kon"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))}))]))},
+    cand: {...CAND, ...Object.fromEntries(["known", "fresh"].map(g => [g, {races: kouho[g].races, ...Object.fromEntries(["top", "place"].map(k => [k, {...kouho[g][k], roi: kouho[g][k].n ? +(kouho[g][k].ret / (100 * kouho[g][k].n)).toFixed(4) : 0}]))}])), recent: kouho.recent.slice(-60)},
     byJishin: {from: FRESH, ...Object.fromEntries(["known", "fresh"].map(g => [g, byJishin[g].map(c => ({...c, ...Object.fromEntries(["top", "ex1", "tri", "trio"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))}))]))}
   };
   fs.writeFileSync("backtest.json", JSON.stringify(out));

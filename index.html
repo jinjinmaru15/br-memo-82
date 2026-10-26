@@ -118,13 +118,14 @@ button:disabled{cursor:default}
 /* sticky filter bar */
 .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
 .bar .gut{padding-block:8px 8px;display:grid;gap:8px}
-.tabs{display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.tabs{display:grid;grid-template-columns:repeat(6,1fr);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
 .tab{border:0;background:none;border-radius:9px;padding:6px 2px;font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;line-height:1.2;color:var(--muted);min-width:0}
 .tab .n{font-family:var(--f-num);font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
 .tab[aria-selected="true"]{background:var(--solid);color:var(--solid-ink)}
 .tab[data-tab="alert"][aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
 .tab[data-tab="ana"][aria-selected="true"]{background:var(--ana);color:var(--surface)}
 .tab[data-tab="value"][aria-selected="true"]{background:var(--val);color:var(--val-ink)}
+.tab[data-tab="cand"][aria-selected="true"]{background:var(--solid);color:var(--solid-ink)}
 .filters{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:1px}
 .filters::-webkit-scrollbar{display:none}
 .chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:500;white-space:nowrap}
@@ -157,6 +158,7 @@ button:disabled{cursor:default}
 .bdg.solid{background:var(--solid);color:var(--solid-ink)}
 .bdg.ana{background:var(--ana-soft);color:var(--ana);border-color:var(--ana)}
 .bdg.val{background:var(--val-soft);color:var(--val);border-color:var(--val)}
+.bdg.cand{background:var(--solid);color:var(--solid-ink)}
 .bdg.mute{background:var(--track);color:var(--muted)}
 .bdg.res{background:none;border-color:var(--line);color:var(--ink)}
 .bdg .bn{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:4px;font-family:var(--f-num);font-size:13px;box-shadow:inset 0 0 0 1px var(--hull-stroke)}
@@ -457,6 +459,7 @@ table.tk-t2 td.tot small{display:inline;font-size:12px}
 <div class="bar">
   <div class="gut">
     <div class="tabs" role="tablist" aria-label="表示するレース">
+      <button class="tab" role="tab" data-tab="cand" type="button"><span class="n" id="n-cand">0</span>候補</button>
       <button class="tab" role="tab" data-tab="value" type="button"><span class="n" id="n-value">0</span>期待値</button>
       <button class="tab" role="tab" data-tab="alert" type="button"><span class="n" id="n-alert">0</span>スリット</button>
       <button class="tab" role="tab" data-tab="honmei" type="button"><span class="n" id="n-honmei">0</span>鉄板</button>
@@ -1394,7 +1397,8 @@ function analyze(r, s){
     slitLevel: alerts.filter(a => a.type === "nobi").reduce((m, a) => Math.max(m, a.level), 0),
     isHonmei: pr.top.p1 * 100 >= s.honmei,
     isAna: pr.c1.p1 * 100 <= s.ana,
-    isValue: value.length > 0
+    isValue: value.length > 0,
+    isCand: isCand(r, pr)
   };
 }
 
@@ -1529,6 +1533,7 @@ function badgeHTML(r, an){
   an.alerts.filter(a => a.type === "attack").forEach(a => out.push(`<span class="bdg alert">${bn(a.boat)}ST攻め・${a.tactic} <span class="num">+${f2(a.diff).slice(1)}</span>${a.fHolder ? " F持ち" : ""}</span>`));
   an.alerts.filter(a => a.type === "dent").forEach(a => out.push(`<span class="bdg alert">${bn(a.boat)}ST凹み → ${bn(a.next)}に展開</span>`));
   an.alerts.filter(a => a.type === "exf").forEach(a => out.push(`<span class="bdg mute">${bn(a.boat)}展示F<span class="num">.${String(Math.round(a.diff * 100)).padStart(2, "0")}</span>（点数に入れない）</span>`));
+  if (an.isCand) out.push(`<span class="bdg cand">◎単勝候補 ${bn(an.top.b.no)}</span>`);
   if (an.isValue) out.push(`<span class="bdg val">期待値 ${an.value.map(x => bn(x.c[0])).join("")}単勝</span>`);
   if (an.isHonmei) out.push(`<span class="bdg solid">鉄板 ${bn(an.top.b.no)}<span class="num">${pct(an.top.p1)}%</span></span>`);
   if (an.isAna) out.push(`<span class="bdg ana">穴 1コース<span class="num">${pct(an.c1.p1)}%</span></span>`);
@@ -1559,19 +1564,39 @@ function marketWinProb(r){
   for (const k in q) q[k] /= t;
   return q;
 }
-function jishinHTML(r, an){
-  if (!an.set3) return "";
+// 自信の段階（0かたい・1ふつう・2荒れそう）。オッズと意見が大きく割れる（KL 0.07超）ときは一段下げる
+function jishinLevel(r, an){
+  if (!an.set3) return null;
   let li = JISHIN.findIndex(([t]) => an.set3.p >= t);
   const mq = marketWinProb(r);
+  let kl = null;
+  if (mq){
+    kl = an.F.reduce((a, f) => { const q = +mq[f.b.no] || 0; return a + (f.p1 > 0 && q > 0 ? f.p1 * Math.log(f.p1 / q) : 0); }, 0);
+    if (kl > 0.07) li = Math.min(JISHIN.length - 1, li + 1);
+  }
+  return {li, kl, mq};
+}
+// ◎単勝候補：信頼度「低」（◎の1着率35〜50%）×自信「かたい」のレースの◎単勝
+// 2〜10/25の約1,700レースで回収率 約99%（2〜6月100%・7〜10月94%・10/17〜25は137%（77レース））。とんとんで、プラスかはまだわからない
+// 見つけたあと（10/26〜）の新しいレースで確かめる（検証タブ）。展示のあとに判定。オッズが届くと、意見が割れて外れることがある
+const CAND = {lo: 0.35, hi: 0.50, from: "2026-10-26"};
+function isCand(r, an){
+  if (!r.hasPreview || an.top.p1 < CAND.lo || an.top.p1 >= CAND.hi) return false;
+  const j = jishinLevel(r, an);
+  return !!(j && j.li === 0);
+}
+function jishinHTML(r, an){
+  if (!an.set3) return "";
+  const J = jishinLevel(r, an);
+  let li = J.li;
+  const mq = J.mq;
   let note = "この3艇で1〜3着が決まる確率（順番は問わない）";
   if (mq){
-    const kl = an.F.reduce((a, f) => { const q = +mq[f.b.no] || 0; return a + (f.p1 > 0 && q > 0 ? f.p1 * Math.log(f.p1 / q) : 0); }, 0);
+    const kl = J.kl;
     const fav = Object.entries(mq).sort((a, b) => b[1] - a[1])[0];
     const diffTop = fav && +fav[0] !== an.top.b.no;
-    if (kl > 0.07){
-      li = Math.min(JISHIN.length - 1, li + 1);
-      note = `オッズと意見が${kl > 0.128 ? "大きく" : ""}割れているので一段下げています。こういうときはアプリのほうが外れやすい`;
-    } else note = "オッズともだいたい同じ見方";
+    if (kl > 0.07) note = `オッズと意見が${kl > 0.128 ? "大きく" : ""}割れているので一段下げています。こういうときはアプリのほうが外れやすい`;
+    else note = "オッズともだいたい同じ見方";
     if (diffTop) note += `。オッズの本命は${chip(+fav[0])}（◎と本命が違うとき、勝つのは◎が約3割・本命が約4割弱）`;
   }
   const [, label, cls] = JISHIN[li];
@@ -1620,6 +1645,7 @@ function verdictHTML(r, an){
   return `<div class="verdict">
     <div class="vd-conf ${cf[2]}"><span class="vd-k">信頼度</span><span class="vd-c">${cf[1]}</span><span class="vd-v">◎${chip(top.b.no)} 1着率${pct(top.p1)}%<small>${cf[3]}</small></span></div>
     ${jishinHTML(r, an)}
+    ${an.isCand ? `<div class="vd-cand"><span class="vd-k">候補</span><span class="vd-v">◎${chip(top.b.no)} 単勝${won ? (won[0] === top.b.no ? ` <em class="hit">的中</em>` : ` <em class="miss">ハズレ</em>`) : ""}</span><span class="vd-n">信頼度「低」×自信「かたい」のレース。2〜10月の約1,700レースで◎の単勝は回収率 約99%（とんとん）、複勝は約98%。プラスかどうかは10/26からの新しいレースで確かめ中（検証タブ）なので、買うなら少額で。</span></div>` : ""}
     ${rec}${axl}${ref}
   </div>`;
 }
@@ -2022,7 +2048,7 @@ function render(){
   state.liveRes = liveRes;
   const analyzed = state.races.map(r => ({r, an: analyze(r, settings)}));
   const pool = analyzed.filter(x => (!state.stadium || x.r.stadium === state.stadium) && (!useUpcoming || x.r.closedAt > now));
-  const pass = {alert: x => x.an.isSlit, honmei: x => x.an.isHonmei, ana: x => x.an.isAna, value: x => x.an.isValue, all: () => true};
+  const pass = {cand: x => x.an.isCand, alert: x => x.an.isSlit, honmei: x => x.an.isHonmei, ana: x => x.an.isAna, value: x => x.an.isValue, all: () => true};
   for (const k in pass) $("n-" + k).textContent = pool.filter(pass[k]).length;
   if (!pass[state.tab]) state.tab = "all";
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === state.tab)));
@@ -2042,6 +2068,7 @@ function render(){
   else if (state.note && !state.races.length) html = `<div class="empty">${esc(state.note)}</div>`;
   else if (!list.length){
     const msg = {
+      cand: "◎単勝候補のレースはありません。信頼度「低」（◎の1着率35〜50%）で自信が「かたい」レースに、展示のあとで出ます（1日6レースほど）。",
       alert: "スリットアラート（一つ内側の艇より展示タイムが速い艇）が出ているレースはありません。展示航走が終わったレースから順に判定します。",
       honmei: "鉄板のレースはありません。設定で「鉄板」のしきい値を下げると増えます。",
       ana: "穴のレースはありません。設定で「穴」のしきい値を上げると増えます。",
@@ -2160,6 +2187,17 @@ function longHTML(L){
       <div class="stat"><span>◎の1着率</span><b>${(L.base.hit1 * 100).toFixed(1)}%</b><small>1コースが勝った率 ${(L.base.c1Win * 100).toFixed(1)}%</small></div>
     </div>
     <p class="note">${verdict}スリットアラート強の艇を期待値を見ずに全部買うと、回収率は${aa.n ? P(aa.roi) : "-"}（${aa.n}点）でした。</p>
+    ${L.cand ? (() => {
+      const C = L.cand, md = x => `${+x.slice(5, 7)}/${+x.slice(8)}`;
+      const hr = (g, k) => g.races ? Math.round(g[k].hit / g.races * 100) + "%" : "-";
+      const row = (lab, g) => `<tr><td>${lab}</td><td>${g.races}</td><td class="zr${g.top.n && g.top.roi >= 1 ? " plus" : ""}">${g.top.n ? P(g.top.roi) : "-"}<small>的中${hr(g, "top")}</small></td><td class="zr${g.place.n && g.place.roi >= 1 ? " plus" : ""}">${g.place.n ? P(g.place.roi) : "-"}<small>的中${hr(g, "place")}</small></td></tr>`;
+      const rec = (C.recent || []).slice(-15).reverse().map(x => `<tr><td>${md(x.d)}</td><td class="feat">${esc(STADIUMS[x.s] || x.s)} ${x.no}R</td><td>${chip(x.A)}<small>${Math.round(x.p1 * 100)}%</small></td><td>${x.res.join("-")}</td><td class="${x.win ? "plus" : ""}">${x.win ? x.win + "円" : "×"}</td><td class="${x.place ? "plus" : ""}">${x.place ? x.place + "円" : "×"}</td></tr>`).join("");
+      return `<div><h3>◎単勝候補の成績（信頼度「低」×自信「かたい」）</h3>
+        <div class="tbl"><table class="lft2"><thead><tr><th>期間</th><th>レース</th><th>◎の単勝</th><th>◎の複勝</th></tr></thead>
+        <tbody>${row(md(C.from) + "〜（確かめ中）", C.fresh)}${row("それより前", C.known)}</tbody></table></div>
+        ${rec ? `<p class="note">最近の候補</p><div class="tbl"><table class="lft2"><thead><tr><th>日</th><th>レース</th><th>◎</th><th>結果</th><th>単勝</th><th>複勝</th></tr></thead><tbody>${rec}</tbody></table></div>` : ""}
+        <p class="note">「それより前」は、この条件を見つけるのに使ったレースなので良く見えて当然です。本当にプラスかは、${md(C.from)}からの新しいレースで決まります（1日6レースほどなので、判断には数か月かかります）。各100円で買ったとして、実際の払戻で数えています。</p></div>`;
+    })() : ""}
     <div><h3>条件ごとの回収率</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>期待値</th><th>確率</th><th>単勝の点数</th><th>単勝</th><th>95%の範囲</th><th>2連単</th><th>3連単</th></tr></thead>
       <tbody>${grid}</tbody></table></div></div>
