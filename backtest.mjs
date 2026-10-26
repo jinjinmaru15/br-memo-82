@@ -11,10 +11,9 @@ import {motorIndex, motorEx, renewMap} from "./motorex.mjs";
 const SRC = "https://turnmark.github.io/api/v1";
 const START = "2026-01-01";
 const CACHE = "btcache";
-const PREFIX = "b4-";
-// モーターの展示の速さ（データ攻めのモーターカルテ・7/15から）を使う日は、モーター番号を入れた b5- で持つ
-const MOTOR_FROM = "2026-07-15";
-const pfx = d => d >= MOTOR_FROM ? "b5-" : PREFIX;
+// b6：モーター番号（モーターの展示の速さ用）と3連複の払戻（自信ごとの成績用）も持つ。前の形（b1〜b5）は消す
+const PREFIX = "b6-";
+const pfx = d => PREFIX;
 const FUNA = "https://funanote-k7q2xm.pages.dev/data/";
 const UA = "Mozilla/5.0 (compatible; slit-radar-import/1.0; with permission of the site operator)";
 const GRID_EV = [1.2, 1.3, 1.5, 2.0];
@@ -23,6 +22,9 @@ const MAIN = {ev: 2.0, minP: 0.10};
 const BANDS = [[1, 3], [3, 6], [6, 10], [10, 20], [20, 1e9]];
 // 開催日ごと。2026-10-17 以降は、条件を探すのに使っていない新しいレース（ここで本物かどうかを確かめる）
 const FRESH = "2026-10-17";
+// アプリの「自信」と同じ決め方：一番ありそうな3艇で1〜3着が決まる確率（順番なし）が30%以上「かたい」、20%以上「ふつう」、それ未満「荒れそう」。
+// オッズ（3連単から出した1着の確率）と意見が大きく割れる（KL 0.07超）ときは一段下げる
+const JISHIN = [[0.30, "かたい"], [0.20, "ふつう"], [0, "荒れそう"]];
 const DAYB = [["初日", r => r.day === 1 && !r.lastDay], ["2日目", r => r.day === 2 && !r.lastDay], ["3日目", r => r.day === 3 && !r.lastDay],
   ["4日目以降", r => r.day >= 4 && !r.lastDay], ["最終日", r => r.lastDay]];
 
@@ -43,7 +45,7 @@ function mini(r){
     s: r.stadium, no: r.no, hp: r.hasPreview, day: r.day ?? null, last: !!r.lastDay, wind: r.cond ? r.cond.wind : null, wd: r.cond ? r.cond.wd : null, wave: r.cond ? r.cond.wave : null,
     boats: r.boats.map(b => ({no: b.no, reg: b.reg, cls: b.cls, win: b.win, local: b.local, top2: b.top2, top3: b.top3, ltop2: b.ltop2, ltop3: b.ltop3, motor3: b.motor3, boat3: b.boat3, avgST: b.avgST, F: b.F, motor2: b.motor2, boat2: b.boat2, mno: b.motorNo ?? null, course: b.course, exST: b.exST, exF: b.exF, exTime: b.exTime, tilt: b.tilt, prop: b.prop, parts: b.parts, wt: b.wt, wtAdj: b.wtAdj})),
     order: r.result.order,
-    pay: {win: r.result.payouts.win || [], exacta: r.result.payouts.exacta || [], trifecta: r.result.payouts.trifecta || []},
+    pay: {win: r.result.payouts.win || [], exacta: r.result.payouts.exacta || [], trifecta: r.result.payouts.trifecta || [], trio: r.result.payouts.trio || []},
     odds: o ? {win: o.win, exacta: o.exacta, trifecta: o.trifecta} : null
   };
 }
@@ -108,6 +110,7 @@ async function loadMotor(){
 
 export async function main(fetcher = fetch){
   fs.mkdirSync(CACHE, {recursive: true});
+  for (const f of fs.readdirSync(CACHE)) if (!f.startsWith(PREFIX)){ try { fs.unlinkSync(`${CACHE}/${f}`); } catch (e){} }
   const motor = await loadMotor();
   const days = [];
   for (let d = START; d <= lastDay; d = addDays(d, 1)) days.push(d);
@@ -133,6 +136,8 @@ export async function main(fetcher = fetch){
   const byConf = CONF.map(([from, label]) => ({from, label, races: 0, top: z(), rec: z(), ex1: z(), tri: z()}));
   const dayBlank = () => DAYB.map(([label]) => ({label, races: 0, top: z(), rec: z(), tri: z(), kon: z()}));
   const byDay = {known: dayBlank(), fresh: dayBlank()};
+  const jBlank = () => JISHIN.map(([from, label]) => ({label, from, races: 0, hit3: 0, top: z(), ex1: z(), tri: z(), trio: z()}));
+  const byJishin = {known: jBlank(), fresh: jBlank()};
   const months = [...new Set(days.map(d => d.slice(0, 7)))];
   const perMonth = {};
   let N = 0, oddsRaces = 0, hit1 = 0, c1Win = 0, ll = 0, llBase = 0;
@@ -227,6 +232,33 @@ export async function main(fetcher = fetch){
             if (kon && t.p * od >= 2) put(D.kon, 1, pay);
           }
         }
+        // 自信ごと：◎の単勝・2連単1点・3連単（参考）・3連複（自信の3艇を1点）
+        if (pr.set3){
+          const q = {}; let qt = 0;
+          for (const a of pr.F) for (const b of pr.F) for (const c of pr.F){
+            if (a === b || b === c || a === c) continue;
+            const od = M.oddsOf(r.odds, "tri", [a.b.no, b.b.no, c.b.no]);
+            if (od > 0){ q[a.b.no] = (q[a.b.no] || 0) + 1 / od; qt += 1 / od; }
+          }
+          let li = JISHIN.findIndex(([t]) => pr.set3.p >= t);
+          if (qt){
+            const kl = pr.F.reduce((a, f) => { const m = (q[f.b.no] || 0) / qt; return a + (f.p1 > 0 && m > 0 ? f.p1 * Math.log(f.p1 / m) : 0); }, 0);
+            if (kl > 0.07) li = Math.min(JISHIN.length - 1, li + 1);
+          }
+          const J = (d >= FRESH ? byJishin.fresh : byJishin.known)[li];
+          J.races++;
+          put(J.top, 1, pr.top.b.no === win ? payOf("win", [win]) : 0);
+          put(J.ex1, 1, e1.c[0] === order[0] && e1.c[1] === order[1] ? payOf("ex", e1.c) : 0);
+          J.tri.n += picks.length; if (th){ J.tri.hit++; J.tri.ret += payOf("tri", th.c); }
+          const in3 = order.length >= 3 && pr.set3.c.every(n => order.slice(0, 3).includes(n));
+          if (in3) J.hit3++;
+          const trio = r.result.payouts.trio;
+          if (trio && trio.length){
+            const comb = [...order.slice(0, 3)].sort((a, b) => a - b).join("=");
+            const x = trio.find(y => String(y.combination) === comb);
+            put(J.trio, 1, in3 && x ? +x.amount || 0 : 0);
+          }
+        }
         for (const a of alerts){
           if (a.type !== "nobi" || a.level !== 2) continue;
           const f = pr.F.find(g => g.b.no === a.boat);
@@ -251,7 +283,8 @@ export async function main(fetcher = fetch){
     bands: BANDS.map(([from, to]) => ({from, to, ...agg(main.filter(x => x.od >= from && x.od < to))})),
     alert: {all: agg(alertAll), ev: agg(alertEV)},
     byConf: byConf.map(c => ({...c, ...Object.fromEntries(["top", "rec", "ex1", "tri"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))})),
-    byDay: {from: FRESH, ...Object.fromEntries(["known", "fresh"].map(g => [g, byDay[g].map(c => ({...c, ...Object.fromEntries(["top", "rec", "tri", "kon"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))}))]))}
+    byDay: {from: FRESH, ...Object.fromEntries(["known", "fresh"].map(g => [g, byDay[g].map(c => ({...c, ...Object.fromEntries(["top", "rec", "tri", "kon"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))}))]))},
+    byJishin: {from: FRESH, ...Object.fromEntries(["known", "fresh"].map(g => [g, byJishin[g].map(c => ({...c, ...Object.fromEntries(["top", "ex1", "tri", "trio"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))}))]))}
   };
   fs.writeFileSync("backtest.json", JSON.stringify(out));
   const w = out.main.win;

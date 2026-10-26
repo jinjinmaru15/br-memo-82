@@ -2167,6 +2167,19 @@ function longHTML(L){
       <thead><tr><th>信頼度</th><th>レース</th><th>◎の単勝</th><th>期待値で選ぶ</th><th>2連単1点</th><th>3連単（参考）</th></tr></thead>
       <tbody>${confRows(L.byConf, [["top", "hit"], ["rec", "n"], ["ex1", "hit"], ["tri", "hit"]])}</tbody></table></div>
       <p class="note">◎の単勝は◎を毎回100円、「期待値で選ぶ」は期待値の条件を満たす単勝、2連単1点と3連単はカードの「参考」の買い方です（3連単は合計25%まで最大5点）。小さい数字は的中率か点数です。${real ? "" : "期待値で選ぶ単勝は確定オッズで選んでいるので、実際より有利です。"}</p></div>` : ""}
+    ${L.byJishin ? (() => {
+      const md = x => `${+x.slice(5, 7)}/${+x.slice(8)}`;
+      const cellOf = (a, sub) => `<td class="zr${a.n && a.roi >= 1 ? " plus" : ""}">${a.n ? P(a.roi) : "-"}<small>${sub}</small></td>`;
+      const rowsOf = list => list.map(c => { const R = c.races || 0, pc = v => R ? Math.round(v / R * 100) + "%" : "-";
+        return `<tr><td>${esc(c.label)}</td><td>${R}</td>${cellOf(c.top, "的中" + pc(c.top.hit))}${cellOf(c.ex1, "的中" + pc(c.ex1.hit))}${cellOf(c.tri, c.tri.n + "点")}${cellOf(c.trio, "3艇で決まる" + pc(c.hit3))}</tr>`; }).join("");
+      const head = `<thead><tr><th>自信</th><th>レース</th><th>◎の単勝</th><th>2連単1点</th><th>3連単（参考）</th><th>3連複（自信の3艇）</th></tr></thead>`;
+      return `<div><h3>自信ごとの成績</h3>
+        <p class="note"><b>${md(L.byJishin.from || "2026-10-17")}以降の新しいレース</b></p>
+        <div class="tbl"><table class="lft2">${head}<tbody>${rowsOf(L.byJishin.fresh)}</tbody></table></div>
+        <p class="note">それより前のレース</p>
+        <div class="tbl"><table class="lft2">${head}<tbody>${rowsOf(L.byJishin.known)}</tbody></table></div>
+        <p class="note">カードの「自信」（一番ありそうな3艇で1〜3着が決まる確率が30%以上で「かたい」、20%以上で「ふつう」、それ未満と、オッズと意見が大きく割れるときは一段下げる）ごとの成績です。3連複は自信の3艇を1点。かたいレースほど回収率は高いですが、長い目で見るとどれも100%未満です。新しいレースは数百レースたまるまで大きくぶれます。</p></div>`;
+    })() : ""}
     ${L.byDay ? (() => {
       const md = x => `${+x.slice(5, 7)}/${+x.slice(8)}`;
       const rowsOf = list => list.map(c => `<tr><td>${c.label}</td><td>${c.races}</td>${["top", "rec", "tri", "kon"].map(k => { const v = c[k] || {n: 0}; return `<td class="zr ${v.roi >= 1 && v.n ? "plus" : ""}">${v.n ? P(v.roi) : "-"}<small>${v.n}点</small></td>`; }).join("")}</tr>`).join("");
