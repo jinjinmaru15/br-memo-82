@@ -15,7 +15,11 @@
 // 締切前の単勝オッズは投票が少なく当てにならず、買う前に見えるオッズで検証すると回収率は約70%だったため。
 //
 // 予想の計算は index.html の中のコードをそのまま使う（記録に各艇の1着率も付ける）。
+//
+// オリジナル展示データ（オリテン：一周・まわり足・直線）を出している7場は、展示のあとに場の公式サイトを1レース1ページ読み、
+// 同じトピックで {k, o} としてアプリに送る（アプリの予想に入る）。場ごとに1秒に1回まで。締切前のオッズ読みを優先する。
 import fs from "node:fs";
+import {ORIG_SITES, parseOrig, compactOrig} from "./origdata.mjs";
 
 const TOPIC = process.env.NTFY_TOPIC;
 const NTFY = "https://ntfy.sh";
@@ -123,6 +127,8 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
   const t0 = clock();
   let races = null, lastApi = -Infinity, lastPub = t0, lastFetch = -Infinity;
   let pages = 0, pagesOK = 0, snaps = 0, oddsMsgs = 0, triOK = 0, lastErr = "";
+  const origMap = new Map(), origSt = new Map(), lastHost = {};
+  let origTry = 0, origOK = 0;
 
   const wait = async ms => { if (ms > 0) await sleep(ms); };
   const hms = t => new Date(t + 9 * 3600e3).toISOString().slice(11, 19);
@@ -152,9 +158,37 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
   }
 
   // 見張りの調子（record.mjs が paper.json に残す。動いているかを確かめるため）
-  const status = () => ({v: "late1", pages, ok: pagesOK, snaps, tri: triOK, err: lastErr || undefined, races: races ? races.length : 0});
+  const status = () => ({v: "late1", pages, ok: pagesOK, snaps, tri: triOK, og: origOK, ogTry: origTry, err: lastErr || undefined, races: races ? races.length : 0});
+
+  // オリテン：展示のあと（締切30分前〜）に1レース1ページ。まだ出ていない・展示タイムが合わないときは1分半後にもう一度（6回まで）
+  async function origJob(){
+    const now = clock();
+    for (const r of races || []){
+      const v = ORIG_SITES[r.stadium];
+      if (!v || !r.hasPreview || !r.closedAt || origMap.has(r.key)) continue;
+      const left = (r.closedAt - now) / 60000;
+      if (left > 30 || left < 0.3) continue;
+      const st = origSt.get(r.key) || {n: 0, next: 0};
+      origSt.set(r.key, st);
+      if (st.n >= 6 || now < st.next) continue;
+      st.n++; st.next = now + 90e3;
+      const url = v.url(r.date, r.no), host = new URL(url).host;
+      await wait((lastHost[host] || 0) + 1100 - clock());
+      lastHost[host] = clock();
+      origTry++;
+      let page = null;
+      try {
+        const res = await fetch(url, {headers: {"Accept-Language": "ja"}, signal: AbortSignal.timeout(6000)});
+        if (res.ok) page = await res.text();
+      } catch (e){}
+      const o = compactOrig(parseOrig(page, v), r.boats);
+      if (o){ origMap.set(r.key, o); pending.push({k: r.key, o}); origOK++; }
+      return true;
+    }
+    return false;
+  }
   async function flushOdds(force = false){
-    if (!pending.length && !force) return;
+    if (!pending.length && !force){ lastPub = clock(); return; }   // 送るものがなくても次は5分後（空回りしない）
     // 1通4096バイトまでなので小分けにする
     let chunk = [];
     const send = async (always = false) => {
@@ -218,6 +252,7 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
     if (!w) return;
     const e = {k: r.key, w: Object.fromEntries(w), t: hms(clock()), m: +left.toFixed(2)};
     if (r.hasPreview){
+      if (origMap.has(r.key)) r.orig = origMap.get(r.key);
       if (M.formFor && stats && !r.form) r.form = M.formFor(r, stats, races);
       const pr = M.predict(r, s, M.slitAlerts(r, s), false, stats);
       e.p = Object.fromEntries(pr.F.map(f => [f.b.no, +f.p1.toFixed(3)]));
@@ -236,6 +271,8 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
     }
     // 1件ずつ、そのつど一番急ぐものを選んで読む
     for (let job; (job = nextJob()); ) await snap(job);
+    // 次のオッズ読みまで10秒以上あいているときだけ、オリテンを読む（1回に3ページまで・1ページ6秒で打ち切り）
+    for (let i = 0; i < 3 && nextAt() - clock() > 10e3; i++) if (!(await origJob())) break;
     if (clock() - lastPub >= ODDS_PUB_EVERY){ await flushOdds(); console.log(`${hms(clock())} 公式サイト ${pagesOK}/${pages}・記録 ${snaps}件（3連単 ${triOK}）${lastErr ? "・最後のエラー " + lastErr : ""}`); }
 
     const allDone = races && races.length && races.every(r => !r.closedAt || +r.closedAt + 8 * 60e3 <= clock());
@@ -246,7 +283,7 @@ export async function main({now: clock = () => Date.now(), sleep = ms => new Pro
     await wait(Math.max(300, Math.min(20e3, until - clock())));
   }
   await flushOdds(true);
-  console.log(`公式サイト ${pages}ページ（取得 ${pagesOK}）、記録 ${snaps}件（3連単あり ${triOK}）、送信 ${oddsMsgs}通`);
+  console.log(`公式サイト ${pages}ページ（取得 ${pagesOK}）、記録 ${snaps}件（3連単あり ${triOK}）、オリテン ${origOK}/${origTry}、送信 ${oddsMsgs}通`);
 }
 
 if (process.argv[1] && process.argv[1].endsWith("notify.mjs")) await main();

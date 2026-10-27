@@ -24,6 +24,7 @@
   --ana:#6A3CC0; --ana-soft:#ECE4FA;
   --val:#0B7A5C; --val-ink:#FFFFFF; --val-soft:#DDF2EA;
   --solid:#0F2233; --solid-ink:#FFFFFF;
+  --og:#0B6E99; --og-ink:#FFFFFF; --og-soft:#DCEFF7;
   --bar1:#0F2233; --bar3:#C7D4DF;
   --track:#E4ECF2; --tick:#B9C7D2; --hull-stroke:rgba(15,34,51,.62);
   --b1:#FFFFFF; --b2:#1B1B1B; --b3:#E1242B; --b4:#1565C0; --b5:#F5D010; --b6:#13915A;
@@ -39,6 +40,7 @@
     --ana:#B795FF; --ana-soft:#2A2142;
     --val:#4FD1A5; --val-ink:#062018; --val-soft:#123328;
     --solid:#E6EDF3; --solid-ink:#0A1520;
+    --og:#5CC8F0; --og-ink:#06202B; --og-soft:#10303F;
     --bar1:#E6EDF3; --bar3:#2C4459;
     --track:#16283A; --tick:#2F4A61; --hull-stroke:rgba(230,237,243,.6);
     color-scheme:dark;
@@ -50,6 +52,7 @@
   --ana:#B795FF; --ana-soft:#2A2142;
   --val:#4FD1A5; --val-ink:#062018; --val-soft:#123328;
   --solid:#E6EDF3; --solid-ink:#0A1520;
+  --og:#5CC8F0; --og-ink:#06202B; --og-soft:#10303F;
   --bar1:#E6EDF3; --bar3:#2C4459;
   --track:#16283A; --tick:#2F4A61; --hull-stroke:rgba(230,237,243,.6);
   color-scheme:dark;
@@ -159,6 +162,14 @@ button:disabled{cursor:default}
 .bdg.ana{background:var(--ana-soft);color:var(--ana);border-color:var(--ana)}
 .bdg.val{background:var(--val-soft);color:var(--val);border-color:var(--val)}
 .bdg.cand{background:var(--solid);color:var(--solid-ink)}
+.bdg.og{background:var(--og-soft);color:var(--og);border-color:var(--og)}
+.chip.og{border-color:var(--og);color:var(--og)}
+.chip.og[aria-pressed="true"]{background:var(--og);color:var(--og-ink);border-color:var(--og)}
+.chip .ogm,.rname .ogm{display:inline-block;margin-left:3px;padding:0 4px;border-radius:4px;font-size:10px;font-weight:700;line-height:1.5;background:var(--og);color:var(--og-ink);vertical-align:2px}
+.rname .ogm{font-size:11px;margin-left:0;align-self:center}
+.chip.og[aria-pressed="true"] .ogm{background:var(--og-ink);color:var(--og)}
+.rname .ogm.wait{background:none;color:var(--og);box-shadow:inset 0 0 0 1px var(--og)}
+td .ogb{color:var(--og);font-weight:700}
 .bdg.mute{background:var(--track);color:var(--muted)}
 .bdg.res{background:none;border-color:var(--line);color:var(--ink)}
 .bdg .bn{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:4px;font-family:var(--f-num);font-size:13px;box-shadow:inset 0 0 0 1px var(--hull-stroke)}
@@ -804,6 +815,7 @@ async function loadWithOdds(date){
 async function loadLiveOdds(date){
   const topic = loadTopic();
   const out = new Map();
+  out.orig = new Map();
   out.status = topic ? "ng" : "none";
   if (!topic) return out;
   try {
@@ -818,7 +830,11 @@ async function loadLiveOdds(date){
         if (m.event !== "message") continue;
         const d = JSON.parse(m.message);
         if (d.d !== date) continue;
-        for (const e of d.r || []){ const prev = out.get(e.k); out.set(e.k, {win: e.w, at: e.t || d.at, m: e.m ?? null, q: e.q || (prev && prev.q) || null}); }
+        for (const e of d.r || []){
+          if (e.o){ out.orig.set(e.k, e.o); continue; }   // オリテン（展示の一周・まわり足・直線）
+          if (!e.w) continue;
+          const prev = out.get(e.k); out.set(e.k, {win: e.w, at: e.t || d.at, m: e.m ?? null, q: e.q || (prev && prev.q) || null});
+        }
       } catch (e) {}
     }
   } catch (e) {}
@@ -839,6 +855,7 @@ async function loadDay(date){
   const live = await liveP;
   const lbl = x => x.m == null ? `${x.at.slice(0, 5)}時点のオッズ` : x.m < 0 ? "締切時のオッズ" : x.m < 0.95 ? `締切${Math.round(x.m * 60)}秒前のオッズ` : `締切${x.m.toFixed(1)}分前のオッズ`;
   races.forEach(r => { const x = live.get(r.key); if (!r.odds && x){ r.odds = {win: x.win}; r.oddsLabel = lbl(x); if (x.q) r.mq = x.q; } });
+  races.forEach(r => { const o = live.orig && live.orig.get(r.key); if (o) r.orig = o; });
   state.liveOdds = {date, status: live.status, n: live.size, at: [...live.values()].reduce((m, x) => x.at > m ? x.at : m, "")};
   return races;
 }
@@ -1011,6 +1028,29 @@ function seibiOf(b, course){
   if (p.some(x => MAJOR_PARTS.includes(x))) v += SEIBI.major;
   if (p.includes("電気")) v += SEIBI.elec;
   return v;
+}
+
+// オリジナル展示データ（オリテン）：場の公式サイトが出している、展示航走の一周・まわり足・直線のタイム
+// 見張り（notify.mjs）が展示のあとに読んで、合言葉のトピックで送ってくる（今日のレースだけ・7場）
+// 2026年1〜6月で効き方を決めて7〜10月で確かめた（約1.3万レース）：1着の当たり具合 +3.5‰（一周と直線が効く）
+// そのレースの中で速いほどプラス（6艇のばらつきで割る・±3まで）。毎晩の検証（backtest）には入っていない
+const ORIG_VENUES = {5: "多摩川", 6: "浜名湖", 10: "三国", 11: "びわこ", 13: "尼崎", 18: "徳山", 22: "福岡"};
+const ORIG_B = {lap: 0.087, turn: 0.016, straight: 0.089};
+const ORIG_K = ["lap", "turn", "straight"];
+function origFeats(r, F){
+  const O = r.orig;
+  if (!O) return null;
+  const out = F.map(() => ({lap: 0, turn: 0, straight: 0}));
+  let any = false;
+  ORIG_K.forEach((k, ki) => {
+    const vs = F.map(f => { const x = O[f.b.no]; return x && x[ki] > 0 ? x[ki] : null; });
+    if (vs.some(v => v == null)) return;
+    const n = vs.length, mean = vs.reduce((a, b) => a + b, 0) / n;
+    const sd = Math.max(Math.sqrt(vs.reduce((a, b) => a + (b - mean) ** 2, 0) / n), 0.02);
+    vs.forEach((v, i) => { out[i][k] = clamp((mean - v) / sd, -3, 3); });
+    any = true;
+  });
+  return any ? out : null;
 }
 
 // モーターの展示の速さ：前の日までの展示タイムが、同じレースの平均よりどれだけ速かったか（モーターごとに直近60走・少ないうちは0に寄せる・×10）
@@ -1195,6 +1235,8 @@ function predict(r, s, alerts, lite, stats = STATS){
   });
   const avg = k => { const v = F.map(f => f[k]).filter(x => x != null); return v.length ? v.reduce((a, c) => a + c, 0) / v.length : 0; };
   F.forEach(f => { f.tx = stats ? traitFx(f.traits, f.b, f.course) : 0; f.fm = formFeat(f.form); });
+  const og = origFeats(r, F);
+  F.forEach((f, i) => { f.og = og ? og[i] : null; f.ogv = og ? ORIG_K.reduce((a, k) => a + ORIG_B[k] * og[i][k], 0) : 0; });
   const M = {winEff: avg("winEff"), st: avg("st"), mo: avg("mo"), mx: avg("mx"), ex: avg("ex"), es: avg("es"), sb: avg("sb"), tx: avg("tx"), fm: avg("fm")};
   const wind = r.cond && r.cond.wind;
   const windF = wind >= 5 ? Math.max(0.75, 1 - 0.03 * (wind - 4)) : 1;
@@ -1205,7 +1247,7 @@ function predict(r, s, alerts, lite, stats = STATS){
       skill: w.skill * BASE.skill * (f.winEff - M.winEff),
       start: w.start * (BASE.avgst * (f.st - M.st) + (f.es == null ? 0 : BASE.exst * clamp(f.es - M.es, -3, 3))),
       motor: w.motor * (f.mo - M.mo + MEX_B * (f.mx - M.mx)),
-      ex: f.ex == null ? 0 : w.ex * BASE.ex * clamp(f.ex - M.ex, -4, 4),
+      ex: (f.ex == null ? 0 : w.ex * BASE.ex * clamp(f.ex - M.ex, -4, 4)) + w.ex * f.ogv,
       course: wc * BASE.course * clamp(f.crs, -2.5, 2.5),
       seibi: (w.seibi ?? 1) * BASE.seibi * (f.sb - M.sb),
       trait: (w.trait ?? 1) * (f.tx - M.tx),
@@ -1890,8 +1932,12 @@ function demeHTML(r){
   return `<div><h3>${esc(STADIUMS[r.stadium] || "")}の出目ランク（3連単・${periodLabel()}）</h3><div class="dms">${items}</div></div>`;
 }
 
-function tableHTML(an){
+function tableHTML(an, r){
   const bestT = Math.min(...an.F.map(f => f.b.exTime ?? 99));
+  // オリテン（一周・まわり足・直線）。届いているときだけ列を足す。一番速いものを色付き
+  const O = r && r.orig ? r.orig : null;
+  const ogBest = O ? [0, 1, 2].map(k => Math.min(...an.F.map(f => (O[f.b.no] && O[f.b.no][k] > 0) ? O[f.b.no][k] : 99))) : null;
+  const ogCell = (no, k) => { const v = O && O[no] ? O[no][k] : null; return `<td>${v > 0 ? `<span class="${v === ogBest[k] ? "best" : ""}">${v.toFixed(2)}</span>` : "-"}</td>`; };
   const stv = b => b.exST == null ? 99 : (b.exF ? -b.exST : b.exST);
   const bestS = Math.min(...an.F.map(f => stv(f.b)));
   const mxTag = v => v >= MEX_MARK ? `<small class="mx up">展示速</small>` : v <= -MEX_MARK ? `<small class="mx dn">展示遅</small>` : "";
@@ -1906,12 +1952,13 @@ function tableHTML(an){
     <td>${b.motor2 == null ? "-" : b.motor2.toFixed(1)}${mxTag(mx || 0)}</td>
     <td>${b.exTime == null ? "-" : `<span class="${b.exTime === bestT ? "best" : ""}">${b.exTime.toFixed(2)}</span>`}</td>
     <td>${b.exST == null ? "-" : `<span class="${stv(b) === bestS ? "best" : ""}">${fST(b.exST, b.exF)}</span>`}</td>
+    ${O ? ogCell(b.no, 0) + ogCell(b.no, 1) + ogCell(b.no, 2) : ""}
     <td>${b.tilt == null ? "-" : (b.tilt > 0 ? "+" : "") + b.tilt.toFixed(1)}</td>
     <td class="nm">${b.parts && b.parts.length ? esc(b.parts.join("・")) : "-"}${b.prop ? `<small>${esc(b.prop)}ペラ</small>` : ""}</td>
   </tr>`).join("");
   return `<div><h3>出走表と直前情報</h3><div class="tbl"><table class="lft">
-    <thead><tr><th>進入</th><th>艇</th><th>選手</th><th>勝率</th><th>当地</th><th>平均ST</th><th>モ2連</th><th>展示T</th><th>展示ST</th><th>チルト</th><th>部品交換</th></tr></thead>
-    <tbody>${rows}</tbody></table></div>${hasMx ? `<p class="note">展示速・展示遅：このモーターの前の日までの展示タイムが、いつも速い・遅い（それぞれ全体の約15%）。オッズにも入りきっていない差なので、予想にも入れています（データ：データ攻めのモーターカルテ）。</p>` : ""}</div>`;
+    <thead><tr><th>進入</th><th>艇</th><th>選手</th><th>勝率</th><th>当地</th><th>平均ST</th><th>モ2連</th><th>展示T</th><th>展示ST</th>${O ? `<th>一周</th><th>まわり足</th><th>直線</th>` : ""}<th>チルト</th><th>部品交換</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>${O ? `<p class="note">一周・まわり足・直線：${esc(STADIUMS[r.stadium] || "")}の公式サイトのオリジナル展示データ（展示航走のタイム・小さいほど速い）。一周と直線が速い艇ほど1着率を上げています（「期待度の内訳」の「展示」に入っています）。</p>` : ""}${hasMx ? `<p class="note">展示速・展示遅：このモーターの前の日までの展示タイムが、いつも速い・遅い（それぞれ全体の約15%）。オッズにも入りきっていない差なので、予想にも入れています（データ：データ攻めのモーターカルテ）。</p>` : ""}</div>`;
 }
 
 function combosHTML(r, an){
@@ -1962,7 +2009,7 @@ function cardHTML(r, an, now){
   const showSlitTop = r.hasPreview && an.isSlit;
   return `<article class="race${closed ? " closed" : ""}">
     <div class="rhead">
-      <div class="rname"><span class="std">${esc(STADIUMS[r.stadium] || "")}</span><span class="rno">${r.no}<small>R</small></span></div>
+      <div class="rname"><span class="std">${esc(STADIUMS[r.stadium] || "")}</span><span class="rno">${r.no}<small>R</small></span>${ORIG_VENUES[r.stadium] ? `<i class="ogm${r.orig ? "" : " wait"}">${r.orig ? "オリテン✓" : "オリテン"}</i>` : ""}</div>
       <div class="close"><span class="t">${hhmm(r.closedAt)}</span><span class="cd${!closed && mins <= 10 ? " soon" : ""}" data-close="${r.closedAt.getTime()}">${cd}</span></div>
       <div class="rmeta">${meta}</div>
     </div>
@@ -1981,7 +2028,7 @@ function cardHTML(r, an, now){
         ${partsHTML(an)}
         ${r.hasPreview && !showSlitTop ? `<div><h3>スリット予想図</h3><div class="slitbox">${slitSVG(an)}</div></div>` : ""}
         ${!r.hasPreview ? `<p class="note">展示航走のあと（締切のおよそ20分前）に展示タイムとスタートが反映され、スリット図とアラートが出ます。</p>` : ""}
-        ${tableHTML(an)}
+        ${tableHTML(an, r)}
       </div>
     </details>
     <details data-key="${esc(r.key)}#d"${state.open.has(r.key + "#d") ? " open" : ""}>
@@ -2058,7 +2105,7 @@ function render(){
   $("filters").innerHTML =
     `<button class="chip" type="button" data-upcoming aria-pressed="${useUpcoming}"${isToday ? "" : " disabled"}>締切前のみ</button><span class="sep"></span>` +
     `<button class="chip" type="button" data-std="0" aria-pressed="${!state.stadium}">全場</button>` +
-    stds.map(s => `<button class="chip" type="button" data-std="${s}" aria-pressed="${state.stadium === s}">${esc(STADIUMS[s] || s)}</button>`).join("");
+    stds.map(s => `<button class="chip${ORIG_VENUES[s] ? " og" : ""}" type="button" data-std="${s}" aria-pressed="${state.stadium === s}">${esc(STADIUMS[s] || s)}${ORIG_VENUES[s] ? `<i class="ogm">オ</i>` : ""}</button>`).join("");
 
   const list = pool.filter(pass[state.tab]).sort((a, b) => a.r.closedAt - b.r.closedAt || a.r.stadium - b.r.stadium);
   const anyOdds = state.races.some(r => r.odds);
