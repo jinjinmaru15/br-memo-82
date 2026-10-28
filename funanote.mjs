@@ -234,7 +234,30 @@ export async function main(){
       console.log(`モーターの展示の速さ：${Object.keys(m).length}基（記録は ${idx.last} まで）`);
     } else console.warn("モーターカルテがまだありません");
   } catch (err){ console.warn("モーターの展示の速さを作れませんでした:", err.message); }
-  fs.writeFileSync("funadata/README.md", `# データ攻めのデータ\n\nhttps://funanote-k7q2xm.pages.dev/ （運営：あべけんさん）のデータを、運営の方の許可を得て置いています。\n各ファイルは gzip。最終取得：${new Date().toISOString()}\n\nmotor.json はモーターカルテから計算した「モーターの展示の速さ」（アプリの予想に使う・作り方は motorex.mjs）。\n`);
+  // アプリ用：前付けしそうな選手（データ攻めの決まり手データの「前づけ率」・直近半年）→ funadata/maezuke.json
+  // 10/16〜25で確かめた：5・6枠で前づけ率20%以上の選手は、展示で9割が内のコースに入った（0%の選手は6%）
+  try {
+    const csv = readCached("/players/racerKimarite.csv");
+    if (csv){
+      const lines = csv.split(/\r?\n/).filter(Boolean), head = lines[0].split(",");
+      const col = name => head.indexOf(name);
+      const iReg = col("登録番号"), iRate = col("前づけ率"), iAvg = col("前づけ平均"), iN = col("出走数"), iFrom = col("集計開始"), iTo = col("集計終了");
+      const m = {};
+      let from = "", to = "";
+      for (const ln of lines.slice(1)){
+        const c = ln.split(",");
+        const rate = parseFloat(c[iRate]);
+        if (rate >= 5) m[c[iReg]] = [rate, parseFloat(c[iAvg]) || 0, +c[iN] || 0];
+        if (c[iFrom]) from = c[iFrom];
+        if (c[iTo]) to = c[iTo];
+      }
+      if (iReg >= 0 && iRate >= 0){
+        fs.writeFileSync("funadata/maezuke.json", JSON.stringify({built: new Date().toISOString(), from, to, m}));
+        console.log(`前付けしそうな選手：${Object.keys(m).length}人（${from}〜${to}）`);
+      }
+    }
+  } catch (err){ console.warn("前付けのデータを作れませんでした:", err.message); }
+  fs.writeFileSync("funadata/README.md", `# データ攻めのデータ\n\nhttps://funanote-k7q2xm.pages.dev/ （運営：あべけんさん）のデータを、運営の方の許可を得て置いています。\n各ファイルは gzip。最終取得：${new Date().toISOString()}\n\nmotor.json はモーターカルテから計算した「モーターの展示の速さ」（アプリの予想に使う・作り方は motorex.mjs）。\nmaezuke.json は決まり手データの「前づけ率」が5%以上の選手（アプリの「前付けしそう」の印に使う）。\n`);
   try { execSync("git add funadata", {stdio: "ignore"}); } catch (err){}
   console.log(`書き出し ${ex.length}ファイル（${EXPORT}）`);
   console.log(`読んだ ${fetched}件（全 ${manifest.length}件・まだ ${out.notYet}件）`, JSON.stringify(out.byKind));

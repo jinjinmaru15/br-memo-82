@@ -162,6 +162,7 @@ button:disabled{cursor:default}
 .bdg.ana{background:var(--ana-soft);color:var(--ana);border-color:var(--ana)}
 .bdg.val{background:var(--val-soft);color:var(--val);border-color:var(--val)}
 .bdg.cand{background:var(--solid);color:var(--solid-ink)}
+.bdg.mz{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 .bdg.og{background:var(--og-soft);color:var(--og);border-color:var(--og)}
 .chip.og{border-color:var(--og);color:var(--og)}
 .chip.og[aria-pressed="true"]{background:var(--og);color:var(--og-ink);border-color:var(--og)}
@@ -273,6 +274,16 @@ td .ogb{color:var(--og);font-weight:700}
 
 /* details */
 details{border-top:1px solid var(--line);padding-top:6px}
+.st7{list-style:none;margin:6px 0 4px;padding:0;display:grid;gap:7px}
+.st7 li{display:grid;grid-template-columns:6.2em minmax(0,1fr);gap:2px 8px;font-size:12.5px;align-items:baseline}
+.st7 .sk{font-weight:700;color:var(--muted);white-space:nowrap}
+.st7 .sk b{font-family:var(--f-num);font-size:13px;margin-right:3px}
+.st7 .sv{display:flex;flex-wrap:wrap;gap:3px 10px;align-items:center;min-width:0}
+.st7 .sv > span{display:inline-flex;align-items:center;gap:3px}
+.st7 .sv small{color:var(--muted);font-size:11.5px}
+.st7 .sv .chipb{width:19px;height:19px;font-size:12.5px;border-radius:4px}
+.st7 .sv .skip{font-weight:700;color:var(--muted)}
+.st7 .sv .go{font-weight:700;color:var(--val)}
 summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);padding-block:2px;list-style:none;display:flex;align-items:center;gap:6px}
 summary::-webkit-details-marker{display:none}
 summary::before{content:"";width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
@@ -1030,6 +1041,19 @@ function seibiOf(b, course){
   return v;
 }
 
+// 前付けしそうな選手：データ攻めの決まり手データの「前づけ率」（直近半年・毎朝 funadata/maezuke.json）
+// 10/16〜25（集計期間のあと）で確かめた：展示で枠より内のコースに入った割合
+//   5・6枠：前づけ率20%以上 9割・10〜20% 4割（0%の選手は6%） ／ 2〜4枠：前づけ率40%以上 5割・20〜40% 2割
+let MAEZUKE = null;
+function setMaezuke(j){ MAEZUKE = j && j.m ? j : null; }
+function maezukeOf(b){
+  const x = MAEZUKE && b.reg != null ? MAEZUKE.m[String(b.reg)] : null;
+  if (!x || b.no < 2) return null;
+  const rate = x[0];
+  const p = b.no >= 5 ? (rate >= 20 ? 0.9 : rate >= 10 ? 0.4 : 0.1) : (rate >= 40 ? 0.5 : rate >= 20 ? 0.2 : 0.02);
+  return {rate, p, label: p >= 0.8 ? "前付け濃厚" : p >= 0.35 ? "前付けあるかも" : null};
+}
+
 // オリジナル展示データ（オリテン）：場の公式サイトが出している、展示航走の一周・まわり足・直線のタイム
 // 見張り（notify.mjs）が展示のあとに読んで、合言葉のトピックで送ってくる（今日のレースだけ・7場）
 // 2026年1〜6月で効き方を決めて7〜10月で確かめた（約1.3万レース）：1着の当たり具合 +3.5‰（一周と直線が効く）
@@ -1576,6 +1600,7 @@ function badgeHTML(r, an){
   an.alerts.filter(a => a.type === "dent").forEach(a => out.push(`<span class="bdg alert">${bn(a.boat)}ST凹み → ${bn(a.next)}に展開</span>`));
   an.alerts.filter(a => a.type === "exf").forEach(a => out.push(`<span class="bdg mute">${bn(a.boat)}展示F<span class="num">.${String(Math.round(a.diff * 100)).padStart(2, "0")}</span>（点数に入れない）</span>`));
   if (an.isCand) out.push(`<span class="bdg cand">◎単勝候補 ${bn(an.top.b.no)}</span>`);
+  if (!r.hasPreview) r.boats.forEach(b => { const z = maezukeOf(b); if (z && z.label) out.push(`<span class="bdg mz">${bn(b.no)}${z.label}<span class="num">${Math.round(z.p * 100)}%</span></span>`); });
   if (an.isValue) out.push(`<span class="bdg val">期待値 ${an.value.map(x => bn(x.c[0])).join("")}単勝</span>`);
   if (an.isHonmei) out.push(`<span class="bdg solid">鉄板 ${bn(an.top.b.no)}<span class="num">${pct(an.top.p1)}%</span></span>`);
   if (an.isAna) out.push(`<span class="bdg ana">穴 1コース<span class="num">${pct(an.c1.p1)}%</span></span>`);
@@ -1642,6 +1667,7 @@ function jishinHTML(r, an){
     if (diffTop) note += `。オッズの本命は${chip(+fav[0])}（◎と本命が違うとき、勝つのは◎が約3割・本命が約4割弱）`;
   }
   const [, label, cls] = JISHIN[li];
+  if (li === 2) note += "。荒れそうなレースはどの買い方も回収率が低いので、見送りも手";
   const top3 = r.result && r.result.order.length >= 3 ? r.result.order.slice(0, 3) : null;
   const mark = top3 ? (an.set3.c.every(n => top3.includes(n)) ? " ✓" : " ✗") : "";
   return `<div class="vd-conf ${cls}"><span class="vd-k">自信</span><span class="vd-c">${label}</span><span class="vd-v">${an.set3.c.map(chip).join("")}で3着まで<small>${pct(an.set3.p)}%</small>${mark}</span><span class="vd-n">${note}</span></div>`;
@@ -1748,6 +1774,83 @@ function tenkaiHTML(an){
     <div class="tk-l">${legend}</div>
     ${th ? `<div class="tk-t">崩すなら：${chip(th.f.b.no)} の<b>${TECHS[th.i]}</b>（${pct(th.p)}%）</div>` : ""}
   </div>`;
+}
+
+// プロの予想の7ステップ（選手→モーター→進入→展開→直前→買い目→オッズ）の順に、アプリの数字を1行ずつまとめる
+// どれもすでに1着率の計算に入っているもの。自分で考えるときの順番どおりに見られるようにしただけ
+function stepsHTML(r, an){
+  const F = an.F, ch = no => chip(no);
+  const item = (no, txt) => `<span>${ch(no)}<small>${txt}</small></span>`;
+  // ① 選手：全国と当地を混ぜた勝率の上位2艇
+  const s1 = [...F].sort((a, b) => b.winEff - a.winEff).slice(0, 2)
+    .map(f => item(f.b.no, `${esc(f.b.cls)} 勝率${f2(f.b.win)}${f.b.local > 0 ? `・当地${f2(f.b.local)}` : ""}`)).join("");
+  // ② モーター：2連率の上位2艇と、展示の速さ（展示速・展示遅）
+  const s2 = [...F].filter(f => f.b.motor2 > 0).sort((a, b) => b.b.motor2 - a.b.motor2).slice(0, 2)
+    .map(f => item(f.b.no, `2連率${f.b.motor2.toFixed(1)}%${f.mx >= MEX_MARK ? "・展示速" : f.mx <= -MEX_MARK ? "・展示遅" : ""}`)).join("")
+    + F.filter(f => f.mx >= MEX_MARK && ![...F].sort((a, b) => (b.b.motor2 || 0) - (a.b.motor2 || 0)).slice(0, 2).includes(f)).map(f => item(f.b.no, "展示速")).join("");
+  // ③ 進入：展示の並び。内に入った艇が前付け
+  let s3;
+  if (!r.hasPreview){
+    const mz = F.map(f => ({f, z: maezukeOf(f.b)})).filter(x => x.z && x.z.label);
+    s3 = `<span><small>展示前（枠なりで計算中）</small></span>` + mz.map(x => `<span>${ch(x.f.b.no)}<small>が${x.z.label}（前づけ率${Math.round(x.z.rate)}%・この枠だと${Math.round(x.z.p * 100)}%が内へ）</small></span>`).join("");
+  }
+  else {
+    const ord = [...F].sort((a, b) => a.course - b.course);
+    const movers = ord.filter(f => f.course < f.b.no);
+    s3 = ord.every(f => f.course === f.b.no) ? `<span>枠なり</span>`
+      : `<span>${ord.map(f => f.b.no).join("")}</span>${movers.length ? `<span>${movers.map(f => ch(f.b.no)).join("")}<small>が前付け</small></span>` : ""}`;
+  }
+  // ④ 1マークの展開：決まり手の上位2つと、崩すなら
+  const T = an.tenkai.T, tt = T.reduce((a, b) => a + b, 0) || 1;
+  const s4 = TECHS.map((n, i) => ({n, v: T[i] / tt})).sort((a, b) => b.v - a.v).slice(0, 2).map(x => `<span>${x.n}<small>${pct(x.v)}%</small></span>`).join("")
+    + (an.tenkai.threat ? `<span><small>崩すなら</small>${ch(an.tenkai.threat.f.b.no)}<small>の${TECHS[an.tenkai.threat.i]}</small></span>` : "");
+  // ⑤ 直前：展示タイム・スタート展示・オリテン・アラート・風
+  let s5 = "";
+  if (!r.hasPreview) s5 = `<span><small>展示のあと（締切20分前ごろ）に出ます</small></span>`;
+  else {
+    const exT = F.filter(f => f.b.exTime != null).sort((a, b) => a.b.exTime - b.b.exTime)[0];
+    const exS = F.filter(f => f.b.exST != null && !f.b.exF).sort((a, b) => a.b.exST - b.b.exST)[0];
+    if (exT) s5 += item(exT.b.no, `展示タイム1位 ${exT.b.exTime.toFixed(2)}`);
+    if (exS) s5 += item(exS.b.no, `スタート展示1位 ${fST(exS.b.exST, false)}`);
+    if (r.orig){
+      const best = k => { let bf = null, bv = 99; F.forEach(f => { const v = r.orig[f.b.no] ? r.orig[f.b.no][k] : null; if (v > 0 && v < bv){ bv = v; bf = f; } }); return bf; };
+      const L = best(0), S = best(2);
+      if (L) s5 += item(L.b.no, "一周1位");
+      if (S) s5 += item(S.b.no, "直線1位");
+    }
+    an.alerts.filter(a => a.type === "nobi").forEach(a => { s5 += item(a.boat, `スリットアラート${a.level === 2 ? "強" : ""}`); });
+    an.alerts.filter(a => a.type === "attack").forEach(a => { s5 += item(a.boat, `ST攻め・${a.tactic}`); });
+    an.alerts.filter(a => a.type === "in").forEach(() => { s5 += item(an.c1.b.no, "ST凹み（イン）"); });
+    if (r.cond && r.cond.wind >= 5) s5 += `<span><small>風${r.cond.wind}m（強め）</small></span>`;
+  }
+  // ⑥ 買い目を絞る：自信が「荒れそう」なら見送り。ほかは軸と2番手
+  const J = jishinLevel(r, an);
+  let s6;
+  if (!J) s6 = "";
+  else if (J.li === 2) s6 = `<span class="skip">見送りが無難</span><small>自信「荒れそう」のレースは、どの買い方も回収率が一番低い（3連単74%・かたいは82%）</small>`;
+  else {
+    const ax = [...F].sort((a, b) => b.p3 - a.p3)[0];
+    const sec = [...F].filter(f => f !== an.top && f !== ax).sort((a, b) => b.p3 - a.p3)[0];
+    s6 = `<span class="go">${JISHIN[J.li][1]}</span><span><small>軸</small>${ch(ax.b.no)}<small>3着以内${pct(ax.p3)}%</small></span>${sec ? `<span><small>2番手</small>${ch(sec.b.no)}<small>${pct(sec.p3)}%</small></span>` : ""}${an.isCand ? `<span><small>候補：◎</small>${ch(an.top.b.no)}<small>単勝</small></span>` : ""}`;
+  }
+  // ⑦ オッズで答え合わせ：みんな（3連単のオッズ）の見立てと、◎の単勝オッズ
+  const mq = J && J.mq;
+  let s7 = "";
+  if (mq){
+    const fav = Object.entries(mq).sort((a, b) => b[1] - a[1])[0];
+    s7 += `<span><small>◎</small>${ch(an.top.b.no)}<small>アプリ${pct(an.top.p1)}%・オッズ${pct(mq[an.top.b.no] || 0)}%</small></span>`;
+    if (+fav[0] !== an.top.b.no) s7 += `<span><small>オッズの本命は</small>${ch(+fav[0])}</span>`;
+  }
+  const od = r.odds && r.odds.win ? +(r.odds.win[an.top.b.no] ?? r.odds.win[String(an.top.b.no)]) : 0;
+  if (od > 0) s7 += `<span><small>単勝${od.toFixed(1)}倍（アプリの見立てでは${(1 / an.top.p1).toFixed(1)}倍で損得なし）</small></span>`;
+  if (!s7) s7 = `<span><small>オッズ待ち（締切7分前ごろから）</small></span>`;
+  const rows = [["選手", s1], ["モーター", s2], ["進入", s3], ["展開", s4], ["直前", s5], ["買い目", s6], ["オッズ", s7]]
+    .map(([k, v], i) => `<li><span class="sk"><b>${i + 1}</b>${k}</span><span class="sv">${v || "<small>-</small>"}</span></li>`).join("");
+  return `<details data-key="${esc(r.key)}#s"${state.open.has(r.key + "#s") ? " open" : ""}>
+    <summary>7ステップで見る（選手→モーター→進入→展開→直前→買い目→オッズ）</summary>
+    <ol class="st7">${rows}</ol>
+    <p class="note">どれもアプリの1着率の計算にすでに入っているものを、考える順番に並べたものです。オッズで旨味があるように見えても、長い目ではオッズのほうが当たっていることが多いので（期待値で選ぶ単勝は回収率75%前後）、見送りの判断に使うのがおすすめです。</p>
+  </details>`;
 }
 
 // 1コース以外が勝つとき：決まり手（まくり・差し…）ごとに2着が変わるので、分けて出す
@@ -1945,7 +2048,7 @@ function tableHTML(an, r){
   const rows = an.F.map(({b, mx}) => `<tr>
     <td>${b.course ?? "-"}</td>
     <td>${chip(b.no)}</td>
-    <td class="nm">${esc(b.name)}<small>${esc(b.cls)}${b.F ? ` · F${b.F}` : ""}${b.L ? ` · L${b.L}` : ""}</small></td>
+    <td class="nm">${esc(b.name)}<small>${esc(b.cls)}${b.F ? ` · F${b.F}` : ""}${b.L ? ` · L${b.L}` : ""}${(() => { const z = maezukeOf(b); return z && z.rate >= 10 ? ` · 前づけ率${Math.round(z.rate)}%` : ""; })()}</small></td>
     <td>${f2(b.win)}</td>
     <td>${b.local > 0 ? f2(b.local) : "-"}</td>
     <td>${f2(b.avgST)}</td>
@@ -2019,6 +2122,7 @@ function cardHTML(r, an, now){
     ${valueHTML(r, an)}
     ${probsHTML(r, an)}
     ${tenkaiHTML(an)}
+    ${stepsHTML(r, an)}
     <details data-key="${esc(r.key)}"${state.open.has(r.key) ? " open" : ""}>
       <summary>買い目・2着と3着の確率・内訳・出走表</summary>
       <div class="dbody">
@@ -2077,6 +2181,7 @@ function ensureMotor(){
   if (state.motorTried && Date.now() - state.motorTried < 3600e3) return;
   state.motorTried = Date.now();
   loadJSONFile("funadata/motor.json").then(j => { if (j && j.m){ setMotorEx(j); safeRender(); } });
+  loadJSONFile("funadata/maezuke.json").then(j => { if (j && j.m){ setMaezuke(j); safeRender(); } });
 }
 
 function render(){
