@@ -22,6 +22,9 @@ const MAIN = {ev: 2.0, minP: 0.10};
 const BANDS = [[1, 3], [3, 6], [6, 10], [10, 20], [20, 1e9]];
 // 開催日ごと。2026-10-17 以降は、条件を探すのに使っていない新しいレース（ここで本物かどうかを確かめる）
 const FRESH = "2026-10-17";
+// 自信ごとの成績：10/29から、自信はオッズを見ない形（オッズと割れても下げない）、3連単はおすすめ点数（かたい3・ふつう6・荒れそう10点）に変えた。
+// 点数は10/25までのレースで決めたので、10/26からが新しいレース
+const JFRESH = "2026-10-26";
 // アプリの「自信」と同じ決め方：一番ありそうな3艇で1〜3着が決まる確率（順番なし）が30%以上「かたい」、20%以上「ふつう」、それ未満「荒れそう」。
 // オッズ（3連単から出した1着の確率）と意見が大きく割れる（KL 0.07超）ときは一段下げる
 const JISHIN = [[0.30, "かたい"], [0.20, "ふつう"], [0, "荒れそう"]];
@@ -34,7 +37,7 @@ const DAYB = [["初日", r => r.day === 1 && !r.lastDay], ["2日目", r => r.day
 const html = fs.readFileSync("index.html", "utf8");
 const ia = html.indexOf("/* ---------- 定数 ---------- */"), ib = html.indexOf("/* ---------- 状態 ---------- */");
 if (ia < 0 || ib < 0) throw new Error("index.html から判定コードを見つけられませんでした");
-const M = new Function(html.slice(ia, ib) + "\nreturn {parseV1, predict, slitAlerts, prepStats, oddsOf, DEFAULTS, PAYKEY, impliedWin: typeof impliedWin === 'function' ? impliedWin : null, formFromList: typeof formFromList === 'function' ? formFromList : null, serExFromList: typeof serExFromList === 'function' ? serExFromList : null};")();
+const M = new Function(html.slice(ia, ib) + "\nreturn {parseV1, predict, slitAlerts, prepStats, oddsOf, DEFAULTS, PAYKEY, impliedWin: typeof impliedWin === 'function' ? impliedWin : null, formFromList: typeof formFromList === 'function' ? formFromList : null, serExFromList: typeof serExFromList === 'function' ? serExFromList : null, TRI_PLAN: typeof TRI_PLAN !== 'undefined' ? TRI_PLAN : null};")();
 
 const addDays = (d, n) => { const t = new Date(d + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
 const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
@@ -247,7 +250,8 @@ export async function main(fetcher = fetch){
             const od = M.oddsOf(r.odds, "tri", [a.b.no, b.b.no, c.b.no]);
             if (od > 0){ q[a.b.no] = (q[a.b.no] || 0) + 1 / od; qt += 1 / od; }
           }
-          let li = JISHIN.findIndex(([t]) => pr.set3.p >= t);
+          const li0 = JISHIN.findIndex(([t]) => pr.set3.p >= t);   // オッズを見ない自信（アプリの表示・3連単の提案と同じ）
+          let li = li0;                                              // ◎単勝候補用：オッズと大きく割れたら一段下げる
           if (qt){
             const kl = pr.F.reduce((a, f) => { const m = (q[f.b.no] || 0) / qt; return a + (f.p1 > 0 && m > 0 ? f.p1 * Math.log(f.p1 / m) : 0); }, 0);
             if (kl > 0.07) li = Math.min(JISHIN.length - 1, li + 1);
@@ -264,11 +268,15 @@ export async function main(fetcher = fetch){
             H.races++; put(H.top, 1, wp); put(H.place, 1, pl);
             if (d >= CAND.from) kouho.recent.push({d, s: r.stadium, no: r.no, A, p1: +pr.top.p1.toFixed(3), se: se ? +se.avg.toFixed(2) : null, sn: se ? se.n : 0, fast: fast ? 1 : 0, res: order.slice(0, 3), win: wp, place: pl});
           }
-          const J = (d >= FRESH ? byJishin.fresh : byJishin.known)[li];
+          // 1月はコース実績がなく予想の形が違うので数えない（カードの「過去の成績」と同じ2月から）
+          const J = stats ? (d >= JFRESH ? byJishin.fresh : byJishin.known)[li0] : {races: 0, hit3: 0, top: z(), ex1: z(), tri: z(), trio: z()};
           J.races++;
           put(J.top, 1, pr.top.b.no === win ? payOf("win", [win]) : 0);
           put(J.ex1, 1, e1.c[0] === order[0] && e1.c[1] === order[1] ? payOf("ex", e1.c) : 0);
-          J.tri.n += picks.length; if (th){ J.tri.hit++; J.tri.ret += payOf("tri", th.c); }
+          // 3連単：アプリの確率の高い順に、おすすめ点数（オッズは見ない）
+          const tp = pr.triAll.slice(0, M.TRI_PLAN ? M.TRI_PLAN[li0] : 5);
+          const tth = tp.find(t => t.c[0] === order[0] && t.c[1] === order[1] && t.c[2] === order[2]);
+          J.tri.n += tp.length; if (tth){ J.tri.hit++; J.tri.ret += payOf("tri", tth.c); }
           const in3 = order.length >= 3 && pr.set3.c.every(n => order.slice(0, 3).includes(n));
           if (in3) J.hit3++;
           const trio = r.result.payouts.trio;
@@ -307,7 +315,7 @@ export async function main(fetcher = fetch){
       const one = c => ({races: c.races, ...Object.fromEntries(["top", "place"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))});
       return {...CAND, ...Object.fromEntries(["known", "fresh"].map(g => [g, {...one(kouho[g]), fast: one(kouho[g].fast), other: one(kouho[g].other)}])), recent: kouho.recent.slice(-60)};
     })(),
-    byJishin: {from: FRESH, ...Object.fromEntries(["known", "fresh"].map(g => [g, byJishin[g].map(c => ({...c, ...Object.fromEntries(["top", "ex1", "tri", "trio"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))}))]))}
+    byJishin: {from: JFRESH, plan: M.TRI_PLAN, ...Object.fromEntries(["known", "fresh"].map(g => [g, byJishin[g].map(c => ({...c, ...Object.fromEntries(["top", "ex1", "tri", "trio"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))}))]))}
   };
   fs.writeFileSync("backtest.json", JSON.stringify(out));
   const w = out.main.win;

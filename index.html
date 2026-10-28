@@ -226,6 +226,23 @@ td .ogb{color:var(--og);font-weight:700}
 .vd-ref .vd-v,.vd-ax .vd-v{font-weight:600;font-size:12.5px}
 .vd-ref .cb{display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-weight:500}
 .vd-ref .vd-v b{display:inline-grid;place-items:center;min-width:16px;height:17px;padding:0 2px;border-radius:3px;font-family:var(--f-num);font-size:12.5px;box-shadow:inset 0 0 0 1px var(--hull-stroke)}
+.vd-tri .vd-v{font-weight:600;font-size:12.5px;gap:5px 7px}
+.vd-tri .cb,.tlist .cb{display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-weight:500;border-radius:4px}
+.vd-tri .vd-v b,.tlist .cb b{display:inline-grid;place-items:center;min-width:16px;height:17px;padding:0 2px;border-radius:3px;font-family:var(--f-num);font-size:12.5px;box-shadow:inset 0 0 0 1px var(--hull-stroke)}
+.cb.hit{outline:2px solid var(--val);outline-offset:1px}
+.tlist .cb{justify-self:start}
+.tcopy,.treset{display:inline-block;margin:6px 6px 0 0;padding:3px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:12px;font-weight:700;color:var(--ink);line-height:1.6}
+.tcopy:active,.treset:active{background:var(--track)}
+.tlist{display:grid;margin:4px 0;border-top:1px solid var(--line)}
+.tlist .thead,.tlist .trow{display:grid;grid-template-columns:2.4em minmax(0,1fr) 4.2em 4.6em 2.6em;align-items:center;gap:6px;padding:5px 6px}
+.tlist .thead{font-size:11px;color:var(--muted);font-weight:700}
+.tlist .thead span:nth-child(n+3),.tlist .trow .tr-p,.tlist .trow .tr-c{text-align:right}
+.tlist .trow{width:100%;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;font-size:13px;font-family:var(--f-num)}
+.tlist .trow.on{background:var(--accent-soft)}
+.tlist .trow .tr-i{color:var(--muted);font-weight:700}
+.tlist .trow .tr-c{color:var(--muted)}
+.tlist .trow.on .tr-c{color:var(--ink);font-weight:700}
+.tlist .trow .tr-h{font-size:11px;font-weight:700;color:var(--val)}
 .vd-v em{font-style:normal;font-size:12px;padding:0 6px;border-radius:5px}
 .vd-v em.hit{background:var(--val);color:var(--val-ink)}
 .vd-v em.miss{background:var(--track);color:var(--muted)}
@@ -1163,6 +1180,14 @@ function serExFor(r, stats, sameDay){
   }
   return out;
 }
+// 3連単の提案（オッズは見ない）：アプリの確率の高い順に、自信（オッズを見ない）で点数を決める
+// 2〜10/25の4万レース：かたい 上位3点 的中34%・回収率84%／ふつう 上位6点 40%・78%／荒れそう 上位10点 41%・76%（見送りが目安）。
+// どの点数でも100%は超えない。オッズと割れているかで3連単の成績はほぼ変わらなかった（かたい3点 84.6%と84.1%）。
+// アプリの「○点で○%」は実際の的中率とほぼ同じ（かたい上位3点 34.4%→実際34%、ふつう上位6点 39.9%→40%）
+const TRI_PLAN = [3, 6, 10];   // 自信 かたい・ふつう・荒れそう のおすすめ点数
+const TRI_MAX = 20;
+// 過去の成績：自信ごと・上位1〜20点の [的中率%, 回収率%]（2〜10/25）
+const TRI_HIST = [[[14,83],[26,83],[34,84],[40,83],[45,81],[50,81],[54,81],[57,81],[60,80],[63,79],[65,78],[67,78],[69,77],[71,78],[73,78],[74,77],[76,77],[77,76],[78,76],[79,76]],[[10,78],[18,77],[24,77],[30,77],[35,77],[40,78],[44,78],[47,78],[50,78],[53,78],[55,78],[58,77],[60,78],[62,78],[64,78],[65,77],[67,76],[68,76],[70,76],[71,76]],[[6,76],[12,76],[17,76],[21,75],[25,76],[29,75],[32,76],[35,75],[38,75],[41,76],[44,76],[46,76],[48,76],[50,76],[52,75],[54,76],[55,76],[57,76],[59,76],[60,77]]];
 // 2着・3着に来る力（勝ち切る力とは別）：全国・当地の2連率・3連率、コース別の2着率・3着率、モーター・ボートの3連率、勝率
 // 1〜6月で決めて7〜10月で確認：2着の当たり具合 +9.1‰、3着 +19.4‰（本命の的中 2着41.4→41.9%、3着39.7→40.9%。オッズは43.3%・42.4%）
 const PLACE_B2 = {cr1: -0.09, cr2: 0.07, cr3: 0.07, t2: 0.06, t3: 0.01, l2: 0.03, l3: 0.03, m3: 0.05, b3: 0, win: 0.76};
@@ -1591,7 +1616,7 @@ function tune(data, s, stats){
 
 /* ---------- 状態 ---------- */
 const settings = loadSettings();
-const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "value", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}, pick: new Map()};
+const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "value", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}, pick: new Map(), triCut: new Map()};
 const bt = {status: "idle", days: 0, data: [], res: null, tuned: null, prevW: null, msg: "", stats: null, long: null, longTried: false, paper: null, paperTried: false};
 function updateStatsInfo(){
   const el = $("stats-info");
@@ -1690,16 +1715,19 @@ function marketWinProb(r){
   return q;
 }
 // 自信の段階（0かたい・1ふつう・2荒れそう）。オッズと意見が大きく割れる（KL 0.07超）ときは一段下げる
+// 自信：li0 はオッズを見ない自信（表示・3連単の提案・見送りに使う。オッズが届いても変わらない）。
+// li はオッズと大きく割れたら一段下げたもの（◎単勝候補だけに使う。割れたレースの◎単勝は83%で、残した分は99.5%だったため）
 function jishinLevel(r, an){
   if (!an.set3) return null;
-  let li = JISHIN.findIndex(([t]) => an.set3.p >= t);
+  const li0 = JISHIN.findIndex(([t]) => an.set3.p >= t);
+  let li = li0;
   const mq = marketWinProb(r);
   let kl = null;
   if (mq){
     kl = an.F.reduce((a, f) => { const q = +mq[f.b.no] || 0; return a + (f.p1 > 0 && q > 0 ? f.p1 * Math.log(f.p1 / q) : 0); }, 0);
     if (kl > 0.07) li = Math.min(JISHIN.length - 1, li + 1);
   }
-  return {li, kl, mq};
+  return {li0, li, kl, mq};
 }
 // ◎単勝候補：信頼度「低」（◎の1着率35〜50%）×自信「かたい」のレースの◎単勝
 // 2〜10/25の約1,700レースで回収率 約99%（2〜6月100%・7〜10月94%・10/17〜25は137%（77レース））。とんとんで、プラスかはまだわからない
@@ -1713,15 +1741,18 @@ function isCand(r, an){
 function jishinHTML(r, an){
   if (!an.set3) return "";
   const J = jishinLevel(r, an);
-  let li = J.li;
+  const li = J.li0;   // 表示はオッズを見ない自信（オッズが届いても変わらない）
   const mq = J.mq;
-  let note = "この3艇で1〜3着が決まる確率（順番は問わない）";
+  let note = "この3艇で1〜3着が決まる確率（順番は問わない）。オッズは見ずに決めています";
   if (mq){
     const kl = J.kl;
     const fav = Object.entries(mq).sort((a, b) => b[1] - a[1])[0];
     const diffTop = fav && +fav[0] !== an.top.b.no;
-    if (kl > 0.07) note = `オッズと意見が${kl > 0.128 ? "大きく" : ""}割れているので一段下げています。こういうときはアプリのほうが外れやすい`;
-    else note = "オッズともだいたい同じ見方";
+    if (kl > 0.07){
+      note += `。参考：オッズとは見方が${kl > 0.128 ? "大きく" : ""}割れています`;
+      if (J.li0 === 0 && an.top.p1 >= CAND.lo && an.top.p1 < CAND.hi) note += "（◎の単勝はこういうとき外れやすいので、◎単勝候補からは外しています）";
+    }
+    else note += "。参考：オッズともだいたい同じ見方";
     if (diffTop) note += `。オッズの本命は${chip(+fav[0])}（◎と本命が違うとき、勝つのは◎が約3割・本命が約4割弱）`;
   }
   const [, label, cls] = JISHIN[li];
@@ -1746,15 +1777,12 @@ function verdictHTML(r, an){
   } else {
     rec = `<div class="vd-rec"><span class="vd-k">期待値</span><span class="vd-v">オッズ待ち</span><span class="vd-n">締切7分前ごろからオッズが入ります</span></div>`;
   }
-  // 参考：当てにいく買い目（2連単1点・3連単は確率の高い順に合計25%まで最大5点）
+  // 参考：2連単1点（3連単は上の「3連単」の行に、確率の高い順で出す）
   const ex = an.exAll[0];
-  const picks = []; let cum = 0;
-  for (const t of an.triAll){ if (picks.length >= 5 || cum >= 0.25) break; picks.push(t); cum += t.p; }
   const comb = c => `<span class="cb">${c.map(n => `<b class="c${n}">${n}</b>`).join("-")}</span>`;
   const hitMark = (c, k) => won ? (c.every((n, i) => won[i] === n) ? " ✓" : "") : "";
   const ref = `<div class="vd-ref"><span class="vd-k">参考</span><span class="vd-v">2連単 ${comb(ex.c)}<small>${pct(ex.p)}%・${(1 / ex.p).toFixed(1)}倍〜</small>${hitMark(ex.c)}</span>
-    <span class="vd-v">3連単 ${picks.map(t => comb(t.c) + hitMark(t.c)).join("・")}<small>${picks.length}点で${pct(cum)}%</small></span>
-    <span class="vd-n">当てにいくならの目安。長期の回収率は約80%（マイナス）なので楽しむ分だけ。「〜倍」はこれ以上なら損しないオッズ</span></div>`;
+    <span class="vd-n">2連単で当てにいくならの1点。長期の回収率は約80%（マイナス）なので楽しむ分だけ。「〜倍」はこれ以上なら損しないオッズ</span></div>`;
   // 軸（3着以内に来る確率85%以上）と2番手（◎と軸以外で、3着以内に一番来やすい艇）と消し（15%未満）。舟券を絞る目安で、これだけで勝てるわけではない
   // 2番手：2〜10月の3.9万レースで、予想67%→実際66%（7〜10月）。◎と両方3着以内は予想56%→実際55%
   const t3 = won ? won.slice(0, 3) : null;
@@ -1779,8 +1807,76 @@ function verdictHTML(r, an){
         : "◎の今節の展示が速くない候補。2〜10月で◎の単勝は「ふつう」96%・「遅い」92%なので、見送りが目安。";
       return `<div class="vd-cand"><span class="vd-k">候補</span><span class="vd-v">◎${chip(top.b.no)} 単勝${won ? (won[0] === top.b.no ? ` <em class="hit">的中</em>` : ` <em class="miss">ハズレ</em>`) : ""}<small>${seV}</small></span><span class="vd-n">${msg}信頼度「低」×自信「かたい」のレースです。偶然の幅がまだ大きく、本当にプラスかは10/26からの新しいレースで確かめ中（検証タブ）なので、買うなら少額で。</span></div>`;
     })() : ""}
-    ${rec}${axl}${ref}
+    ${triRowHTML(r, an)}${axl}${ref}${rec}
   </div>`;
+}
+
+// 3連単の提案（オッズは見ない）：アプリの確率の高い順に、自信（オッズを見ない）でおすすめ点数を決める。
+// 一覧（確率順・上位20）をタップすると、その順位までに点数を変えられる（このページを開いている間だけ）
+function triPlan(r, an){
+  const J = jishinLevel(r, an);
+  const li0 = J ? J.li0 : 1;
+  const rec = TRI_PLAN[li0];
+  const cut = state.triCut.get(r.key);
+  const n = Math.max(1, Math.min(TRI_MAX, an.triAll.length, cut || rec));
+  const picks = an.triAll.slice(0, n);
+  return {li0, rec, n, custom: !!cut && cut !== rec, picks, cum: picks.reduce((a, t) => a + t.p, 0), hist: TRI_HIST[li0][n - 1], skip: li0 === 2};
+}
+const triWon = r => r.result && r.result.order.length >= 3 ? r.result.order.slice(0, 3) : null;
+const triSame = (c, w) => !!w && c.every((n, i) => w[i] === n);
+const triComb = (c, hit) => `<span class="cb${hit ? " hit" : ""}">${c.map(n => `<b class="c${n}">${n}</b>`).join("-")}</span>`;
+function triText(r, an){
+  const P = triPlan(r, an);
+  return `${STADIUMS[r.stadium] || ""}${r.no}R 3連単 ${P.n}点：${P.picks.map(t => t.c.join("-")).join(" / ")}`;
+}
+function triRowHTML(r, an){
+  if (!an.triAll || !an.triAll.length) return "";
+  const P = triPlan(r, an), w = triWon(r);
+  const hit = w ? P.picks.some(t => triSame(t.c, w)) : null;
+  const lv = JISHIN[P.li0][1];
+  const head = P.skip ? `自信「荒れそう」：何点買っても回収率75%前後なので見送りが目安。買うなら上位${P.rec}点` : `自信「${lv}」→ おすすめは上位${P.rec}点`;
+  return `<div class="vd-tri" data-trirow="${esc(r.key)}"><span class="vd-k">3連単</span>
+    <span class="vd-v">${P.picks.map(t => triComb(t.c, triSame(t.c, w))).join("")}<small>${P.n}点で${pct(P.cum)}%</small>${hit == null ? "" : hit ? ` <em class="hit">的中</em>` : ` <em class="miss">ハズレ</em>`}</span>
+    <span class="vd-n">${head}${P.custom ? `（今は${P.n}点に変えています）` : ""}。過去の「${lv}」のレースで上位${P.n}点を買うと、的中${P.hist[0]}%・回収率${P.hist[1]}%。アプリの確率の高い順で、オッズは見ていません（オッズが届いても変わりません）。
+      <button type="button" class="tcopy" data-key="${esc(r.key)}">買い目をコピー</button></span></div>`;
+}
+function triListBody(r, an){
+  const P = triPlan(r, an), w = triWon(r);
+  let cum = 0;
+  const rows = an.triAll.slice(0, TRI_MAX).map((t, i) => {
+    cum += t.p;
+    const h = triSame(t.c, w);
+    return `<button type="button" class="trow${i < P.n ? " on" : ""}${h ? " hit" : ""}" data-key="${esc(r.key)}" data-n="${i + 1}" aria-pressed="${i < P.n}">
+      <span class="tr-i">${i + 1}</span>${triComb(t.c, h)}<span class="tr-p">${pct(t.p, 1)}%</span><span class="tr-c">${pct(cum)}%</span><span class="tr-h">${h ? "的中" : ""}</span></button>`;
+  }).join("");
+  return `<div class="dbody" data-trilist="${esc(r.key)}">
+    <p class="note">タップした順位までを買い目にします（今は上位${P.n}点・合計${pct(P.cum)}%${P.custom ? `・おすすめは${P.rec}点` : ""}）。${r.hasPreview ? "" : "展示前は枠なりの想定で、展示のあとで変わります。"}</p>
+    <div class="tlist"><div class="thead"><span>順位</span><span>組み合わせ</span><span>確率</span><span>ここまで</span><span></span></div>${rows}</div>
+    <p class="note">「ここまで」はその順位までを全部買ったときに当たる確率（アプリの計算）。過去4万レースで、この数字と実際の的中率はほぼ同じでした（かたい上位3点：34%→実際34%、ふつう上位6点：40%→40%）。オッズは使っていません。
+      ${P.custom ? `<button type="button" class="treset" data-key="${esc(r.key)}">おすすめ（${P.rec}点）に戻す</button>` : ""}<button type="button" class="tcopy" data-key="${esc(r.key)}">買い目をコピー</button></p>
+  </div>`;
+}
+function triListHTML(r, an){
+  if (!an.triAll || !an.triAll.length) return "";
+  return `<details data-key="${esc(r.key)}#t"${state.open.has(r.key + "#t") ? " open" : ""}>
+    <summary>3連単を確率の高い順に（上位${TRI_MAX}・タップで点数を変える）</summary>
+    ${triListBody(r, an)}
+  </details>`;
+}
+function refreshTri(r){
+  const an = analyze(r, settings);
+  const k = CSS.escape(r.key);
+  document.querySelectorAll(`[data-trirow="${k}"]`).forEach(el => { el.outerHTML = triRowHTML(r, an); });
+  document.querySelectorAll(`[data-trilist="${k}"]`).forEach(el => { el.outerHTML = triListBody(r, an); });
+}
+async function copyText(t){
+  try { if (navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(t); return true; } } catch (e) {}
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = t; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.top = "0"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, t.length);
+    const ok = document.execCommand("copy"); ta.remove(); return ok;
+  } catch (e) { return false; }
 }
 
 function valueHTML(r, an){
@@ -1891,15 +1987,16 @@ function stepsHTML(r, an){
     an.alerts.filter(a => a.type === "in").forEach(() => { s5 += item(an.c1.b.no, "ST凹み（イン）"); });
     if (r.cond && r.cond.wind >= 5) s5 += `<span><small>風${r.cond.wind}m（強め）</small></span>`;
   }
-  // ⑥ 買い目を絞る：自信が「荒れそう」なら見送り。ほかは軸と2番手
+  // ⑥ 買い目を絞る：自信（オッズを見ない）が「荒れそう」なら見送り。ほかは3連単のおすすめ点数と軸・2番手
   const J = jishinLevel(r, an);
   let s6;
   if (!J) s6 = "";
-  else if (J.li === 2) s6 = `<span class="skip">見送りが無難</span><small>自信「荒れそう」のレースは、どの買い方も回収率が一番低い（3連単74%・かたいは82%）</small>`;
+  else if (J.li0 === 2) s6 = `<span class="skip">見送りが無難</span><small>自信「荒れそう」のレースは、3連単を何点買っても回収率75%前後（かたいの上位3点は84%）</small>`;
   else {
     const ax = [...F].sort((a, b) => b.p3 - a.p3)[0];
     const sec = [...F].filter(f => f !== an.top && f !== ax).sort((a, b) => b.p3 - a.p3)[0];
-    s6 = `<span class="go">${JISHIN[J.li][1]}</span><span><small>軸</small>${ch(ax.b.no)}<small>3着以内${pct(ax.p3)}%</small></span>${sec ? `<span><small>2番手</small>${ch(sec.b.no)}<small>${pct(sec.p3)}%</small></span>` : ""}${an.isCand ? `<span><small>候補：◎</small>${ch(an.top.b.no)}<small>単勝${an.candFast ? "（今節展示が速い→買いの目安）" : "（今節展示が速くない→見送りの目安）"}</small></span>` : ""}`;
+    const P = triPlan(r, an), recCum = an.triAll.slice(0, P.rec).reduce((a, t) => a + t.p, 0);
+    s6 = `<span class="go">${JISHIN[J.li0][1]}</span><span><small>3連単 おすすめ</small>上位${P.rec}点<small>（当たる確率${pct(recCum)}%）</small></span><span><small>軸</small>${ch(ax.b.no)}<small>3着以内${pct(ax.p3)}%</small></span>${sec ? `<span><small>2番手</small>${ch(sec.b.no)}<small>${pct(sec.p3)}%</small></span>` : ""}${an.isCand ? `<span><small>候補：◎</small>${ch(an.top.b.no)}<small>単勝${an.candFast ? "（今節展示が速い→買いの目安）" : "（今節展示が速くない→見送りの目安）"}</small></span>` : ""}`;
   }
   // ⑦ オッズで答え合わせ：みんな（3連単のオッズ）の見立てと、◎の単勝オッズ
   const mq = J && J.mq;
@@ -2188,6 +2285,7 @@ function cardHTML(r, an, now){
       <div class="rmeta">${meta}</div>
     </div>
     ${verdictHTML(r, an)}
+    ${triListHTML(r, an)}
     ${badgeHTML(r, an)}
     ${showSlitTop ? `<div class="slitbox">${slitSVG(an)}</div>` : ""}
     ${valueHTML(r, an)}
@@ -2435,14 +2533,16 @@ function longHTML(L){
       const md = x => `${+x.slice(5, 7)}/${+x.slice(8)}`;
       const cellOf = (a, sub) => `<td class="zr${a.n && a.roi >= 1 ? " plus" : ""}">${a.n ? P(a.roi) : "-"}<small>${sub}</small></td>`;
       const rowsOf = list => list.map(c => { const R = c.races || 0, pc = v => R ? Math.round(v / R * 100) + "%" : "-";
-        return `<tr><td>${esc(c.label)}</td><td>${R}</td>${cellOf(c.top, "的中" + pc(c.top.hit))}${cellOf(c.ex1, "的中" + pc(c.ex1.hit))}${cellOf(c.tri, c.tri.n + "点")}${cellOf(c.trio, "3艇で決まる" + pc(c.hit3))}</tr>`; }).join("");
-      const head = `<thead><tr><th>自信</th><th>レース</th><th>◎の単勝</th><th>2連単1点</th><th>3連単（参考）</th><th>3連複（自信の3艇）</th></tr></thead>`;
+        return `<tr><td>${esc(c.label)}</td><td>${R}</td>${cellOf(c.top, "的中" + pc(c.top.hit))}${cellOf(c.ex1, "的中" + pc(c.ex1.hit))}${cellOf(c.tri, L.byJishin.plan ? "的中" + pc(c.tri.hit) : c.tri.n + "点")}${cellOf(c.trio, "3艇で決まる" + pc(c.hit3))}</tr>`; }).join("");
+      const head = `<thead><tr><th>自信</th><th>レース</th><th>◎の単勝</th><th>2連単1点</th><th>${L.byJishin.plan ? "3連単（おすすめ点数）" : "3連単（参考）"}</th><th>3連複（自信の3艇）</th></tr></thead>`;
       return `<div><h3>自信ごとの成績</h3>
         <p class="note"><b>${md(L.byJishin.from || "2026-10-17")}以降の新しいレース</b></p>
         <div class="tbl"><table class="lft2">${head}<tbody>${rowsOf(L.byJishin.fresh)}</tbody></table></div>
         <p class="note">それより前のレース</p>
         <div class="tbl"><table class="lft2">${head}<tbody>${rowsOf(L.byJishin.known)}</tbody></table></div>
-        <p class="note">カードの「自信」（一番ありそうな3艇で1〜3着が決まる確率が30%以上で「かたい」、20%以上で「ふつう」、それ未満と、オッズと意見が大きく割れるときは一段下げる）ごとの成績です。3連複は自信の3艇を1点。かたいレースほど回収率は高いですが、長い目で見るとどれも100%未満です。新しいレースは数百レースたまるまで大きくぶれます。</p></div>`;
+        <p class="note">${L.byJishin.plan
+          ? `カードの「自信」（一番ありそうな3艇で1〜3着が決まる確率が30%以上で「かたい」、20%以上で「ふつう」、それ未満は「荒れそう」。オッズは見ない）ごとの成績です。3連単はカードの「3連単」の行のおすすめ点数（アプリの確率の高い順に、かたい${L.byJishin.plan[0]}点・ふつう${L.byJishin.plan[1]}点・荒れそう${L.byJishin.plan[2]}点）、3連複は自信の3艇を1点。`
+          : "カードの「自信」（一番ありそうな3艇で1〜3着が決まる確率が30%以上で「かたい」、20%以上で「ふつう」、それ未満と、オッズと意見が大きく割れるときは一段下げる）ごとの成績です。3連複は自信の3艇を1点。"}かたいレースほど回収率は高いですが、長い目で見るとどれも100%未満です。新しいレースは数百レースたまるまで大きくぶれます。</p></div>`;
     })() : ""}
     ${L.byDay ? (() => {
       const md = x => `${+x.slice(5, 7)}/${+x.slice(8)}`;
@@ -2644,8 +2744,24 @@ $("btn-refresh").addEventListener("click", async e => {
 const togglePanel = (btn, id) => { const p = $(id); p.hidden = !p.hidden; btn.setAttribute("aria-pressed", String(!p.hidden)); };
 $("btn-settings").addEventListener("click", e => togglePanel(e.currentTarget, "settings"));
 $("btn-bt").addEventListener("click", e => { renderBT(); togglePanel(e.currentTarget, "bt"); });
-$("d-prev").addEventListener("click", () => { state.date = shiftDate(state.date, -1); state.open.clear(); load(); });
-$("d-next").addEventListener("click", () => { if (state.date < jstNowDate()){ state.date = shiftDate(state.date, 1); state.open.clear(); load(); } });
+$("d-prev").addEventListener("click", () => { state.date = shiftDate(state.date, -1); state.open.clear(); state.triCut.clear(); load(); });
+$("d-next").addEventListener("click", () => { if (state.date < jstNowDate()){ state.date = shiftDate(state.date, 1); state.open.clear(); state.triCut.clear(); load(); } });
+// 3連単の一覧：タップでその順位までを買い目に／おすすめに戻す／買い目をコピー
+$("feed").addEventListener("click", async e => {
+  const t = e.target.closest && e.target.closest(".trow, .treset, .tcopy");
+  if (!t) return;
+  const key = t.dataset.key, r = state.races.find(x => x.key === key);
+  if (!r) return;
+  if (t.classList.contains("tcopy")){
+    const ok = await copyText(triText(r, analyze(r, settings)));
+    t.textContent = ok ? "コピーしました" : "コピーできませんでした";
+    setTimeout(() => { if (t.isConnected) t.textContent = "買い目をコピー"; }, 1600);
+    return;
+  }
+  if (t.classList.contains("treset")) state.triCut.delete(key);
+  else state.triCut.set(key, +t.dataset.n);
+  refreshTri(r);
+});
 
 const SL = [
   ["w-skill", s => s.w.skill, (s, v) => s.w.skill = v, v => "×" + v.toFixed(2)],
