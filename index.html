@@ -1625,7 +1625,7 @@ function tune(data, s, stats){
 /* ---------- 状態 ---------- */
 const settings = loadSettings();
 // アプリの版（アップロードしたものに切り替わったかを見分ける用。直すたびに変える）
-const APP_VER = "10/29④版";
+const APP_VER = "10/29⑤版";
 const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "value", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}, pick: new Map(), triCut: new Map()};
 const bt = {status: "idle", days: 0, data: [], res: null, tuned: null, prevW: null, msg: "", stats: null, long: null, longTried: false, paper: null, paperTried: false};
 function updateStatsInfo(){
@@ -1849,9 +1849,10 @@ function viewSentences(r, an){
   }
   // ⑩ 風・展示でフライング
   if (r.cond && r.cond.wind >= 5) pts.push([5, `風が${r.cond.wind}mと強めで、展開が荒れやすいです。`]);
-  // 展示でフライングした艇は、◎○▲か「崩すなら」の艇だけ（展示のFはよくあるので）
-  const exf = an.alerts.filter(a => a.type === "exf").map(a => byNo.get(a.boat)).filter(f => f && key(f));
-  if (exf.length) pts.push([4, `${exf.map(f => f.mark + who(f)).join("・")}は展示でフライング。本番は慎重になりやすいです。`]);
+  // F持ち（期の途中でFをもらっている）：本番のスタートが遅くなりやすい（2026/1〜10：本番ST平均.17・出遅れ.20以上が3割強。F持ちでない艇は.155・2割強）。
+  // 展示でのフライングは関係なかった（展示でFした艇の本番STは、展示で早く行ってFしなかった艇とほぼ同じ .158と.155）ので、展示Fには触れない
+  const fh = F.filter(f => (f.b.F || 0) >= 1 && key(f) && !said.has(f.b.no));
+  if (fh.length) pts.push([5, `${fh.map(f => f.mark + who(f)).join("・")}はF持ちで、本番のスタートは控えめになりやすいです（F持ちは本番ST平均.17・出遅れが3割強）。`]);
   // ほかに何もないときは、展示タイム1位（◎○▲か「崩すなら」の艇のとき）
   const exBest = F.filter(f => f.b.exTime != null).sort((a, b) => a.b.exTime - b.b.exTime)[0];
   if (exBest && key(exBest) && !said.has(exBest.b.no)) pts.push([2, `展示タイムは${exBest.mark}${who(exBest)}が一番（${exBest.b.exTime.toFixed(2)}）。`]);
