@@ -14,7 +14,7 @@
 // 27 ST合計（直近3ヶ月）  28 ST件数（直近3ヶ月）  29 本番でのフライング
 //
 // 選手ごと：c = コース別の配列、z = 展示ST→本番STのズレ [件数, 合計, 絶対値の合計]（1/100秒）
-//           r = 直近10日の結果 [何日前, 場, R, コース, 着順(0=失格など), ST]
+//           r = 直近10日の結果 [何日前, 場, R, コース, 着順(0=失格など), ST, 展示タイムの順位(1=一番速い・なければnull)]
 // 場ごと：cc = 1着・2着・3着のコースの並びの回数（216個。(1着-1)*36+(2着-1)*6+(3着-1)）
 import fs from "node:fs";
 
@@ -34,7 +34,7 @@ const firstNeeded = addDays(btCut, -183);
 const keepFrom = addDays(today, -2); // 直近2日分は結果の更新があり得るので保存しない
 
 // 1日分のJSONから、集計に必要な部分だけを小さく取り出す
-// [場, R, 決まり手, 3連単払戻, rows]  rows: [登録番号, コース, 着順, 本番ST, 展示ST, 艇番]
+// [場, R, 決まり手, 3連単払戻, rows]  rows: [登録番号, コース, 着順, 本番ST, 展示ST, 艇番, 展示タイムの順位]
 export function compact(j){
   const out = [];
   for (const [sk, S] of Object.entries((j && j.programs && j.programs.stadiums) || {})){
@@ -42,6 +42,8 @@ export function compact(j){
       const res = R && R.result;
       if (!res || !res.racers) continue;
       const pvr = (R.preview && R.preview.racers) || {};
+      // 展示タイムの順位（1＝一番速い。同じタイムは同じ順位）。「今節の展示順位」用
+      const exT = Object.values(pvr).map(q => num(q && q.exhibition_time)).filter(t => t > 0);
       const rows = [];
       for (const x of Object.values(res.racers)){
         if (!x) continue;
@@ -52,7 +54,9 @@ export function compact(j){
         const st = num(x.start_timing);
         const q = pvr[e] || pvr[String(e)] || {};
         const ex = num(q.start_timing);
-        rows.push([reg, course, num(x.place_number) || 0, st == null ? null : Math.round(st * 100), ex == null ? null : Math.round(ex * 100), e]);
+        const t = num(q.exhibition_time);
+        const xr = t > 0 && exT.length >= 4 ? 1 + exT.filter(v => v < t).length : null;
+        rows.push([reg, course, num(x.place_number) || 0, st == null ? null : Math.round(st * 100), ex == null ? null : Math.round(ex * 100), e, xr]);
       }
       if (rows.length < 4 || !rows.some(r => r[2] === 1)) continue;
       const tech = String(res.technique_number_source ?? "").trim();
@@ -65,7 +69,13 @@ export function compact(j){
 
 async function getDay(d){
   const f = `${CACHE}/${PREFIX}${d}.json`;
-  if (fs.existsSync(f)) return JSON.parse(fs.readFileSync(f, "utf8"));
+  let saved = null;
+  if (fs.existsSync(f)){
+    saved = JSON.parse(fs.readFileSync(f, "utf8"));
+    // 展示タイムの順位（7番目）を持たない前の形の保存は、「今節の展示順位」に使う直近12日だけ取り直す
+    const old = d >= addDays(lastDay, -12) && saved.some(race => (race[4] || []).some(row => row.length < 7));
+    if (!old) return saved;
+  }
   const url = `${API}/${d.slice(0, 4)}/${d.replace(/-/g, "")}.json`;
   for (let attempt = 0; attempt < 3; attempt++){
     try {
@@ -80,7 +90,7 @@ async function getDay(d){
     }
   }
   console.warn("取得できなかった日:", d);
-  return [];
+  return saved || [];
 }
 
 const blank = () => new Array(K).fill(0);
@@ -117,7 +127,7 @@ export function build(days, data, until, opt = {}){
     if (top.every(Boolean)){ const k = top.join("-"); sd.deme[k] = (sd.deme[k] || 0) + 1; }
     const tc = [1, 2, 3].map(p => (rows.find(r => r[2] === p) || [])[1]);
     if (tc.every(c => c >= 1 && c <= 6) && new Set(tc).size === 3) sd.cc[(tc[0] - 1) * 36 + (tc[1] - 1) * 6 + tc[2] - 1]++;
-    for (const [reg, c, place, st, ex] of rows){
+    for (const [reg, c, place, st, ex, , xr] of rows){
       if (c < 1 || c > 6) continue;
       const R = racers[reg] || (racers[reg] = {c: [0, 0, 0, 0, 0, 0], z: [0, 0, 0]});
       if (!R.c[c - 1]) R.c[c - 1] = blank();
@@ -139,7 +149,7 @@ export function build(days, data, until, opt = {}){
       }
       // 展示でF（ex < 0）のときはずれの計算に入れない
       if (st != null && ex != null && st >= 0 && ex >= 0){ R.z[0]++; R.z[1] += st - ex; R.z[2] += Math.abs(st - ex); }
-      if (opt.recent && d >= fromRecent) (R.r || (R.r = [])).push([dayDiff(until, d), s, rno, c, place, st]);
+      if (opt.recent && d >= fromRecent) (R.r || (R.r = [])).push([dayDiff(until, d), s, rno, c, place, st, xr ?? null]);
     }
   }
   for (const R of Object.values(racers)){

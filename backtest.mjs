@@ -34,7 +34,7 @@ const DAYB = [["初日", r => r.day === 1 && !r.lastDay], ["2日目", r => r.day
 const html = fs.readFileSync("index.html", "utf8");
 const ia = html.indexOf("/* ---------- 定数 ---------- */"), ib = html.indexOf("/* ---------- 状態 ---------- */");
 if (ia < 0 || ib < 0) throw new Error("index.html から判定コードを見つけられませんでした");
-const M = new Function(html.slice(ia, ib) + "\nreturn {parseV1, predict, slitAlerts, prepStats, oddsOf, DEFAULTS, PAYKEY, impliedWin: typeof impliedWin === 'function' ? impliedWin : null, formFromList: typeof formFromList === 'function' ? formFromList : null};")();
+const M = new Function(html.slice(ia, ib) + "\nreturn {parseV1, predict, slitAlerts, prepStats, oddsOf, DEFAULTS, PAYKEY, impliedWin: typeof impliedWin === 'function' ? impliedWin : null, formFromList: typeof formFromList === 'function' ? formFromList : null, serExFromList: typeof serExFromList === 'function' ? serExFromList : null};")();
 
 const addDays = (d, n) => { const t = new Date(d + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
 const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
@@ -141,7 +141,9 @@ export async function main(fetcher = fetch){
   const byDay = {known: dayBlank(), fresh: dayBlank()};
   const jBlank = () => JISHIN.map(([from, label]) => ({label, from, races: 0, hit3: 0, top: z(), ex1: z(), tri: z(), trio: z()}));
   const byJishin = {known: jBlank(), fresh: jBlank()};
-  const cBlank = () => ({races: 0, top: z(), place: z()});
+  // fast／other：◎の今節の展示順位が速い候補とそれ以外（ボートレース日和の項目の検証で見つけた絞り込み。10/25までで見つけた）
+  const cOne = () => ({races: 0, top: z(), place: z()});
+  const cBlank = () => ({...cOne(), fast: cOne(), other: cOne()});
   const kouho = {known: cBlank(), fresh: cBlank(), recent: []};
   const months = [...new Set(days.map(d => d.slice(0, 7)))];
   const perMonth = {};
@@ -256,7 +258,11 @@ export async function main(fetcher = fetch){
             const wp = win === A ? payOf("win", [A]) : 0;
             const pl = order.slice(0, 2).includes(A) ? (+((r.result.payouts.place || []).find(x => String(x.combination) === String(A)) || {}).amount || 0) : 0;
             G.races++; put(G.top, 1, wp); put(G.place, 1, pl);
-            if (d >= CAND.from) kouho.recent.push({d, s: r.stadium, no: r.no, A, p1: +pr.top.p1.toFixed(3), res: order.slice(0, 3), win: wp, place: pl});
+            const se = M.serExFromList ? M.serExFromList(recent, r).get(A) || null : null;
+            const fast = !!(se && se.lv === "fast");
+            const H = G[fast ? "fast" : "other"];
+            H.races++; put(H.top, 1, wp); put(H.place, 1, pl);
+            if (d >= CAND.from) kouho.recent.push({d, s: r.stadium, no: r.no, A, p1: +pr.top.p1.toFixed(3), se: se ? +se.avg.toFixed(2) : null, sn: se ? se.n : 0, fast: fast ? 1 : 0, res: order.slice(0, 3), win: wp, place: pl});
           }
           const J = (d >= FRESH ? byJishin.fresh : byJishin.known)[li];
           J.races++;
@@ -297,7 +303,10 @@ export async function main(fetcher = fetch){
     alert: {all: agg(alertAll), ev: agg(alertEV)},
     byConf: byConf.map(c => ({...c, ...Object.fromEntries(["top", "rec", "ex1", "tri"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))})),
     byDay: {from: FRESH, ...Object.fromEntries(["known", "fresh"].map(g => [g, byDay[g].map(c => ({...c, ...Object.fromEntries(["top", "rec", "tri", "kon"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))}))]))},
-    cand: {...CAND, ...Object.fromEntries(["known", "fresh"].map(g => [g, {races: kouho[g].races, ...Object.fromEntries(["top", "place"].map(k => [k, {...kouho[g][k], roi: kouho[g][k].n ? +(kouho[g][k].ret / (100 * kouho[g][k].n)).toFixed(4) : 0}]))}])), recent: kouho.recent.slice(-60)},
+    cand: (() => {
+      const one = c => ({races: c.races, ...Object.fromEntries(["top", "place"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))});
+      return {...CAND, ...Object.fromEntries(["known", "fresh"].map(g => [g, {...one(kouho[g]), fast: one(kouho[g].fast), other: one(kouho[g].other)}])), recent: kouho.recent.slice(-60)};
+    })(),
     byJishin: {from: FRESH, ...Object.fromEntries(["known", "fresh"].map(g => [g, byJishin[g].map(c => ({...c, ...Object.fromEntries(["top", "ex1", "tri", "trio"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))}))]))}
   };
   fs.writeFileSync("backtest.json", JSON.stringify(out));

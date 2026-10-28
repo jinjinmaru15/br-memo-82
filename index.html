@@ -162,6 +162,7 @@ button:disabled{cursor:default}
 .bdg.ana{background:var(--ana-soft);color:var(--ana);border-color:var(--ana)}
 .bdg.val{background:var(--val-soft);color:var(--val);border-color:var(--val)}
 .bdg.cand{background:var(--solid);color:var(--solid-ink)}
+.bdg.cand.weak{background:transparent;color:var(--solid);border-color:var(--solid);font-weight:600}
 .bdg.mz{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 .bdg.og{background:var(--og-soft);color:var(--og);border-color:var(--og)}
 .chip.og{border-color:var(--og);color:var(--og)}
@@ -300,7 +301,7 @@ table.lft2 th:first-child,table.lft2 td:first-child{text-align:left;font-family:
 td.nm{font-family:var(--f-body);font-size:13px;font-weight:500}
 td.nm small{display:block;font-size:11px;color:var(--muted);font-weight:400}
 td .best{color:var(--accent);font-weight:700}
-td small.mx{display:block;font-size:10.5px;font-weight:700;line-height:1.2;white-space:nowrap}td small.mx.up{color:var(--val)}td small.mx.dn{color:var(--muted);font-weight:400}
+td small.mx{display:block;font-size:10.5px;font-weight:700;line-height:1.2;white-space:nowrap}td small.mx.up{color:var(--val)}td small.mx.md{color:var(--muted);font-weight:500}td small.mx.dn{color:var(--muted);font-weight:400}
 td .neg{color:var(--muted)}
 td.tot{font-weight:700}
 .chipb{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:5px;font-family:var(--f-num);font-weight:700;font-size:15px;box-shadow:inset 0 0 0 1px var(--hull-stroke)}
@@ -1116,6 +1117,52 @@ function formFor(r, stats, sameDay){
   }
   return out;
 }
+// 今節の展示順位（ボートレース日和の「今節成績」の展示順位と同じ考え方）：同じ場の前のレース（6日以内と、今日の前のレース）で
+// 展示タイムが何位だったか（1＝一番速い）。スコア＝Σ(順位−3.5)÷(走数+3)（走数が少ないうちは0に寄せる）。−0.4未満「速い」・+0.4超「遅い」
+// 目安：走数3なら平均2.7位以内、5〜6なら2.9位以内で「速い」（1走だけなら1位のときだけ）
+// 2〜10/25：◎単勝候補（信頼度「低」×自信「かたい」）で、◎の今節の展示が速いと◎の単勝 108%（608R：2〜6月105%・7〜10月112%）、
+// ふつう96%（723R）、遅い92%（331R）。全レースの◎でも、速い95%・ふつう91%・遅い86%（オッズが今節の展示を少し軽く見ている）。
+// 日和の項目を26個試して一番効いたもの（ほかはオッズに入りきっていた）。偶然の幅がまだ大きいので、10/29からの新しいレースで確かめる
+const SER_EX = {k: 3, fast: -0.4, slow: 0.4, from: "2026-10-29"};
+function exRankMap(x){
+  const m = new Map();
+  const ts = ((x && x.boats) || []).map(b => b.exTime).filter(t => t > 0);
+  if (ts.length < 4) return m;
+  for (const b of x.boats) if (b.exTime > 0 && b.reg != null) m.set(b.reg, 1 + ts.filter(t => t < b.exTime).length);
+  return m;
+}
+function serExOf(rk){
+  if (!rk.length) return null;
+  const sc = rk.reduce((a, v) => a + v - 3.5, 0) / (rk.length + SER_EX.k);
+  return {n: rk.length, avg: rk.reduce((a, v) => a + v, 0) / rk.length, sc, lv: sc < SER_EX.fast ? "fast" : sc > SER_EX.slow ? "slow" : "mid"};
+}
+// 前の日のレースも入った一覧から（長期検証用）
+function serExFromList(list, r){
+  const H = list.filter(x => x.stadium === r.stadium && (x.date === r.date ? x.no < r.no : x.date < r.date && dayGap(r.date, x.date) <= 6)).map(exRankMap);
+  const out = new Map();
+  for (const b of r.boats){
+    if (b.reg == null) continue;
+    const e = serExOf(H.map(m => m.get(b.reg)).filter(v => v >= 1));
+    if (e) out.set(b.no, e);
+  }
+  return out;
+}
+// アプリ用：前の日までは集計（stats.json の選手の r の7番目）、今日の前のレースは読み込んだ出走表から
+function serExFor(r, stats, sameDay){
+  const out = new Map();
+  const gap = stats && stats.to && r.date ? dayGap(r.date, stats.to) : null;
+  const H = (sameDay || []).filter(x => x.stadium === r.stadium && x.date === r.date && x.no < r.no).map(exRankMap);
+  for (const b of r.boats){
+    if (b.reg == null) continue;
+    const rk = [];
+    const R = racerOf(stats, b.reg);
+    if (R && R.r && gap != null) for (const e of R.r) if (+e[1] === +r.stadium && e[0] + gap >= 1 && e[0] + gap <= 6 && e[6] >= 1) rk.push(e[6]);
+    for (const m of H){ const v = m.get(b.reg); if (v) rk.push(v); }
+    const e = serExOf(rk);
+    if (e) out.set(b.no, e);
+  }
+  return out;
+}
 // 2着・3着に来る力（勝ち切る力とは別）：全国・当地の2連率・3連率、コース別の2着率・3着率、モーター・ボートの3連率、勝率
 // 1〜6月で決めて7〜10月で確認：2着の当たり具合 +9.1‰、3着 +19.4‰（本命の的中 2着41.4→41.9%、3着39.7→40.9%。オッズは43.3%・42.4%）
 const PLACE_B2 = {cr1: -0.09, cr2: 0.07, cr3: 0.07, t2: 0.06, t3: 0.01, l2: 0.03, l3: 0.03, m3: 0.05, b3: 0, win: 0.76};
@@ -1456,7 +1503,12 @@ function analyze(r, s){
   const alerts = slitAlerts(r, s);
   const pr = predict(r, s, alerts);
   const value = valueBets(r, pr, s);
+  // 今節の展示順位（予想には入れず、表示と◎単勝候補の絞り込みだけに使う）。前のレースの展示が後から届くので毎回作り直す
+  const serEx = serExFor(r, STATS, state.races);
+  const cand = isCand(r, pr);
+  const topSe = serEx.get(pr.top.b.no) || null;
   return {
+    serEx, topSe, candFast: cand && !!topSe && topSe.lv === "fast",
     ...pr, alerts, value,
     isAlert: alerts.some(a => a.type !== "exf"),
     isSlit: alerts.some(a => a.type === "nobi"),
@@ -1464,7 +1516,7 @@ function analyze(r, s){
     isHonmei: pr.top.p1 * 100 >= s.honmei,
     isAna: pr.c1.p1 * 100 <= s.ana,
     isValue: value.length > 0,
-    isCand: isCand(r, pr)
+    isCand: cand
   };
 }
 
@@ -1599,7 +1651,13 @@ function badgeHTML(r, an){
   an.alerts.filter(a => a.type === "attack").forEach(a => out.push(`<span class="bdg alert">${bn(a.boat)}ST攻め・${a.tactic} <span class="num">+${f2(a.diff).slice(1)}</span>${a.fHolder ? " F持ち" : ""}</span>`));
   an.alerts.filter(a => a.type === "dent").forEach(a => out.push(`<span class="bdg alert">${bn(a.boat)}ST凹み → ${bn(a.next)}に展開</span>`));
   an.alerts.filter(a => a.type === "exf").forEach(a => out.push(`<span class="bdg mute">${bn(a.boat)}展示F<span class="num">.${String(Math.round(a.diff * 100)).padStart(2, "0")}</span>（点数に入れない）</span>`));
-  if (an.isCand) out.push(`<span class="bdg cand">◎単勝候補 ${bn(an.top.b.no)}</span>`);
+  if (an.isCand){
+    // ◎の今節の展示が速い候補だけ塗りつぶし（2〜10月で◎の単勝108%）。それ以外は枠だけ（ふつう96%・遅い92%）
+    const se = an.topSe, lv = se ? ({fast: "速い", mid: "ふつう", slow: "遅い"})[se.lv] : "データなし";
+    out.push(an.candFast
+      ? `<span class="bdg cand">◎単勝候補 ${bn(an.top.b.no)}<span class="num">今節展示 速い</span></span>`
+      : `<span class="bdg cand weak">◎候補 ${bn(an.top.b.no)}<span class="num">今節展示 ${lv}</span></span>`);
+  }
   if (!r.hasPreview) r.boats.forEach(b => { const z = maezukeOf(b); if (z && z.label) out.push(`<span class="bdg mz">${bn(b.no)}${z.label}<span class="num">${Math.round(z.p * 100)}%</span></span>`); });
   if (an.isValue) out.push(`<span class="bdg val">期待値 ${an.value.map(x => bn(x.c[0])).join("")}単勝</span>`);
   if (an.isHonmei) out.push(`<span class="bdg solid">鉄板 ${bn(an.top.b.no)}<span class="num">${pct(an.top.p1)}%</span></span>`);
@@ -1713,7 +1771,14 @@ function verdictHTML(r, an){
   return `<div class="verdict">
     <div class="vd-conf ${cf[2]}"><span class="vd-k">信頼度</span><span class="vd-c">${cf[1]}</span><span class="vd-v">◎${chip(top.b.no)} 1着率${pct(top.p1)}%<small>${cf[3]}</small></span></div>
     ${jishinHTML(r, an)}
-    ${an.isCand ? `<div class="vd-cand"><span class="vd-k">候補</span><span class="vd-v">◎${chip(top.b.no)} 単勝${won ? (won[0] === top.b.no ? ` <em class="hit">的中</em>` : ` <em class="miss">ハズレ</em>`) : ""}</span><span class="vd-n">信頼度「低」×自信「かたい」のレース。2〜10月の約1,700レースで◎の単勝は回収率 約99%（とんとん）、複勝は約98%。プラスかどうかは10/26からの新しいレースで確かめ中（検証タブ）なので、買うなら少額で。</span></div>` : ""}
+    ${an.isCand ? (() => {
+      const se = an.topSe;
+      const seV = se ? `今節の展示 平均${se.avg.toFixed(1)}位（${se.n}走）→ <b>${({fast: "速い", mid: "ふつう", slow: "遅い"})[se.lv]}</b>` : "今節の展示 データなし（ふつう扱い）";
+      const msg = an.candFast
+        ? "◎の今節の展示が速い候補。2〜10月の608レースで◎の単勝は回収率108%（2〜6月105%・7〜10月112%）、複勝103%。"
+        : "◎の今節の展示が速くない候補。2〜10月で◎の単勝は「ふつう」96%・「遅い」92%なので、見送りが目安。";
+      return `<div class="vd-cand"><span class="vd-k">候補</span><span class="vd-v">◎${chip(top.b.no)} 単勝${won ? (won[0] === top.b.no ? ` <em class="hit">的中</em>` : ` <em class="miss">ハズレ</em>`) : ""}<small>${seV}</small></span><span class="vd-n">${msg}信頼度「低」×自信「かたい」のレースです。偶然の幅がまだ大きく、本当にプラスかは10/26からの新しいレースで確かめ中（検証タブ）なので、買うなら少額で。</span></div>`;
+    })() : ""}
     ${rec}${axl}${ref}
   </div>`;
 }
@@ -1787,7 +1852,10 @@ function stepsHTML(r, an){
   // ② モーター：2連率の上位2艇と、展示の速さ（展示速・展示遅）
   const s2 = [...F].filter(f => f.b.motor2 > 0).sort((a, b) => b.b.motor2 - a.b.motor2).slice(0, 2)
     .map(f => item(f.b.no, `2連率${f.b.motor2.toFixed(1)}%${f.mx >= MEX_MARK ? "・展示速" : f.mx <= -MEX_MARK ? "・展示遅" : ""}`)).join("")
-    + F.filter(f => f.mx >= MEX_MARK && ![...F].sort((a, b) => (b.b.motor2 || 0) - (a.b.motor2 || 0)).slice(0, 2).includes(f)).map(f => item(f.b.no, "展示速")).join("");
+    + F.filter(f => f.mx >= MEX_MARK && ![...F].sort((a, b) => (b.b.motor2 || 0) - (a.b.motor2 || 0)).slice(0, 2).includes(f)).map(f => item(f.b.no, "展示速")).join("")
+    // 今節の展示順位が速い艇（この節の展示タイムの平均順位）。速い順に2艇まで
+    + F.filter(f => an.serEx && an.serEx.get(f.b.no) && an.serEx.get(f.b.no).lv === "fast").sort((a, b) => an.serEx.get(a.b.no).sc - an.serEx.get(b.b.no).sc).slice(0, 2)
+      .map(f => { const e = an.serEx.get(f.b.no); return item(f.b.no, `今節展示 速い（平均${e.avg.toFixed(1)}位・${e.n}走）`); }).join("");
   // ③ 進入：展示の並び。内に入った艇が前付け
   let s3;
   if (!r.hasPreview){
@@ -1831,7 +1899,7 @@ function stepsHTML(r, an){
   else {
     const ax = [...F].sort((a, b) => b.p3 - a.p3)[0];
     const sec = [...F].filter(f => f !== an.top && f !== ax).sort((a, b) => b.p3 - a.p3)[0];
-    s6 = `<span class="go">${JISHIN[J.li][1]}</span><span><small>軸</small>${ch(ax.b.no)}<small>3着以内${pct(ax.p3)}%</small></span>${sec ? `<span><small>2番手</small>${ch(sec.b.no)}<small>${pct(sec.p3)}%</small></span>` : ""}${an.isCand ? `<span><small>候補：◎</small>${ch(an.top.b.no)}<small>単勝</small></span>` : ""}`;
+    s6 = `<span class="go">${JISHIN[J.li][1]}</span><span><small>軸</small>${ch(ax.b.no)}<small>3着以内${pct(ax.p3)}%</small></span>${sec ? `<span><small>2番手</small>${ch(sec.b.no)}<small>${pct(sec.p3)}%</small></span>` : ""}${an.isCand ? `<span><small>候補：◎</small>${ch(an.top.b.no)}<small>単勝${an.candFast ? "（今節展示が速い→買いの目安）" : "（今節展示が速くない→見送りの目安）"}</small></span>` : ""}`;
   }
   // ⑦ オッズで答え合わせ：みんな（3連単のオッズ）の見立てと、◎の単勝オッズ
   const mq = J && J.mq;
@@ -2045,6 +2113,9 @@ function tableHTML(an, r){
   const bestS = Math.min(...an.F.map(f => stv(f.b)));
   const mxTag = v => v >= MEX_MARK ? `<small class="mx up">展示速</small>` : v <= -MEX_MARK ? `<small class="mx dn">展示遅</small>` : "";
   const hasMx = an.F.some(f => f.mx);
+  // 今節の展示順位（この節の展示タイムの平均順位・走数）。速いは緑、遅いは薄く
+  const seTag = no => { const e = an.serEx && an.serEx.get(no); return e ? `<small class="mx ${({fast: "up", mid: "md", slow: "dn"})[e.lv]}">今節${e.avg.toFixed(1)}位/${e.n}走</small>` : ""; };
+  const hasSe = !!(an.serEx && an.serEx.size);
   const rows = an.F.map(({b, mx}) => `<tr>
     <td>${b.course ?? "-"}</td>
     <td>${chip(b.no)}</td>
@@ -2053,7 +2124,7 @@ function tableHTML(an, r){
     <td>${b.local > 0 ? f2(b.local) : "-"}</td>
     <td>${f2(b.avgST)}</td>
     <td>${b.motor2 == null ? "-" : b.motor2.toFixed(1)}${mxTag(mx || 0)}</td>
-    <td>${b.exTime == null ? "-" : `<span class="${b.exTime === bestT ? "best" : ""}">${b.exTime.toFixed(2)}</span>`}</td>
+    <td>${b.exTime == null ? "-" : `<span class="${b.exTime === bestT ? "best" : ""}">${b.exTime.toFixed(2)}</span>`}${seTag(b.no)}</td>
     <td>${b.exST == null ? "-" : `<span class="${stv(b) === bestS ? "best" : ""}">${fST(b.exST, b.exF)}</span>`}</td>
     ${O ? ogCell(b.no, 0) + ogCell(b.no, 1) + ogCell(b.no, 2) : ""}
     <td>${b.tilt == null ? "-" : (b.tilt > 0 ? "+" : "") + b.tilt.toFixed(1)}</td>
@@ -2061,7 +2132,7 @@ function tableHTML(an, r){
   </tr>`).join("");
   return `<div><h3>出走表と直前情報</h3><div class="tbl"><table class="lft">
     <thead><tr><th>進入</th><th>艇</th><th>選手</th><th>勝率</th><th>当地</th><th>平均ST</th><th>モ2連</th><th>展示T</th><th>展示ST</th>${O ? `<th>一周</th><th>まわり足</th><th>直線</th>` : ""}<th>チルト</th><th>部品交換</th></tr></thead>
-    <tbody>${rows}</tbody></table></div>${O ? `<p class="note">一周・まわり足・直線：${esc(STADIUMS[r.stadium] || "")}の公式サイトのオリジナル展示データ（展示航走のタイム・小さいほど速い）。一周と直線が速い艇ほど1着率を上げています（「期待度の内訳」の「展示」に入っています）。</p>` : ""}${hasMx ? `<p class="note">展示速・展示遅：このモーターの前の日までの展示タイムが、いつも速い・遅い（それぞれ全体の約15%）。オッズにも入りきっていない差なので、予想にも入れています（データ：データ攻めのモーターカルテ）。</p>` : ""}</div>`;
+    <tbody>${rows}</tbody></table></div>${O ? `<p class="note">一周・まわり足・直線：${esc(STADIUMS[r.stadium] || "")}の公式サイトのオリジナル展示データ（展示航走のタイム・小さいほど速い）。一周と直線が速い艇ほど1着率を上げています（「期待度の内訳」の「展示」に入っています）。</p>` : ""}${hasMx ? `<p class="note">展示速・展示遅：このモーターの前の日までの展示タイムが、いつも速い・遅い（それぞれ全体の約15%）。オッズにも入りきっていない差なので、予想にも入れています（データ：データ攻めのモーターカルテ）。</p>` : ""}${hasSe ? `<p class="note">今節〇位/〇走：この節（同じ場・6日以内と今日の前のレース）の展示タイムの平均順位と走数。緑は「速い」（走数3なら平均2.7位以内・5〜6走なら2.9位以内）。オッズが少し軽く見ている差で、◎単勝候補は◎が速いときだけ買うのが目安です（2〜10月で◎の単勝108%）。予想の1着率には入れていません。</p>` : ""}</div>`;
 }
 
 function combosHTML(r, an){
@@ -2220,7 +2291,7 @@ function render(){
   else if (state.note && !state.races.length) html = `<div class="empty">${esc(state.note)}</div>`;
   else if (!list.length){
     const msg = {
-      cand: "◎単勝候補のレースはありません。信頼度「低」（◎の1着率35〜50%）で自信が「かたい」レースに、展示のあとで出ます（1日6レースほど）。",
+      cand: "◎単勝候補のレースはありません。信頼度「低」（◎の1着率35〜50%）で自信が「かたい」レースに、展示のあとで出ます（1日6レースほど）。そのうち◎の今節の展示が速いもの（買いの目安）は塗りつぶしで出ます。",
       alert: "スリットアラート（一つ内側の艇より展示タイムが速い艇）が出ているレースはありません。展示航走が終わったレースから順に判定します。",
       honmei: "鉄板のレースはありません。設定で「鉄板」のしきい値を下げると増えます。",
       ana: "穴のレースはありません。設定で「穴」のしきい値を上げると増えます。",
@@ -2343,12 +2414,15 @@ function longHTML(L){
       const C = L.cand, md = x => `${+x.slice(5, 7)}/${+x.slice(8)}`;
       const hr = (g, k) => g.races ? Math.round(g[k].hit / g.races * 100) + "%" : "-";
       const row = (lab, g) => `<tr><td>${lab}</td><td>${g.races}</td><td class="zr${g.top.n && g.top.roi >= 1 ? " plus" : ""}">${g.top.n ? P(g.top.roi) : "-"}<small>的中${hr(g, "top")}</small></td><td class="zr${g.place.n && g.place.roi >= 1 ? " plus" : ""}">${g.place.n ? P(g.place.roi) : "-"}<small>的中${hr(g, "place")}</small></td></tr>`;
-      const rec = (C.recent || []).slice(-15).reverse().map(x => `<tr><td>${md(x.d)}</td><td class="feat">${esc(STADIUMS[x.s] || x.s)} ${x.no}R</td><td>${chip(x.A)}<small>${Math.round(x.p1 * 100)}%</small></td><td>${x.res.join("-")}</td><td class="${x.win ? "plus" : ""}">${x.win ? x.win + "円" : "×"}</td><td class="${x.place ? "plus" : ""}">${x.place ? x.place + "円" : "×"}</td></tr>`).join("");
+      const hasSe = !!(C.fresh.fast && C.known.fast);
+      const sub = g => hasSe ? row("　うち◎の今節展示が速い", g.fast) + row("　それ以外", g.other) : "";
+      const seCell = x => x.se == null ? "-" : `<span class="${x.fast ? "plus" : ""}">${x.se.toFixed(1)}位${x.fast ? " 速" : ""}</span>`;
+      const rec = (C.recent || []).slice(-15).reverse().map(x => `<tr><td>${md(x.d)}</td><td class="feat">${esc(STADIUMS[x.s] || x.s)} ${x.no}R</td><td>${chip(x.A)}<small>${Math.round(x.p1 * 100)}%</small></td>${hasSe ? `<td>${seCell(x)}</td>` : ""}<td>${x.res.join("-")}</td><td class="${x.win ? "plus" : ""}">${x.win ? x.win + "円" : "×"}</td><td class="${x.place ? "plus" : ""}">${x.place ? x.place + "円" : "×"}</td></tr>`).join("");
       return `<div><h3>◎単勝候補の成績（信頼度「低」×自信「かたい」）</h3>
         <div class="tbl"><table class="lft2"><thead><tr><th>期間</th><th>レース</th><th>◎の単勝</th><th>◎の複勝</th></tr></thead>
-        <tbody>${row(md(C.from) + "〜（確かめ中）", C.fresh)}${row("それより前", C.known)}</tbody></table></div>
-        ${rec ? `<p class="note">最近の候補</p><div class="tbl"><table class="lft2"><thead><tr><th>日</th><th>レース</th><th>◎</th><th>結果</th><th>単勝</th><th>複勝</th></tr></thead><tbody>${rec}</tbody></table></div>` : ""}
-        <p class="note">「それより前」は、この条件を見つけるのに使ったレースなので良く見えて当然です。本当にプラスかは、${md(C.from)}からの新しいレースで決まります（1日6レースほどなので、判断には数か月かかります）。各100円で買ったとして、実際の払戻で数えています。</p></div>`;
+        <tbody>${row(md(C.from) + "〜（確かめ中）", C.fresh)}${sub(C.fresh)}${row("それより前", C.known)}${sub(C.known)}</tbody></table></div>
+        ${rec ? `<p class="note">最近の候補</p><div class="tbl"><table class="lft2"><thead><tr><th>日</th><th>レース</th><th>◎</th>${hasSe ? "<th>今節展示</th>" : ""}<th>結果</th><th>単勝</th><th>複勝</th></tr></thead><tbody>${rec}</tbody></table></div>` : ""}
+        <p class="note">「それより前」は、この条件を見つけるのに使ったレースなので良く見えて当然です。本当にプラスかは、${md(C.from)}からの新しいレースで決まります（1日6レースほどなので、判断には数か月かかります）。各100円で買ったとして、実際の払戻で数えています。${hasSe ? "「◎の今節展示が速い」は、ボートレース日和の項目を確かめて見つけた絞り込み（◎の今節の展示タイムの平均順位が速い。走数3なら2.7位以内）。10/25までのレースで見つけたので、10/26からの分で本当に効くかがわかります。" : ""}</p></div>`;
     })() : ""}
     <div><h3>条件ごとの回収率</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>期待値</th><th>確率</th><th>単勝の点数</th><th>単勝</th><th>95%の範囲</th><th>2連単</th><th>3連単</th></tr></thead>
