@@ -226,6 +226,11 @@ td .ogb{color:var(--og);font-weight:700}
 .vd-ref .vd-v,.vd-ax .vd-v{font-weight:600;font-size:12.5px}
 .vd-ref .cb{display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-weight:500}
 .vd-ref .vd-v b{display:inline-grid;place-items:center;min-width:16px;height:17px;padding:0 2px;border-radius:3px;font-family:var(--f-num);font-size:12.5px;box-shadow:inset 0 0 0 1px var(--hull-stroke)}
+.verdict > .vd-view{align-items:start;padding-bottom:6px;border-bottom:1px dashed var(--line)}
+.vd-view .vd-k{padding-top:2px}
+.vd-view .vd-t{grid-column:2;font-size:13px;line-height:1.7;color:var(--ink);min-width:0}
+.vd-view .vd-t .chipb{width:18px;height:18px;font-size:12px;border-radius:4px;vertical-align:-3px;margin:0 2px 0 1px}
+td.mkc{text-align:center}
 .vd-tri .vd-v{font-weight:600;font-size:12.5px;gap:5px 7px}
 .vd-tri .cb,.tlist .cb{display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-weight:500;border-radius:4px}
 .vd-tri .vd-v b,.tlist .cb b{display:inline-grid;place-items:center;min-width:16px;height:17px;padding:0 2px;border-radius:3px;font-family:var(--f-num);font-size:12.5px;box-shadow:inset 0 0 0 1px var(--hull-stroke)}
@@ -1620,7 +1625,7 @@ function tune(data, s, stats){
 /* ---------- 状態 ---------- */
 const settings = loadSettings();
 // アプリの版（アップロードしたものに切り替わったかを見分ける用。直すたびに変える）
-const APP_VER = "10/29③版";
+const APP_VER = "10/29④版";
 const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "value", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}, pick: new Map(), triCut: new Map()};
 const bt = {status: "idle", days: 0, data: [], res: null, tuned: null, prevW: null, msg: "", stats: null, long: null, longTried: false, paper: null, paperTried: false};
 function updateStatsInfo(){
@@ -1767,6 +1772,108 @@ function jishinHTML(r, an){
   return `<div class="vd-conf ${cls}"><span class="vd-k">自信</span><span class="vd-c">${label}</span><span class="vd-v">${an.set3.c.map(chip).join("")}で3着まで<small>${pct(an.set3.p)}%</small>${mark}</span><span class="vd-n">${note}</span></div>`;
 }
 
+// 見解（展示のあと）：スタート展示・展示タイム・オリテン・選手の特徴・進入・展開から、このレースの見立てを短い文にする。
+// データから決まった言い回しで作る文で、予想の確率は変えない（確率は下の数字のとおり）。目立つものを3つまでと、まとめ1文
+function viewSentences(r, an){
+  if (!r.hasPreview) return [];
+  const F = an.F, byNo = new Map(F.map(f => [f.b.no, f]));
+  const sur = f => esc(String(f.b.name || "").split(/[\s　]+/)[0] || `${f.b.no}号艇`);
+  const who = f => `${chip(f.b.no)}${sur(f)}`;
+  const st2 = v => "." + String(Math.round(Math.abs(v) * 100)).padStart(2, "0");
+  const trait = (f, k) => (f.traits || []).find(t => t.k === k) || null;
+  const th = an.tenkai.threat;
+  const key = f => f.markIdx <= 2 || (th && th.f === f);   // ◎○▲と「崩すなら」の艇
+  const said = new Set(), pts = [];   // [優先度, 文]
+  // ① スタート：内より早い艇（ST攻め）。その艇の勝ち方（まくり屋／差し巧者／このコースでの決まり手）とつなげる
+  an.alerts.filter(a => a.type === "attack").sort((a, b) => b.diff - a.diff).forEach((a, i) => {
+    const f = byNo.get(a.boat);
+    if (!f || f.b.exST == null || (i > 0 && !key(f)) || i > 1) return;
+    const cs = f.cs || [], wins = cs[1] || 0, mk = (cs[8] || 0) + (cs[9] || 0), ss = cs[7] || 0;
+    const tm = trait(f, "makuri"), ts = trait(f, "sashi");
+    const tac = a.tactic === "差し・まくり" ? "差しかまくり" : a.tactic;
+    let t = f.b.exST <= 0.15 ? `${who(f)}がスタート行ってて（展示ST${st2(f.b.exST)}・内より${st2(a.diff)}早い）` : `${who(f)}は内の艇よりスタートが早く（展示ST${st2(f.b.exST)}・内より${st2(a.diff)}早い）`;
+    if (/まくり/.test(a.tactic) && tm) t += `、まくりが多い選手（${esc(tm.d)}）なので、今回もまくりの可能性あります`;
+    else if (/まくり/.test(a.tactic) && wins >= 3 && mk / wins >= 0.5) t += `、${f.course}コースで勝った${wins}回のうち${mk}回がまくり・まくり差しなので、今回も可能性あります`;
+    else if (/差し/.test(a.tactic) && ts) t += `、差しが得意な選手（${esc(ts.d)}）なので、差し場を突けそうです`;
+    else if (/差し/.test(a.tactic) && wins >= 3 && ss / wins >= 0.5) t += `、${f.course}コースで勝った${wins}回のうち${ss}回が差しなので、差しの可能性あります`;
+    else t += `、${tac}を狙える形です`;
+    if (a.fHolder) t += `（F持ちなので本番は控えめかも）`;
+    else if (trait(f, "zureBad")) t += `（ただ本番ではSTが遅れやすい選手）`;
+    pts.push([i === 0 ? 10 : 7, t + "。"]); said.add(f.b.no);
+  });
+  // ② 1コースのスタートが凹み気味
+  const ina = an.alerts.find(a => a.type === "in");
+  if (ina){
+    const f = byNo.get(ina.boat);
+    if (f && f.b.exST != null){
+      let t = `${who(f)}（1コース）はスタートが凹み気味（展示ST${st2(f.b.exST)}・2〜3コースより${st2(ina.diff)}遅い）で、逃げは盤石ではありません`;
+      const ti = trait(f, "inStrong");
+      if (ti) t += `。ただインは強い選手（${esc(ti.d)}）`;
+      pts.push([9, t + "。"]); said.add(f.b.no);
+    }
+  }
+  // ③ 伸び（スリットアラート）：内の艇より展示タイムが速い
+  const nobi = an.alerts.filter(a => a.type === "nobi").sort((a, b) => b.level - a.level || b.diff - a.diff)[0];
+  if (nobi){
+    const f = byNo.get(nobi.boat);
+    if (f){ pts.push([nobi.level === 2 ? 8 : 6, `${who(f)}は展示タイムが内の艇より${nobi.diff.toFixed(2)}秒速く${nobi.level === 2 ? "（内の全艇より速い）" : ""}、${said.has(f.b.no) ? "足もよさそうです" : "伸びがよさそうです"}。`]); said.add(f.b.no); }
+  }
+  // ④ 進入：前付け
+  const movers = F.filter(f => f.course && f.course < f.b.no).sort((a, b) => a.course - b.course);
+  if (movers.length) pts.push([8, `${movers.map(who).join("・")}が前付けで${movers.map(f => f.course + "コース").join("・")}に入っていて、内が深くなりそうです。`]);
+  // ⑤ 気配：実力と展示のずれ（◎○▲と「崩すなら」の艇だけ・1つまで）
+  const worry = F.find(f => f.tag && f.tag.t === "気配に不安" && f.markIdx <= 1 && !said.has(f.b.no));
+  if (worry){ pts.push([7, `${worry.mark}${who(worry)}は実力上位ですが、展示は今ひとつ（展示タイム${worry.exRank}番手）。`]); said.add(worry.b.no); }
+  const rise = F.filter(f => f.tag && f.tag.t === "気配で浮上" && key(f) && !said.has(f.b.no)).sort((a, b) => a.exRank - b.exRank)[0];
+  if (rise){ pts.push([6, `${rise.mark}${who(rise)}は実力は下位でも、展示の気配は上位（展示タイム${rise.exRank}番手）。`]); said.add(rise.b.no); }
+  // ⑥ 1コースがスタート展示で一番早い（スタートの手がかりがほかにないとき）
+  if (!an.alerts.some(a => a.type === "attack" || a.type === "in")){
+    const c1 = an.c1, okST = F.filter(f => f.b.exST != null && !f.b.exF);
+    if (c1 && c1.b.exST != null && !c1.b.exF && okST.length >= 4 && okST.every(f => f === c1 || f.b.exST >= c1.b.exST)) pts.push([6, `${who(c1)}（1コース）がスタート展示も一番早く（${st2(c1.b.exST)}）、逃げやすい形です。`]);
+  }
+  // ⑦ 凹み → 外の艇に展開（外の艇が◎○▲か「崩すなら」の艇のときだけ）
+  const dent = an.alerts.filter(a => a.type === "dent" && byNo.get(a.next) && key(byNo.get(a.next))).sort((a, b) => b.diff - a.diff)[0];
+  if (dent){
+    const f = byNo.get(dent.boat), g = byNo.get(dent.next);
+    if (f && g && f.b.exST != null) pts.push([5, `${who(f)}がスタートで凹んでいて（展示ST${st2(f.b.exST)}）、外の${who(g)}に展開が向きそうです。`]);
+  }
+  // ⑧ 今節の展示（◎）
+  const te = an.serEx && an.serEx.get(an.top.b.no);
+  if (te && te.n >= 2 && te.lv !== "mid") pts.push([5, `◎${who(an.top)}は今節の展示も平均${te.avg.toFixed(1)}位と${te.lv === "fast" ? "速いです" : "遅めです"}。`]);
+  // ⑨ オリテン：一周・直線が一番の艇（◎○▲か「崩すなら」の艇のとき）
+  if (r.orig){
+    const best = k => { let bf = null, bv = 99; F.forEach(f => { const v = r.orig[f.b.no] ? r.orig[f.b.no][k] : null; if (v > 0 && v < bv){ bv = v; bf = f; } }); return bf; };
+    const L = best(0), S = best(2);
+    if (L && S && L === S && key(L)) pts.push([5, `オリテンは一周も直線も${who(L)}が一番。`]);
+    else if ((L && key(L)) || (S && key(S))) pts.push([4, `オリテンは${L ? `一周が${who(L)}` : ""}${L && S ? "、" : ""}${S ? `直線が${who(S)}` : ""}で一番。`]);
+  }
+  // ⑩ 風・展示でフライング
+  if (r.cond && r.cond.wind >= 5) pts.push([5, `風が${r.cond.wind}mと強めで、展開が荒れやすいです。`]);
+  // 展示でフライングした艇は、◎○▲か「崩すなら」の艇だけ（展示のFはよくあるので）
+  const exf = an.alerts.filter(a => a.type === "exf").map(a => byNo.get(a.boat)).filter(f => f && key(f));
+  if (exf.length) pts.push([4, `${exf.map(f => f.mark + who(f)).join("・")}は展示でフライング。本番は慎重になりやすいです。`]);
+  // ほかに何もないときは、展示タイム1位（◎○▲か「崩すなら」の艇のとき）
+  const exBest = F.filter(f => f.b.exTime != null).sort((a, b) => a.b.exTime - b.b.exTime)[0];
+  if (exBest && key(exBest) && !said.has(exBest.b.no)) pts.push([2, `展示タイムは${exBest.mark}${who(exBest)}が一番（${exBest.b.exTime.toFixed(2)}）。`]);
+  const body = pts.sort((a, b) => b[0] - a[0]).slice(0, 3).map(x => x[1]);
+  // まとめ：展開・本線・崩すなら・自信
+  const T = an.tenkai.T, tot = T.reduce((a, b) => a + b, 0) || 1, nige = T[0] / tot;
+  const head = nige >= 0.6 ? "イン逃げが濃厚" : nige >= 0.45 ? "イン有利ですが波乱含み" : "イン苦戦で波乱模様";
+  let end = `展開は${head}（逃げ${pct(nige)}%）。本線は◎${who(an.top)}（1着率${pct(an.top.p1)}%）`;
+  if (an.top.course !== 1 && an.top.tech){ const ti = an.top.tech.indexOf(Math.max(...an.top.tech)); end += `の${TECHS[ti]}`; }
+  if (th && th.f !== an.top && th.p >= 0.08) end += `、崩すなら${who(th.f)}の${TECHS[th.i]}（${pct(th.p)}%）`;
+  end += "。";
+  const J = jishinLevel(r, an);
+  if (J && J.li0 === 2) end += "自信は「荒れそう」（3着までの組み合わせが絞りにくい）なので、3連単は見送りも手です。";
+  else if (J && J.li0 === 0) end += `自信は「かたい」（${an.set3.c.map(chip).join("")}で3着まで${pct(an.set3.p)}%）。`;
+  return [...body, end];
+}
+function viewHTML(r, an){
+  const ss = viewSentences(r, an);
+  if (!ss.length) return "";
+  return `<div class="vd-view"><span class="vd-k">見解</span><span class="vd-t">${ss.join("")}</span><span class="vd-n">展示とデータから自動で作った見立てです（予想の確率は下の数字のとおり）。</span></div>`;
+}
+
 function verdictHTML(r, an){
   if (!r.hasPreview && !r.odds) return "";
   const top = an.top, cf = CONF.find(([t]) => top.p1 >= t);
@@ -1802,6 +1909,7 @@ function verdictHTML(r, an){
     <span class="vd-v">${cuts.length ? `消し ${cuts.map(f => chip(f.b.no) + `<small>${pct(f.p3)}%</small>` + mark(f, false)).join(" ")}` : `消しなし<small>${Math.round(CUT_P * 100)}%未満の艇がいない</small>`}</span>
     <span class="vd-n">${AXIS_NOTE}</span></div>`;
   return `<div class="verdict">
+    ${viewHTML(r, an)}
     <div class="vd-conf ${cf[2]}"><span class="vd-k">信頼度</span><span class="vd-c">${cf[1]}</span><span class="vd-v">◎${chip(top.b.no)} 1着率${pct(top.p1)}%<small>${cf[3]}</small></span></div>
     ${jishinHTML(r, an)}
     ${an.isCand ? (() => {
@@ -1930,9 +2038,9 @@ function probsHTML(r, an){
 function partsHTML(an){
   const v = x => { const p = Math.round(x * 10); return `<span class="${p < 0 ? "neg" : ""}">${sgn(p)}</span>`; };
   const ps = an.F.reduce((a, g) => a + g.prior, 0);
-  const rows = an.F.map(f => `<tr><td>${chip(f.b.no)}</td><td>${v(f.parts.skill)}</td><td>${v(f.parts.start)}</td><td>${v(f.parts.motor)}</td><td>${v(f.parts.ex)}</td><td>${v(f.parts.course)}</td><td>${v(f.parts.seibi || 0)}</td><td>${v(f.parts.trait || 0)}</td><td>${v(f.parts.form || 0)}</td><td class="tot">${v(f.z)}</td><td>${pct(f.prior / ps)}%</td></tr>`).join("");
+  const rows = an.F.map(f => `<tr><td>${chip(f.b.no)}</td><td class="mkc"><span class="mk m${f.markIdx}">${f.mark || "-"}</span></td><td>${v(f.parts.skill)}</td><td>${v(f.parts.start)}</td><td>${v(f.parts.motor)}</td><td>${v(f.parts.ex)}</td><td>${v(f.parts.course)}</td><td>${v(f.parts.seibi || 0)}</td><td>${v(f.parts.trait || 0)}</td><td>${v(f.parts.form || 0)}</td><td class="tot">${v(f.z)}</td><td>${pct(f.prior / ps)}%</td></tr>`).join("");
   return `<div><h3>期待度の内訳（0がこのレースの平均）</h3><div class="tbl"><table class="lft2">
-    <thead><tr><th>艇</th><th>実力</th><th>スタート</th><th>モーター</th><th>展示</th><th>コース</th><th>整備</th><th>特徴</th><th>調子</th><th>合計</th><th>コース基本</th></tr></thead>
+    <thead><tr><th>艇</th><th>印</th><th>実力</th><th>スタート</th><th>モーター</th><th>展示</th><th>コース</th><th>整備</th><th>特徴</th><th>調子</th><th>合計</th><th>コース基本</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
     <p class="note">合計が+7ならコースの基本確率のおよそ2倍、−7ならおよそ半分になります。モーターには、2連率に加えてモーターの展示の速さ（出走表の「展示速・展示遅」）も入っています。</p></div>`;
 }
