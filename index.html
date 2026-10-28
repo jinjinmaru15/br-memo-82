@@ -1185,9 +1185,12 @@ function serExFor(r, stats, sameDay){
 // どの点数でも100%は超えない。オッズと割れているかで3連単の成績はほぼ変わらなかった（かたい3点 84.6%と84.1%）。
 // アプリの「○点で○%」は実際の的中率とほぼ同じ（かたい上位3点 34.4%→実際34%、ふつう上位6点 39.9%→40%）
 const TRI_PLAN = [3, 6, 10];   // 自信 かたい・ふつう・荒れそう のおすすめ点数
-const TRI_MAX = 20;
-// 過去の成績：自信ごと・上位1〜20点の [的中率%, 回収率%]（2〜10/25）
-const TRI_HIST = [[[14,83],[26,83],[34,84],[40,83],[45,81],[50,81],[54,81],[57,81],[60,80],[63,79],[65,78],[67,78],[69,77],[71,78],[73,78],[74,77],[76,77],[77,76],[78,76],[79,76]],[[10,78],[18,77],[24,77],[30,77],[35,77],[40,78],[44,78],[47,78],[50,78],[53,78],[55,78],[58,77],[60,78],[62,78],[64,78],[65,77],[67,76],[68,76],[70,76],[71,76]],[[6,76],[12,76],[17,76],[21,75],[25,76],[29,75],[32,76],[35,75],[38,75],[41,76],[44,76],[46,76],[48,76],[50,76],[52,75],[54,76],[55,76],[57,76],[59,76],[60,77]]];
+// 一覧に出す点数：アプリの確率の合計が8割になるまで（最低20点・最大50点）。かたいは20点前後、ふつう30点前後、荒れそう40点前後
+// （2〜10/25：平均 かたい23点・ふつう30点・荒れそう40点。合成オッズなどで自分で点数を決める用）
+const TRI_LIST = {cover: 0.80, min: 20, max: 50};
+const TRI_MAX = TRI_LIST.max;
+// 過去の成績：自信ごと・上位1〜50点の [的中率%, 回収率%]（2〜10/25）
+const TRI_HIST = [[[14,83],[26,83],[34,84],[40,83],[45,81],[50,81],[54,81],[57,81],[60,80],[63,79],[65,78],[67,78],[69,77],[71,78],[73,78],[74,77],[76,77],[77,76],[78,76],[79,76],[80,75],[81,75],[82,75],[83,73],[84,74],[85,73],[85,72],[86,72],[87,72],[87,71],[88,71],[88,71],[89,71],[89,71],[90,70],[90,70],[91,70],[91,69],[91,68],[92,67],[92,67],[92,68],[93,67],[93,67],[93,67],[94,66],[94,67],[94,66],[94,66],[95,66]],[[10,78],[18,77],[24,77],[30,77],[35,77],[40,78],[44,78],[47,78],[50,78],[53,78],[55,78],[58,77],[60,78],[62,78],[64,78],[65,77],[67,76],[68,76],[70,76],[71,76],[72,76],[73,76],[74,75],[76,75],[76,75],[77,75],[78,75],[79,75],[80,74],[81,73],[81,73],[82,73],[83,73],[83,73],[84,73],[84,72],[85,72],[85,72],[86,72],[87,72],[87,72],[87,71],[88,71],[88,71],[89,71],[89,71],[90,71],[90,70],[90,70],[91,70]],[[6,76],[12,76],[17,76],[21,75],[25,76],[29,75],[32,76],[35,75],[38,75],[41,76],[44,76],[46,76],[48,76],[50,76],[52,75],[54,76],[55,76],[57,76],[59,76],[60,77],[61,76],[63,76],[64,76],[65,76],[66,76],[67,75],[68,75],[69,75],[70,75],[71,75],[71,75],[72,75],[73,75],[74,75],[75,75],[75,75],[76,74],[77,75],[78,75],[78,75],[79,75],[79,75],[80,74],[81,74],[81,75],[82,75],[83,75],[83,74],[83,74],[84,74]]];
 // 2着・3着に来る力（勝ち切る力とは別）：全国・当地の2連率・3連率、コース別の2着率・3着率、モーター・ボートの3連率、勝率
 // 1〜6月で決めて7〜10月で確認：2着の当たり具合 +9.1‰、3着 +19.4‰（本命の的中 2着41.4→41.9%、3着39.7→40.9%。オッズは43.3%・42.4%）
 const PLACE_B2 = {cr1: -0.09, cr2: 0.07, cr3: 0.07, t2: 0.06, t3: 0.01, l2: 0.03, l3: 0.03, m3: 0.05, b3: 0, win: 0.76};
@@ -1616,6 +1619,8 @@ function tune(data, s, stats){
 
 /* ---------- 状態 ---------- */
 const settings = loadSettings();
+// アプリの版（アップロードしたものに切り替わったかを見分ける用。直すたびに変える）
+const APP_VER = "10/29③版";
 const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "value", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}, pick: new Map(), triCut: new Map()};
 const bt = {status: "idle", days: 0, data: [], res: null, tuned: null, prevW: null, msg: "", stats: null, long: null, longTried: false, paper: null, paperTried: false};
 function updateStatsInfo(){
@@ -1812,22 +1817,30 @@ function verdictHTML(r, an){
 }
 
 // 3連単の提案（オッズは見ない）：アプリの確率の高い順に、自信（オッズを見ない）でおすすめ点数を決める。
-// 一覧（確率順・上位20）をタップすると、その順位までに点数を変えられる（このページを開いている間だけ）
+// 一覧（確率順・合計8割まで・20〜50点）をタップすると、その順位までに点数を変えられる（このページを開いている間だけ）
+function triListN(an){
+  let cum = 0, n = 0;
+  for (const t of an.triAll){ n++; cum += t.p; if (cum >= TRI_LIST.cover) break; }
+  return Math.max(Math.min(TRI_LIST.min, an.triAll.length), Math.min(TRI_LIST.max, n));
+}
 function triPlan(r, an){
   const J = jishinLevel(r, an);
   const li0 = J ? J.li0 : 1;
   const rec = TRI_PLAN[li0];
+  const listN = triListN(an);
   const cut = state.triCut.get(r.key);
-  const n = Math.max(1, Math.min(TRI_MAX, an.triAll.length, cut || rec));
+  const n = Math.max(1, Math.min(listN, cut || rec));
   const picks = an.triAll.slice(0, n);
-  return {li0, rec, n, custom: !!cut && cut !== rec, picks, cum: picks.reduce((a, t) => a + t.p, 0), hist: TRI_HIST[li0][n - 1], skip: li0 === 2};
+  return {li0, rec, n, listN, custom: !!cut && cut !== rec, picks, cum: picks.reduce((a, t) => a + t.p, 0), hist: TRI_HIST[li0][Math.min(TRI_HIST[li0].length, n) - 1], skip: li0 === 2};
 }
 const triWon = r => r.result && r.result.order.length >= 3 ? r.result.order.slice(0, 3) : null;
 const triSame = (c, w) => !!w && c.every((n, i) => w[i] === n);
 const triComb = (c, hit) => `<span class="cb${hit ? " hit" : ""}">${c.map(n => `<b class="c${n}">${n}</b>`).join("-")}</span>`;
-function triText(r, an){
+// コピーする文字：all なら一覧の全部（合成オッズを自分で計算する用）、そうでなければ今の買い目
+function triText(r, an, all){
   const P = triPlan(r, an);
-  return `${STADIUMS[r.stadium] || ""}${r.no}R 3連単 ${P.n}点：${P.picks.map(t => t.c.join("-")).join(" / ")}`;
+  const list = all ? an.triAll.slice(0, P.listN) : P.picks;
+  return `${STADIUMS[r.stadium] || ""}${r.no}R 3連単 ${list.length}点（確率の高い順）：${list.map(t => t.c.join("-")).join(" / ")}`;
 }
 function triRowHTML(r, an){
   if (!an.triAll || !an.triAll.length) return "";
@@ -1837,13 +1850,13 @@ function triRowHTML(r, an){
   const head = P.skip ? `自信「荒れそう」：何点買っても回収率75%前後なので見送りが目安。買うなら上位${P.rec}点` : `自信「${lv}」→ おすすめは上位${P.rec}点`;
   return `<div class="vd-tri" data-trirow="${esc(r.key)}"><span class="vd-k">3連単</span>
     <span class="vd-v">${P.picks.map(t => triComb(t.c, triSame(t.c, w))).join("")}<small>${P.n}点で${pct(P.cum)}%</small>${hit == null ? "" : hit ? ` <em class="hit">的中</em>` : ` <em class="miss">ハズレ</em>`}</span>
-    <span class="vd-n">${head}${P.custom ? `（今は${P.n}点に変えています）` : ""}。過去の「${lv}」のレースで上位${P.n}点を買うと、的中${P.hist[0]}%・回収率${P.hist[1]}%。アプリの確率の高い順で、オッズは見ていません（オッズが届いても変わりません）。
+    <span class="vd-n">${head}${P.custom ? `（今は${P.n}点に変えています）` : ""}。過去の「${lv}」のレースで上位${P.n}点を買うと、的中${P.hist[0]}%・回収率${P.hist[1]}%。アプリの確率の高い順で、オッズは見ていません（オッズが届いても変わりません）。下の「3連単を確率の高い順に」に上位${P.listN}点まで出ています。
       <button type="button" class="tcopy" data-key="${esc(r.key)}">買い目をコピー</button></span></div>`;
 }
 function triListBody(r, an){
   const P = triPlan(r, an), w = triWon(r);
   let cum = 0;
-  const rows = an.triAll.slice(0, TRI_MAX).map((t, i) => {
+  const rows = an.triAll.slice(0, P.listN).map((t, i) => {
     cum += t.p;
     const h = triSame(t.c, w);
     return `<button type="button" class="trow${i < P.n ? " on" : ""}${h ? " hit" : ""}" data-key="${esc(r.key)}" data-n="${i + 1}" aria-pressed="${i < P.n}">
@@ -1852,14 +1865,14 @@ function triListBody(r, an){
   return `<div class="dbody" data-trilist="${esc(r.key)}">
     <p class="note">タップした順位までを買い目にします（今は上位${P.n}点・合計${pct(P.cum)}%${P.custom ? `・おすすめは${P.rec}点` : ""}）。${r.hasPreview ? "" : "展示前は枠なりの想定で、展示のあとで変わります。"}</p>
     <div class="tlist"><div class="thead"><span>順位</span><span>組み合わせ</span><span>確率</span><span>ここまで</span><span></span></div>${rows}</div>
-    <p class="note">「ここまで」はその順位までを全部買ったときに当たる確率（アプリの計算）。過去4万レースで、この数字と実際の的中率はほぼ同じでした（かたい上位3点：34%→実際34%、ふつう上位6点：40%→40%）。オッズは使っていません。
-      ${P.custom ? `<button type="button" class="treset" data-key="${esc(r.key)}">おすすめ（${P.rec}点）に戻す</button>` : ""}<button type="button" class="tcopy" data-key="${esc(r.key)}">買い目をコピー</button></p>
+    <p class="note">一覧は、アプリの確率の合計が8割になるまで（最低${TRI_LIST.min}点・最大${TRI_LIST.max}点）。荒れそうなレースほど多く出ます（かたい20点前後・ふつう30点前後・荒れそう40点前後）。「ここまで」はその順位までを全部買ったときに当たる確率で、過去4万レースの実際の的中率とほぼ同じでした（かたい上位3点：34%→実際34%、荒れそう上位40点：79%→78%）。並びにオッズは使っていません。合成オッズで点数を決めるときは、「一覧を全部コピー」でメモなどに貼っておくと、オッズを見ながら削るのに使えます。
+      ${P.custom ? `<button type="button" class="treset" data-key="${esc(r.key)}">おすすめ（${P.rec}点）に戻す</button>` : ""}<button type="button" class="tcopy" data-key="${esc(r.key)}">買い目をコピー（${P.n}点）</button><button type="button" class="tcopy" data-all="1" data-key="${esc(r.key)}">一覧を全部コピー（${P.listN}点）</button></p>
   </div>`;
 }
 function triListHTML(r, an){
   if (!an.triAll || !an.triAll.length) return "";
   return `<details data-key="${esc(r.key)}#t"${state.open.has(r.key + "#t") ? " open" : ""}>
-    <summary>3連単を確率の高い順に（上位${TRI_MAX}・タップで点数を変える）</summary>
+    <summary>3連単を確率の高い順に（上位${triListN(an)}点・タップで点数を変える）</summary>
     ${triListBody(r, an)}
   </details>`;
 }
@@ -1868,6 +1881,7 @@ function refreshTri(r){
   const k = CSS.escape(r.key);
   document.querySelectorAll(`[data-trirow="${k}"]`).forEach(el => { el.outerHTML = triRowHTML(r, an); });
   document.querySelectorAll(`[data-trilist="${k}"]`).forEach(el => { el.outerHTML = triListBody(r, an); });
+  document.querySelectorAll(`[data-combos="${k}"]`).forEach(el => { if (!el.contains(document.activeElement)) el.outerHTML = combosHTML(r, an); });
 }
 async function copyText(t){
   try { if (navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(t); return true; } } catch (e) {}
@@ -2235,10 +2249,12 @@ function tableHTML(an, r){
 function combosHTML(r, an){
   const has = !!r.odds;
   const saved = state.manual[r.key] || {};
+  // 3連単は上の「3連単」の行と同じ買い目（自信でおすすめ3・6・10点、一覧のタップで上位20点まで変えられる）
+  const P = triPlan(r, an);
   const groups = [
     ["win", [...an.F].sort((a, b) => b.p1 - a.p1).slice(0, 2).map(f => ({c: [f.b.no], p: f.p1}))],
     ["ex", an.exacta],
-    ["tri", an.tri]
+    ["tri", P.picks]
   ];
   const row = (t, x) => {
     const cs = x.c.join("-");
@@ -2254,14 +2270,14 @@ function combosHTML(r, an){
       <span class="evo${ev != null && ev >= settings.ev - 1e-9 ? " good" : ""}">${ev != null ? ev.toFixed(2) : ""}</span>
     </div>`;
   };
-  return `<div><h3>買い目と期待値</h3>
+  return `<div data-combos="${esc(r.key)}"><h3>買い目と期待値</h3>
     <div class="combos">
       <div class="chead"><span>組み合わせ</span><span>確率</span><span>損益ゼロ</span><span>オッズ</span><span>期待値</span></div>
       ${groups.map(([t, list]) => `<div class="cgrp">${TYPES[t]}</div>` + list.map(x => row(t, x)).join("")).join("")}
     </div>
     <p class="note">${has
       ? `${esc(r.oddsLabel)}で計算しています。期待値が${settings.ev.toFixed(2)}以上なら緑になります。期待値で選んでも、長期でプラスになる根拠は見つかっていません（参考）。`
-      : `オッズの欄に実際のオッズを入れると期待値を計算します。${settings.ev.toFixed(2)}以上で緑になります。「損益ゼロ」はこれ以上のオッズなら期待値プラスになる目安です。`}</p>
+      : `オッズの欄に実際のオッズを入れると期待値を計算します。${settings.ev.toFixed(2)}以上で緑になります。「損益ゼロ」はこれ以上のオッズなら期待値プラスになる目安です。`}3連単はカードの「3連単」の行と同じ${P.n}点（自信「${JISHIN[P.li0][1]}」のおすすめは${P.rec}点）。上位20点までの一覧は、カードの「3連単を確率の高い順に」から開けて、タップで点数を変えられます。</p>
     <div class="links note">公式のオッズ：
       <a href="${oddsLink(r, "oddstf")}" target="_blank" rel="noopener">単勝</a>
       <a href="${oddsLink(r, "odds2tf")}" target="_blank" rel="noopener">2連単</a>
@@ -2409,8 +2425,8 @@ function render(){
   $("d-prev").disabled = state.mode !== "live";
   $("d-next").disabled = state.mode !== "live" || isToday;
   const st = $("src-status");
-  if (state.mode === "live") st.innerHTML = `<span class="dot live"></span>実データ · ${state.updatedAt ? hhmm(state.updatedAt) + " 取得" : ""}${anyOdds ? " · オッズあり" : ""}`;
-  else if (state.mode === "sample") st.innerHTML = `<span class="dot sample"></span>サンプル表示`;
+  if (state.mode === "live") st.innerHTML = `<span class="dot live"></span>実データ · ${state.updatedAt ? hhmm(state.updatedAt) + " 取得" : ""}${anyOdds ? " · オッズあり" : ""} · <span class="ver">${APP_VER}</span>`;
+  else if (state.mode === "sample") st.innerHTML = `<span class="dot sample"></span>サンプル表示 · <span class="ver">${APP_VER}</span>`;
   else st.innerHTML = `<span class="dot"></span>読み込み中`;
 }
 const safeRender = () => { if (!typing()) render(); };
@@ -2753,9 +2769,10 @@ $("feed").addEventListener("click", async e => {
   const key = t.dataset.key, r = state.races.find(x => x.key === key);
   if (!r) return;
   if (t.classList.contains("tcopy")){
-    const ok = await copyText(triText(r, analyze(r, settings)));
+    const label = t.textContent;
+    const ok = await copyText(triText(r, analyze(r, settings), !!t.dataset.all));
     t.textContent = ok ? "コピーしました" : "コピーできませんでした";
-    setTimeout(() => { if (t.isConnected) t.textContent = "買い目をコピー"; }, 1600);
+    setTimeout(() => { if (t.isConnected) t.textContent = label; }, 1600);
     return;
   }
   if (t.classList.contains("treset")) state.triCut.delete(key);
