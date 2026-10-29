@@ -1,12 +1,12 @@
 {
- "built": "2026-10-29T02:21:24.586Z",
+ "built": "2026-10-29T21:22:05.497Z",
  "base": "https://funanote-k7q2xm.pages.dev",
- "minutes": 0.3,
- "fetchedThisRun": 19,
- "total": 226,
+ "minutes": 3,
+ "fetchedThisRun": 177,
+ "total": 234,
  "notYet": 0,
  "byKind": {
-  "html": 84,
+  "html": 89,
   "json": 72,
   "image/png": 2,
   "text/css": 24,
@@ -14,7 +14,7 @@
   "csv": 3,
   "font/woff2": 1,
   "image/jpeg": 29,
-  "image/webp": 1
+  "image/webp": 4
  },
  "cards": {
   "ver": "20261017",
@@ -55,7 +55,7 @@
    "path": "/",
    "status": 200,
    "kind": "html",
-   "bytes": 52464,
+   "bytes": 54377,
    "title": "データ攻め｜今日も、読んでから。",
    "scripts": [
     "./assets/guard.js",
@@ -63,13 +63,13 @@
     "assets/kata/kata.js?v=ecd47e51",
     "assets/ugoki.js?v=e40e8a0a"
    ],
-   "inlineScriptBytes": 19681
+   "inlineScriptBytes": 20865
   },
   {
    "path": "/racers/",
    "status": 200,
    "kind": "html",
-   "bytes": 411566,
+   "bytes": 471387,
    "title": "本日の出走表 | データ攻め",
    "scripts": [
     "../assets/haranLv.js",
@@ -77,13 +77,13 @@
     "../assets/kata/kata.js?v=ecd47e51",
     "../assets/ugoki.js?v=e40e8a0a"
    ],
-   "inlineScriptBytes": 299163
+   "inlineScriptBytes": 349820
   },
   {
    "path": "/highlights/",
    "status": 200,
    "kind": "html",
-   "bytes": 113513,
+   "bytes": 113842,
    "title": "本日の見どころ｜BOATRACE データ攻め",
    "scripts": [
     "../assets/haranLv.js",
@@ -92,7 +92,7 @@
     "../assets/kata/kata.js?v=ecd47e51",
     "../assets/ugoki.js?v=e40e8a0a"
    ],
-   "inlineScriptBytes": 61182
+   "inlineScriptBytes": 61328
   },
   {
    "path": "/results/",
@@ -112,7 +112,7 @@
    "path": "/motor/",
    "status": 200,
    "kind": "html",
-   "bytes": 98613,
+   "bytes": 98439,
    "title": "競艇モーター成績ビューワー",
    "scripts": [
     "https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js",
@@ -122,7 +122,7 @@
     "../assets/kata/kata.js?v=ecd47e51",
     "../assets/ugoki.js?v=e40e8a0a"
    ],
-   "inlineScriptBytes": 77449
+   "inlineScriptBytes": 77311
   },
   {
    "path": "/players/",
@@ -188,19 +188,19 @@
    "path": "/motor-maintenance/",
    "status": 200,
    "kind": "html",
-   "bytes": 4279698,
+   "bytes": 4298821,
    "title": "モーター整備 一覧",
    "scripts": [
     "../assets/guard.js",
     "https://static.cloudflareinsights.com/beacon.min.js"
    ],
-   "inlineScriptBytes": 2669734
+   "inlineScriptBytes": 2680195
   },
   {
    "path": "/kensho/",
    "status": 200,
    "kind": "html",
-   "bytes": 11738,
+   "bytes": 12441,
    "title": "検証 ｜ データ攻め",
    "scripts": [
     "../assets/guard.js",
@@ -312,7 +312,7 @@
    "path": "/manifest.json?v=2",
    "status": 200,
    "kind": "json",
-   "bytes": 653,
+   "bytes": 661,
    "shape": {
     "object": 11,
     "keys": [
@@ -333,7 +333,7 @@
      "short_name": "string(データ攻め)",
      "description": "string(競艇を、読む。買い目なし・数字だけ。出走表・見どころ・24場特性を毎朝更新。)",
      "lang": "string(ja)",
-     "start_url": "string(./)",
+     "start_url": "string(./in/home/)",
      "scope": "string(./)",
      "display": "string(standalone)",
      "orientation": "string(portrait)",
@@ -359,7 +359,7 @@
      }
     }
    },
-   "head": "{\n  \"name\": \"データ攻め\",\n  \"short_name\": \"データ攻め\",\n  \"description\": \"競艇を、読む。買い目なし・数字だけ。出走表・見どころ・24場特性を毎朝更新。\",\n  \"lang\": \"ja\",\n  \"start_url\": \"./\",\n  \"scope\": \"./\",\n  \"display\": \"standalone\",\n  \"orientation\": \"portrait\",\n  \"background_color\": \"#0a1422\",\n  \"theme_color\": \"#0a1422\",\n  \"icons\": [\n    { \"src\""
+   "head": "{\n  \"name\": \"データ攻め\",\n  \"short_name\": \"データ攻め\",\n  \"description\": \"競艇を、読む。買い目なし・数字だけ。出走表・見どころ・24場特性を毎朝更新。\",\n  \"lang\": \"ja\",\n  \"start_url\": \"./in/home/\",\n  \"scope\": \"./\",\n  \"display\": \"standalone\",\n  \"orientation\": \"portrait\",\n  \"background_color\": \"#0a1422\",\n  \"theme_color\": \"#0a1422\",\n  \"icons\": [\n   "
   },
   {
    "path": "/icon180.png",
@@ -407,18 +407,18 @@
    "path": "/choukan/?d=",
    "status": 200,
    "kind": "html",
-   "bytes": 8184,
+   "bytes": 9539,
    "title": "場の朝刊｜データ攻め",
    "scripts": [
     "../assets/guard.js"
    ],
-   "inlineScriptBytes": 3088
+   "inlineScriptBytes": 3116
   },
   {
    "path": "/data/verify_summary.json?_=",
    "status": 200,
    "kind": "json",
-   "bytes": 8110,
+   "bytes": 8112,
    "shape": {
     "object": 10,
     "keys": [
@@ -443,7 +443,7 @@
       ],
       "fields": {
        "開始": "string(20250715)",
-       "終了": "string(20261028)"
+       "終了": "string(20261029)"
       }
      },
      "判定別的中率": {
@@ -537,7 +537,7 @@
        "全体"
       ],
       "fields": {
-       "日付": "string(20261027)",
+       "日付": "string(20261029)",
        "件数": "number",
        "波乱": {
         "object": 2,
@@ -621,15 +621,15 @@
         "主役正誤"
        ],
        "fields": {
-        "日付": "string(20261028)",
+        "日付": "string(20261029)",
         "場": "string(唐津)",
         "レース": "string(12R)",
-        "判定": "string(混戦)",
+        "判定": "string(堅め)",
         "主役艇": "string(1)",
-        "スコア": "string(0.178)",
-        "着順": "string(1-4-5)",
-        "配当": "string(1270)",
-        "波乱正誤": "string(-)",
+        "スコア": "string(-0.057)",
+        "着順": "string(1-2-4)",
+        "配当": "string(630)",
+        "波乱正誤": "string(○)",
         "主役正誤": "string(◎)"
        }
       }
@@ -734,7 +734,7 @@
         ],
         "fields": {
          "開始": "string(20260930)",
-         "終了": "string(20261028)",
+         "終了": "string(20261029)",
          "件数": "number",
          "波乱": {
           "object": 2,
@@ -764,13 +764,13 @@
      }
     }
    },
-   "head": "{\n  \"総レース数\": 70858,\n  \"集計期間\": {\n    \"開始\": \"20250715\",\n    \"終了\": \"20261028\"\n  },\n  \"判定別的中率\": {\n    \"波乱\": {\n      \"件数\": 21049,\n      \"的中率\": 36.2,\n      \"対象外\": false\n    },\n    \"混戦\": {\n      \"件数\": 19792,\n      \"的中率\": null,\n      \"対象外\": true\n    },\n    \"堅め\": {\n      \"件数\": 30017,\n      \"的中率\": 74.7,\n     "
+   "head": "{\n  \"総レース数\": 70978,\n  \"集計期間\": {\n    \"開始\": \"20250715\",\n    \"終了\": \"20261029\"\n  },\n  \"判定別的中率\": {\n    \"波乱\": {\n      \"件数\": 21070,\n      \"的中率\": 36.2,\n      \"対象外\": false\n    },\n    \"混戦\": {\n      \"件数\": 19835,\n      \"的中率\": null,\n      \"対象外\": true\n    },\n    \"堅め\": {\n      \"件数\": 30073,\n      \"的中率\": 74.8,\n     "
   },
   {
    "path": "/data/todayTop.json?_=",
    "status": 200,
    "kind": "json",
-   "bytes": 16599,
+   "bytes": 19854,
    "shape": {
     "object": 5,
     "keys": [
@@ -781,7 +781,7 @@
      "レース"
     ],
     "fields": {
-     "開催日": "string(20261029)",
+     "開催日": "string(20261030)",
      "生成元": {
       "object": 2,
       "keys": [
@@ -789,8 +789,8 @@
        "gradeSchedule"
       ],
       "fields": {
-       "highlights": "string(2026-10-29T04:52:11+09:00)",
-       "gradeSchedule": "string(2026-10-29 04:51)"
+       "highlights": "string(2026-10-30T05:38:05+09:00)",
+       "gradeSchedule": "string(2026-10-30 05:37)"
       }
      },
      "格": {
@@ -807,7 +807,7 @@
       "item": "string(01)"
      },
      "レース": {
-      "array": 120,
+      "array": 144,
       "item": {
        "object": 7,
        "keys": [
@@ -823,22 +823,22 @@
         "場コード": "string(01)",
         "場名": "string(桐生)",
         "レース": "string(1R)",
-        "締切時刻": "string(15:19)",
+        "締切時刻": "string(15:21)",
         "企画名": "string(一般)",
-        "日目": "string(５日目)",
+        "日目": "string(最終日)",
         "女子": "number"
        }
       }
      }
     }
    },
-   "head": "{\"開催日\":\"20261029\",\"生成元\":{\"highlights\":\"2026-10-29T04:52:11+09:00\",\"gradeSchedule\":\"2026-10-29 04:51\"},\"格\":{\"13\":\"SG\"},\"レディース\":[\"01\"],\"レース\":[{\"場コード\":\"01\",\"場名\":\"桐生\",\"レース\":\"1R\",\"締切時刻\":\"15:19\",\"企画名\":\"一般\",\"日目\":\"５日目\",\"女子\":6},{\"場コード\":\"01\",\"場名\":\"桐生\",\"レース\":\"2R\",\"締切時刻\":\"15:45\",\"企画名\":\"一般\",\"日目\":\"５日目\",\"女子\":6},{\""
+   "head": "{\"開催日\":\"20261030\",\"生成元\":{\"highlights\":\"2026-10-30T05:38:05+09:00\",\"gradeSchedule\":\"2026-10-30 05:37\"},\"格\":{\"13\":\"SG\"},\"レディース\":[\"01\"],\"レース\":[{\"場コード\":\"01\",\"場名\":\"桐生\",\"レース\":\"1R\",\"締切時刻\":\"15:21\",\"企画名\":\"一般\",\"日目\":\"最終日\",\"女子\":6},{\"場コード\":\"01\",\"場名\":\"桐生\",\"レース\":\"2R\",\"締切時刻\":\"15:47\",\"企画名\":\"一般\",\"日目\":\"最終日\",\"女子\":6},{\""
   },
   {
    "path": "/data/gradeWeek.json?_=",
    "status": 200,
    "kind": "json",
-   "bytes": 332,
+   "bytes": 544,
    "shape": {
     "object": 3,
     "keys": [
@@ -854,12 +854,12 @@
        "終了"
       ],
       "fields": {
-       "開始": "string(20261029)",
-       "終了": "string(20261104)"
+       "開始": "string(20261030)",
+       "終了": "string(20261105)"
       }
      },
      "節": {
-      "array": 1,
+      "array": 2,
       "item": {
        "object": 6,
        "keys": [
@@ -880,18 +880,18 @@
        }
       }
      },
-     "updated": "string(2026-10-29 05:16)"
+     "updated": "string(2026-10-30 05:37)"
     }
    },
-   "head": "{\n  \"期間\": {\n    \"開始\": \"20261029\",\n    \"終了\": \"20261104\"\n  },\n  \"節\": [\n    {\n      \"場コード\": \"13\",\n      \"場名\": \"尼崎\",\n      \"区分\": \"SG\",\n      \"節名\": \"第７３回ボートレースダービー\",\n      \"開始日\": \"20261027\",\n      \"終了日\": \"20261101\"\n    }\n  ],\n  \"updated\": \"2026-10-29 05:16\"\n}"
+   "head": "{\n  \"期間\": {\n    \"開始\": \"20261030\",\n    \"終了\": \"20261105\"\n  },\n  \"節\": [\n    {\n      \"場コード\": \"13\",\n      \"場名\": \"尼崎\",\n      \"区分\": \"SG\",\n      \"節名\": \"第７３回ボートレースダービー\",\n      \"開始日\": \"20261027\",\n      \"終了日\": \"20261101\"\n    },\n    {\n      \"場コード\": \"12\",\n      \"場名\": \"住之江\",\n      \"区分\": \"G1\",\n      \"節名\": \"第５４回高松宮"
   },
   {
    "path": "/data/updates.json",
    "status": 200,
    "kind": "json",
-   "bytes": 41923,
+   "bytes": 42096,
    "shape": {
-    "array": 191,
+    "array": 192,
     "item": {
      "object": 3,
      "keys": [
@@ -900,13 +900,13 @@
       "text"
      ],
      "fields": {
-      "date": "string(2026-10-28)",
-      "page": "string(見どころ)",
-      "text": "string(観戦記を「場の朝刊」に改名し、1ページで読めるページへの入口を足しました)"
+      "date": "string(2026-10-30)",
+      "page": "string(検証)",
+      "text": "string(検証11「部品を替えた艇を、私は展示の時計で許していた」を公開しました)"
      }
     }
    },
-   "head": "[\n  {\n    \"date\": \"2026-10-28\",\n    \"page\": \"見どころ\",\n    \"text\": \"観戦記を「場の朝刊」に改名し、1ページで読めるページへの入口を足しました\"\n  },\n  {\n    \"date\": \"2026-10-28\",\n    \"page\": \"トップ\",\n    \"text\": \"観戦記の名前を「場の朝刊」に変え、トップから場ごとに読めるようにしました\"\n  },\n  {\n    \"date\": \"2026-10-27\",\n    \"page\": \"見どころ\",\n    \"text\": \"明日タブでも、前の晩に書き上がった場の観戦記をま"
+   "head": "[\n  {\n    \"date\": \"2026-10-30\",\n    \"page\": \"検証\",\n    \"text\": \"検証11「部品を替えた艇を、私は展示の時計で許していた」を公開しました\"\n  },\n  {\n    \"date\": \"2026-10-28\",\n    \"page\": \"見どころ\",\n    \"text\": \"観戦記を「場の朝刊」に改名し、1ページで読めるページへの入口を足しました\"\n  },\n  {\n    \"date\": \"2026-10-28\",\n    \"page\": \"トップ\",\n    \"text\": \"観戦記の名前を「場の朝刊」に変え、トップから場ごとに読"
   },
   {
    "path": "/sw.js",
@@ -919,6 +919,320 @@
    "status": 404,
    "kind": "json",
    "bytes": 833
+  },
+  {
+   "path": "/data/gradeSchedule.json?_=",
+   "status": 200,
+   "kind": "json",
+   "bytes": 5546,
+   "shape": {
+    "object": 2,
+    "keys": [
+     "updated",
+     "days"
+    ],
+    "fields": {
+     "updated": "string(2026-10-30 05:37)",
+     "days": {
+      "object": 2,
+      "keys": [
+       "20261030",
+       "20261031"
+      ],
+      "fields": {
+       "20261030": {
+        "object": 12,
+        "keys": [
+         "13",
+         "14",
+         "15",
+         "16",
+         "18",
+         "23",
+         "24",
+         "01",
+         "03",
+         "06",
+         "07",
+         "08"
+        ],
+        "fields": {
+         "13": {
+          "object": 7,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日",
+           "女子",
+           "出走",
+           "レディース"
+          ]
+         },
+         "14": {
+          "object": 7,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日",
+           "女子",
+           "出走",
+           "レディース"
+          ]
+         },
+         "15": {
+          "object": 7,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日",
+           "女子",
+           "出走",
+           "レディース"
+          ]
+         },
+         "16": {
+          "object": 7,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日",
+           "女子",
+           "出走",
+           "レディース"
+          ]
+         },
+         "18": {
+          "object": 7,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日",
+           "女子",
+           "出走",
+           "レディース"
+          ]
+         },
+         "23": {
+          "object": 7,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日",
+           "女子",
+           "出走",
+           "レディース"
+          ]
+         },
+         "24": {
+          "object": 7,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日",
+           "女子",
+           "出走",
+           "レディース"
+          ]
+         },
+         "01": {
+          "object": 7,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日",
+           "女子",
+           "出走",
+           "レディース"
+          ]
+         },
+         "03": {
+          "object": 7,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日",
+           "女子",
+           "出走",
+           "レディース"
+          ]
+         },
+         "06": {
+          "object": 7,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日",
+           "女子",
+           "出走",
+           "レディース"
+          ]
+         },
+         "07": {
+          "object": 7,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日",
+           "女子",
+           "出走",
+           "レディース"
+          ]
+         },
+         "08": {
+          "object": 4,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日"
+          ]
+         }
+        }
+       },
+       "20261031": {
+        "object": 13,
+        "keys": [
+         "13",
+         "14",
+         "15",
+         "16",
+         "18",
+         "23",
+         "24",
+         "02",
+         "03",
+         "04",
+         "06",
+         "07",
+         "09"
+        ],
+        "fields": {
+         "13": {
+          "object": 4,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日"
+          ]
+         },
+         "14": {
+          "object": 4,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日"
+          ]
+         },
+         "15": {
+          "object": 4,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日"
+          ]
+         },
+         "16": {
+          "object": 4,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日"
+          ]
+         },
+         "18": {
+          "object": 4,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日"
+          ]
+         },
+         "23": {
+          "object": 4,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日"
+          ]
+         },
+         "24": {
+          "object": 4,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日"
+          ]
+         },
+         "02": {
+          "object": 4,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日"
+          ]
+         },
+         "03": {
+          "object": 4,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日"
+          ]
+         },
+         "04": {
+          "object": 4,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日"
+          ]
+         },
+         "06": {
+          "object": 4,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日"
+          ]
+         },
+         "07": {
+          "object": 4,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日"
+          ]
+         }
+        }
+       }
+      }
+     }
+    }
+   },
+   "head": "{\n  \"updated\": \"2026-10-30 05:37\",\n  \"days\": {\n    \"20261030\": {\n      \"01\": {\n        \"区分\": \"ヴィーナスシリーズ\",\n        \"節名\": \"第１９回マクール杯　ヴィーナスシリーズ第１６戦\",\n        \"開始日\": \"20261025\",\n        \"終了日\": \"20261030\",\n        \"女子\": 45,\n        \"出走\": 45,\n        \"レディース\": true\n      },\n      \"03\": {\n        \"区分\": \"一般\""
   },
   {
    "path": "/data/kansenki/source/",
@@ -936,7 +1250,7 @@
    "path": "/manifest.json",
    "status": 200,
    "kind": "json",
-   "bytes": 653,
+   "bytes": 661,
    "shape": {
     "object": 11,
     "keys": [
@@ -957,7 +1271,7 @@
      "short_name": "string(データ攻め)",
      "description": "string(競艇を、読む。買い目なし・数字だけ。出走表・見どころ・24場特性を毎朝更新。)",
      "lang": "string(ja)",
-     "start_url": "string(./)",
+     "start_url": "string(./in/home/)",
      "scope": "string(./)",
      "display": "string(standalone)",
      "orientation": "string(portrait)",
@@ -983,7 +1297,7 @@
      }
     }
    },
-   "head": "{\n  \"name\": \"データ攻め\",\n  \"short_name\": \"データ攻め\",\n  \"description\": \"競艇を、読む。買い目なし・数字だけ。出走表・見どころ・24場特性を毎朝更新。\",\n  \"lang\": \"ja\",\n  \"start_url\": \"./\",\n  \"scope\": \"./\",\n  \"display\": \"standalone\",\n  \"orientation\": \"portrait\",\n  \"background_color\": \"#0a1422\",\n  \"theme_color\": \"#0a1422\",\n  \"icons\": [\n    { \"src\""
+   "head": "{\n  \"name\": \"データ攻め\",\n  \"short_name\": \"データ攻め\",\n  \"description\": \"競艇を、読む。買い目なし・数字だけ。出走表・見どころ・24場特性を毎朝更新。\",\n  \"lang\": \"ja\",\n  \"start_url\": \"./in/home/\",\n  \"scope\": \"./\",\n  \"display\": \"standalone\",\n  \"orientation\": \"portrait\",\n  \"background_color\": \"#0a1422\",\n  \"theme_color\": \"#0a1422\",\n  \"icons\": [\n   "
   },
   {
    "path": "/icon192.png",
@@ -1050,7 +1364,7 @@
    "path": "/data/e30PlayerStats.json",
    "status": 200,
    "kind": "json",
-   "bytes": 1533581,
+   "bytes": 1533937,
    "shape": {
     "object": 9,
     "keys": [
@@ -1065,7 +1379,7 @@
      "選手成績"
     ],
     "fields": {
-     "生成時刻JST": "string(2026-10-28 05:20)",
+     "生成時刻JST": "string(2026-10-30 05:45)",
      "出典": "string(BoatraceOpenAPI/results ミラー（mbrace由来・Git)",
      "集計期間": {
       "object": 3,
@@ -1076,7 +1390,7 @@
       ],
       "fields": {
        "開始": "string(20250715)",
-       "終了": "string(20261027)",
+       "終了": "string(20261029)",
        "開催日数": "number"
       }
      },
@@ -1521,13 +1835,13 @@
      }
     }
    },
-   "head": "{\n \"生成時刻JST\": \"2026-10-28 05:20\",\n \"出典\": \"BoatraceOpenAPI/results ミラー（mbrace由来・GitHub配信）\",\n \"集計期間\": {\n  \"開始\": \"20250715\",\n  \"終了\": \"20261027\",\n  \"開催日数\": 408\n },\n \"対象場\": {\n  \"03\": {\n   \"場名\": \"江戸川\",\n   \"E30開始日\": \"20260511\"\n  },\n  \"04\": {\n   \"場名\": \"平和島\",\n   \"E30開始日\": \"20260618\"\n  },\n  \"05\": {\n   \"場名\": \""
+   "head": "{\n \"生成時刻JST\": \"2026-10-30 05:45\",\n \"出典\": \"BoatraceOpenAPI/results ミラー（mbrace由来・GitHub配信）\",\n \"集計期間\": {\n  \"開始\": \"20250715\",\n  \"終了\": \"20261029\",\n  \"開催日数\": 410\n },\n \"対象場\": {\n  \"03\": {\n   \"場名\": \"江戸川\",\n   \"E30開始日\": \"20260511\"\n  },\n  \"04\": {\n   \"場名\": \"平和島\",\n   \"E30開始日\": \"20260618\"\n  },\n  \"05\": {\n   \"場名\": \""
   },
   {
    "path": "/data/arare.json",
    "status": 200,
    "kind": "json",
-   "bytes": 29446,
+   "bytes": 35653,
    "shape": {
     "object": 4,
     "keys": [
@@ -1537,45 +1851,45 @@
      "races"
     ],
     "fields": {
-     "generated": "string(2026-10-29T05:17+09:00)",
+     "generated": "string(2026-10-30T05:38+09:00)",
      "note": "string(荒れ条件が揃った数の目安。買い目・予想ではありません。)",
      "max_score": "number",
      "races": {
-      "object": 120,
+      "object": 144,
       "keys": [
-       "01_20261029_1",
-       "01_20261029_2",
-       "01_20261029_3",
-       "01_20261029_4",
-       "01_20261029_5",
-       "01_20261029_6",
-       "01_20261029_7",
-       "01_20261029_8",
-       "01_20261029_9",
-       "01_20261029_10",
-       "01_20261029_11",
-       "01_20261029_12",
-       "03_20261029_1",
-       "03_20261029_2",
-       "03_20261029_3",
-       "03_20261029_4",
-       "03_20261029_5",
-       "03_20261029_6",
-       "03_20261029_7",
-       "03_20261029_8",
-       "03_20261029_9",
-       "03_20261029_10",
-       "03_20261029_11",
-       "03_20261029_12",
-       "07_20261029_1",
-       "07_20261029_2",
-       "07_20261029_3",
-       "07_20261029_4",
-       "07_20261029_5",
-       "07_20261029_6"
+       "01_20261030_1",
+       "01_20261030_2",
+       "01_20261030_3",
+       "01_20261030_4",
+       "01_20261030_5",
+       "01_20261030_6",
+       "01_20261030_7",
+       "01_20261030_8",
+       "01_20261030_9",
+       "01_20261030_10",
+       "01_20261030_11",
+       "01_20261030_12",
+       "03_20261030_1",
+       "03_20261030_2",
+       "03_20261030_3",
+       "03_20261030_4",
+       "03_20261030_5",
+       "03_20261030_6",
+       "03_20261030_7",
+       "03_20261030_8",
+       "03_20261030_9",
+       "03_20261030_10",
+       "03_20261030_11",
+       "03_20261030_12",
+       "06_20261030_1",
+       "06_20261030_2",
+       "06_20261030_3",
+       "06_20261030_4",
+       "06_20261030_5",
+       "06_20261030_6"
       ],
       "fields": {
-       "01_20261029_1": {
+       "01_20261030_1": {
         "object": 8,
         "keys": [
          "jcd",
@@ -1589,59 +1903,7 @@
         ],
         "fields": {
          "jcd": "string(01)",
-         "hd": "string(20261029)",
-         "venue": "string(桐生)",
-         "rno": "number",
-         "score": "number",
-         "level": "string(中)",
-         "factors": {
-          "array": 2,
-          "item": "string(桐生は荒れ度中の水面)"
-         },
-         "deadline": "string(15:19)"
-        }
-       },
-       "01_20261029_2": {
-        "object": 8,
-        "keys": [
-         "jcd",
-         "hd",
-         "venue",
-         "rno",
-         "score",
-         "level",
-         "factors",
-         "deadline"
-        ],
-        "fields": {
-         "jcd": "string(01)",
-         "hd": "string(20261029)",
-         "venue": "string(桐生)",
-         "rno": "number",
-         "score": "number",
-         "level": "string(中)",
-         "factors": {
-          "array": 2,
-          "item": "string(桐生は荒れ度中の水面)"
-         },
-         "deadline": "string(15:45)"
-        }
-       },
-       "01_20261029_3": {
-        "object": 8,
-        "keys": [
-         "jcd",
-         "hd",
-         "venue",
-         "rno",
-         "score",
-         "level",
-         "factors",
-         "deadline"
-        ],
-        "fields": {
-         "jcd": "string(01)",
-         "hd": "string(20261029)",
+         "hd": "string(20261030)",
          "venue": "string(桐生)",
          "rno": "number",
          "score": "number",
@@ -1650,10 +1912,10 @@
           "array": 3,
           "item": "string(桐生は荒れ度中の水面)"
          },
-         "deadline": "string(16:17)"
+         "deadline": "string(15:21)"
         }
        },
-       "01_20261029_4": {
+       "01_20261030_2": {
         "object": 8,
         "keys": [
          "jcd",
@@ -1667,201 +1929,253 @@
         ],
         "fields": {
          "jcd": "string(01)",
-         "hd": "string(20261029)",
-         "venue": "string(桐生)",
-         "rno": "number",
-         "score": "number",
-         "level": "string(低)",
-         "factors": {
-          "array": 1,
-          "item": "string(桐生は荒れ度中の水面)"
-         },
-         "deadline": "string(16:47)"
-        }
-       },
-       "01_20261029_5": {
-        "object": 8,
-        "keys": [
-         "jcd",
-         "hd",
-         "venue",
-         "rno",
-         "score",
-         "level",
-         "factors",
-         "deadline"
-        ],
-        "fields": {
-         "jcd": "string(01)",
-         "hd": "string(20261029)",
-         "venue": "string(桐生)",
-         "rno": "number",
-         "score": "number",
-         "level": "string(低)",
-         "factors": {
-          "array": 1,
-          "item": "string(桐生は荒れ度中の水面)"
-         },
-         "deadline": "string(17:19)"
-        }
-       },
-       "01_20261029_6": {
-        "object": 8,
-        "keys": [
-         "jcd",
-         "hd",
-         "venue",
-         "rno",
-         "score",
-         "level",
-         "factors",
-         "deadline"
-        ],
-        "fields": {
-         "jcd": "string(01)",
-         "hd": "string(20261029)",
-         "venue": "string(桐生)",
-         "rno": "number",
-         "score": "number",
-         "level": "string(中)",
-         "factors": {
-          "array": 2,
-          "item": "string(桐生は荒れ度中の水面)"
-         },
-         "deadline": "string(17:46)"
-        }
-       },
-       "01_20261029_7": {
-        "object": 8,
-        "keys": [
-         "jcd",
-         "hd",
-         "venue",
-         "rno",
-         "score",
-         "level",
-         "factors",
-         "deadline"
-        ],
-        "fields": {
-         "jcd": "string(01)",
-         "hd": "string(20261029)",
-         "venue": "string(桐生)",
-         "rno": "number",
-         "score": "number",
-         "level": "string(低)",
-         "factors": {
-          "array": 1,
-          "item": "string(桐生は荒れ度中の水面)"
-         },
-         "deadline": "string(18:13)"
-        }
-       },
-       "01_20261029_8": {
-        "object": 8,
-        "keys": [
-         "jcd",
-         "hd",
-         "venue",
-         "rno",
-         "score",
-         "level",
-         "factors",
-         "deadline"
-        ],
-        "fields": {
-         "jcd": "string(01)",
-         "hd": "string(20261029)",
-         "venue": "string(桐生)",
-         "rno": "number",
-         "score": "number",
-         "level": "string(低)",
-         "factors": {
-          "array": 1,
-          "item": "string(桐生は荒れ度中の水面)"
-         },
-         "deadline": "string(18:43)"
-        }
-       },
-       "01_20261029_9": {
-        "object": 8,
-        "keys": [
-         "jcd",
-         "hd",
-         "venue",
-         "rno",
-         "score",
-         "level",
-         "factors",
-         "deadline"
-        ],
-        "fields": {
-         "jcd": "string(01)",
-         "hd": "string(20261029)",
-         "venue": "string(桐生)",
-         "rno": "number",
-         "score": "number",
-         "level": "string(中)",
-         "factors": {
-          "array": 2,
-          "item": "string(桐生は荒れ度中の水面)"
-         },
-         "deadline": "string(19:14)"
-        }
-       },
-       "01_20261029_10": {
-        "object": 8,
-        "keys": [
-         "jcd",
-         "hd",
-         "venue",
-         "rno",
-         "score",
-         "level",
-         "factors",
-         "deadline"
-        ],
-        "fields": {
-         "jcd": "string(01)",
-         "hd": "string(20261029)",
-         "venue": "string(桐生)",
-         "rno": "number",
-         "score": "number",
-         "level": "string(低)",
-         "factors": {
-          "array": 1,
-          "item": "string(桐生は荒れ度中の水面)"
-         },
-         "deadline": "string(19:47)"
-        }
-       },
-       "01_20261029_11": {
-        "object": 8,
-        "keys": [
-         "jcd",
-         "hd",
-         "venue",
-         "rno",
-         "score",
-         "level",
-         "factors",
-         "deadline"
-        ],
-        "fields": {
-         "jcd": "string(01)",
-         "hd": "string(20261029)",
+         "hd": "string(20261030)",
          "venue": "string(桐生)",
          "rno": "number",
          "score": "number",
          "level": "string(中)",
          "factors": {
           "array": 3,
+          "item": "string(桐生は荒れ度中の水面)"
+         },
+         "deadline": "string(15:47)"
+        }
+       },
+       "01_20261030_3": {
+        "object": 8,
+        "keys": [
+         "jcd",
+         "hd",
+         "venue",
+         "rno",
+         "score",
+         "level",
+         "factors",
+         "deadline"
+        ],
+        "fields": {
+         "jcd": "string(01)",
+         "hd": "string(20261030)",
+         "venue": "string(桐生)",
+         "rno": "number",
+         "score": "number",
+         "level": "string(中)",
+         "factors": {
+          "array": 3,
+          "item": "string(桐生は荒れ度中の水面)"
+         },
+         "deadline": "string(16:18)"
+        }
+       },
+       "01_20261030_4": {
+        "object": 8,
+        "keys": [
+         "jcd",
+         "hd",
+         "venue",
+         "rno",
+         "score",
+         "level",
+         "factors",
+         "deadline"
+        ],
+        "fields": {
+         "jcd": "string(01)",
+         "hd": "string(20261030)",
+         "venue": "string(桐生)",
+         "rno": "number",
+         "score": "number",
+         "level": "string(中)",
+         "factors": {
+          "array": 2,
+          "item": "string(桐生は荒れ度中の水面)"
+         },
+         "deadline": "string(16:49)"
+        }
+       },
+       "01_20261030_5": {
+        "object": 8,
+        "keys": [
+         "jcd",
+         "hd",
+         "venue",
+         "rno",
+         "score",
+         "level",
+         "factors",
+         "deadline"
+        ],
+        "fields": {
+         "jcd": "string(01)",
+         "hd": "string(20261030)",
+         "venue": "string(桐生)",
+         "rno": "number",
+         "score": "number",
+         "level": "string(中)",
+         "factors": {
+          "array": 3,
+          "item": "string(桐生は荒れ度中の水面)"
+         },
+         "deadline": "string(17:22)"
+        }
+       },
+       "01_20261030_6": {
+        "object": 8,
+        "keys": [
+         "jcd",
+         "hd",
+         "venue",
+         "rno",
+         "score",
+         "level",
+         "factors",
+         "deadline"
+        ],
+        "fields": {
+         "jcd": "string(01)",
+         "hd": "string(20261030)",
+         "venue": "string(桐生)",
+         "rno": "number",
+         "score": "number",
+         "level": "string(低)",
+         "factors": {
+          "array": 1,
+          "item": "string(桐生は荒れ度中の水面)"
+         },
+         "deadline": "string(17:51)"
+        }
+       },
+       "01_20261030_7": {
+        "object": 8,
+        "keys": [
+         "jcd",
+         "hd",
+         "venue",
+         "rno",
+         "score",
+         "level",
+         "factors",
+         "deadline"
+        ],
+        "fields": {
+         "jcd": "string(01)",
+         "hd": "string(20261030)",
+         "venue": "string(桐生)",
+         "rno": "number",
+         "score": "number",
+         "level": "string(中)",
+         "factors": {
+          "array": 2,
+          "item": "string(桐生は荒れ度中の水面)"
+         },
+         "deadline": "string(18:18)"
+        }
+       },
+       "01_20261030_8": {
+        "object": 8,
+        "keys": [
+         "jcd",
+         "hd",
+         "venue",
+         "rno",
+         "score",
+         "level",
+         "factors",
+         "deadline"
+        ],
+        "fields": {
+         "jcd": "string(01)",
+         "hd": "string(20261030)",
+         "venue": "string(桐生)",
+         "rno": "number",
+         "score": "number",
+         "level": "string(低)",
+         "factors": {
+          "array": 1,
+          "item": "string(桐生は荒れ度中の水面)"
+         },
+         "deadline": "string(18:46)"
+        }
+       },
+       "01_20261030_9": {
+        "object": 8,
+        "keys": [
+         "jcd",
+         "hd",
+         "venue",
+         "rno",
+         "score",
+         "level",
+         "factors",
+         "deadline"
+        ],
+        "fields": {
+         "jcd": "string(01)",
+         "hd": "string(20261030)",
+         "venue": "string(桐生)",
+         "rno": "number",
+         "score": "number",
+         "level": "string(中)",
+         "factors": {
+          "array": 2,
+          "item": "string(桐生は荒れ度中の水面)"
+         },
+         "deadline": "string(19:16)"
+        }
+       },
+       "01_20261030_10": {
+        "object": 8,
+        "keys": [
+         "jcd",
+         "hd",
+         "venue",
+         "rno",
+         "score",
+         "level",
+         "factors",
+         "deadline"
+        ],
+        "fields": {
+         "jcd": "string(01)",
+         "hd": "string(20261030)",
+         "venue": "string(桐生)",
+         "rno": "number",
+         "score": "number",
+         "level": "string(中)",
+         "factors": {
+          "array": 2,
+          "item": "string(桐生は荒れ度中の水面)"
+         },
+         "deadline": "string(19:48)"
+        }
+       },
+       "01_20261030_11": {
+        "object": 8,
+        "keys": [
+         "jcd",
+         "hd",
+         "venue",
+         "rno",
+         "score",
+         "level",
+         "factors",
+         "deadline"
+        ],
+        "fields": {
+         "jcd": "string(01)",
+         "hd": "string(20261030)",
+         "venue": "string(桐生)",
+         "rno": "number",
+         "score": "number",
+         "level": "string(中)",
+         "factors": {
+          "array": 2,
           "item": "string(桐生は荒れ度中の水面)"
          },
          "deadline": "string(20:16)"
         }
        },
-       "01_20261029_12": {
+       "01_20261030_12": {
         "object": 8,
         "keys": [
          "jcd",
@@ -1875,13 +2189,13 @@
         ],
         "fields": {
          "jcd": "string(01)",
-         "hd": "string(20261029)",
+         "hd": "string(20261030)",
          "venue": "string(桐生)",
          "rno": "number",
          "score": "number",
          "level": "string(中)",
          "factors": {
-          "array": 2,
+          "array": 3,
           "item": "string(桐生は荒れ度中の水面)"
          },
          "deadline": "string(20:45)"
@@ -1891,13 +2205,13 @@
      }
     }
    },
-   "head": "{\n \"generated\": \"2026-10-29T05:17+09:00\",\n \"note\": \"荒れ条件が揃った数の目安。買い目・予想ではありません。\",\n \"max_score\": 6,\n \"races\": {\n  \"01_20261029_1\": {\n   \"jcd\": \"01\",\n   \"hd\": \"20261029\",\n   \"venue\": \"桐生\",\n   \"rno\": 1,\n   \"score\": 2,\n   \"level\": \"中\",\n   \"factors\": [\n    \"桐生は荒れ度中の水面\",\n    \"1号艇がB2\"\n   ],\n   \"deadline\": "
+   "head": "{\n \"generated\": \"2026-10-30T05:38+09:00\",\n \"note\": \"荒れ条件が揃った数の目安。買い目・予想ではありません。\",\n \"max_score\": 6,\n \"races\": {\n  \"01_20261030_1\": {\n   \"jcd\": \"01\",\n   \"hd\": \"20261030\",\n   \"venue\": \"桐生\",\n   \"rno\": 1,\n   \"score\": 3,\n   \"level\": \"中\",\n   \"factors\": [\n    \"桐生は荒れ度中の水面\",\n    \"1号艇がB1\",\n    \"1号艇の機力が平均以下で外に上"
   },
   {
    "path": "/data/weather.json",
    "status": 200,
    "kind": "json",
-   "bytes": 89205,
+   "bytes": 90083,
    "shape": {
     "object": 3,
     "keys": [
@@ -1906,7 +2220,7 @@
      "stadiums"
     ],
     "fields": {
-     "updated": "string(2026-10-29 05:13)",
+     "updated": "string(2026-10-30 03:24)",
      "note": "string(Open-Meteo予報。風速はm/s、degは風が吹いてくる方位(0=北)。向)",
      "stadiums": {
       "object": 24,
@@ -2217,7 +2531,7 @@
      }
     }
    },
-   "head": "{\"updated\":\"2026-10-29 05:13\",\"note\":\"Open-Meteo予報。風速はm/s、degは風が吹いてくる方位(0=北)。向かい風/追い風判定は各場のスタート方位確定後。\",\"stadiums\":{\"01\":{\"name\":\"桐生\",\"hourly\":[{\"time\":\"2026-10-29T00:00\",\"wind\":1.0,\"deg\":180,\"dir\":\"南\",\"wx\":\"快晴\"},{\"time\":\"2026-10-29T01:00\",\"wind\":1.4,\"deg\":163,\"dir\":\"南南東\",\"wx\":\"快晴\"},{\"time\":\"2026-10-"
+   "head": "{\"updated\":\"2026-10-30 03:24\",\"note\":\"Open-Meteo予報。風速はm/s、degは風が吹いてくる方位(0=北)。向かい風/追い風判定は各場のスタート方位確定後。\",\"stadiums\":{\"01\":{\"name\":\"桐生\",\"hourly\":[{\"time\":\"2026-10-30T00:00\",\"wind\":0.6,\"deg\":351,\"dir\":\"北\",\"wx\":\"晴\"},{\"time\":\"2026-10-30T01:00\",\"wind\":0.5,\"deg\":338,\"dir\":\"北北西\",\"wx\":\"晴\"},{\"time\":\"2026-10-30"
   },
   {
    "path": "/players/profile.json",
@@ -2397,7 +2711,7 @@
    "path": "/highlights/highlights.json",
    "status": 200,
    "kind": "json",
-   "bytes": 730715,
+   "bytes": 915766,
    "shape": {
     "object": 7,
     "keys": [
@@ -2410,8 +2724,8 @@
      "レース"
     ],
     "fields": {
-     "生成時刻": "string(2026-10-29T04:52:11+09:00)",
-     "開催日": "string(20261029)",
+     "生成時刻": "string(2026-10-30T05:38:05+09:00)",
+     "開催日": "string(20261030)",
      "確定イン率場": {
       "array": 6,
       "item": "string(下関)"
@@ -2492,13 +2806,13 @@
        "中央値": "number",
        "人数": "number",
        "最低走数": "number",
-       "集計日": "string(2026-10-29)",
+       "集計日": "string(2026-10-30)",
        "出典": "string(データ攻め（YouTube あべけん）)"
       }
      },
      "レース数": "number",
      "レース": {
-      "array": 120,
+      "array": 144,
       "item": {
        "object": 20,
        "keys": [
@@ -2527,10 +2841,10 @@
         "場名": "string(桐生)",
         "場コード": "string(01)",
         "レース": "string(1R)",
-        "締切時刻": "string(15:19)",
+        "締切時刻": "string(15:21)",
         "節名": "string(第１９回マクール杯 ヴィーナスシリーズ第１６戦)",
         "企画名": "string(一般)",
-        "日目": "string(５日目)",
+        "日目": "string(最終日)",
         "波乱": "number",
         "波乱指数": "number",
         "イン堅": "boolean",
@@ -2541,13 +2855,13 @@
      }
     }
    },
-   "head": "{\"生成時刻\":\"2026-10-29T04:52:11+09:00\",\"開催日\":\"20261029\",\"確定イン率場\":[\"下関\",\"大村\",\"尼崎\",\"常滑\",\"徳山\",\"芦屋\"],\"モーター新替\":{\"08\":{\"新替日\":\"20261006\",\"節名\":\"生誕２５周年記念トコタンカップ\",\"記録\":\"auto\"},\"15\":{\"新替日\":\"20260917\",\"節名\":\"第１回香川ファイブアローズカップ\",\"記録\":\"manual\"},\"17\":{\"新替日\":\"20261020\",\"節名\":\"第４７回報知エキサイトカップＢＴＳ尾道開設６周年\",\"記録\":\"auto\"},\"23\":{\""
+   "head": "{\"生成時刻\":\"2026-10-30T05:38:05+09:00\",\"開催日\":\"20261030\",\"確定イン率場\":[\"下関\",\"大村\",\"尼崎\",\"常滑\",\"徳山\",\"芦屋\"],\"モーター新替\":{\"08\":{\"新替日\":\"20261006\",\"節名\":\"生誕２５周年記念トコタンカップ\",\"記録\":\"auto\"},\"15\":{\"新替日\":\"20260917\",\"節名\":\"第１回香川ファイブアローズカップ\",\"記録\":\"manual\"},\"17\":{\"新替日\":\"20261020\",\"節名\":\"第４７回報知エキサイトカップＢＴＳ尾道開設６周年\",\"記録\":\"auto\"},\"23\":{\""
   },
   {
    "path": "/data/tideToday.json",
    "status": 200,
    "kind": "json",
-   "bytes": 1271,
+   "bytes": 1572,
    "shape": {
     "object": 5,
     "keys": [
@@ -2558,12 +2872,12 @@
      "stadiums"
     ],
     "fields": {
-     "updatedJst": "string(2026-10-29 01:56)",
-     "開催日": "string(20261029)",
+     "updatedJst": "string(2026-10-30 02:13)",
+     "開催日": "string(20261030)",
      "潮回り": "string(中潮)",
      "source": "string(open-meteo Marine（潮位・事実情報／荒れ予想には用いない）)",
      "stadiums": {
-      "object": 9,
+      "object": 11,
       "keys": [
        "13",
        "14",
@@ -2571,7 +2885,9 @@
        "16",
        "18",
        "23",
+       "24",
        "03",
+       "06",
        "07",
        "08"
       ],
@@ -2586,12 +2902,12 @@
         ],
         "fields": {
          "満潮": {
-          "array": 2,
-          "item": "string(07:00 +1.05m)"
+          "array": 3,
+          "item": "string(07:00 +1.00m)"
          },
          "干潮": {
-          "array": 2,
-          "item": "string(01:00 -0.84m)"
+          "array": 3,
+          "item": "string(01:00 -0.70m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -2608,11 +2924,11 @@
         "fields": {
          "満潮": {
           "array": 2,
-          "item": "string(06:00 +0.91m)"
+          "item": "string(06:00 +0.89m)"
          },
          "干潮": {
           "array": 1,
-          "item": "string(10:00 -0.22m)"
+          "item": "string(11:00 -0.14m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -2629,11 +2945,11 @@
         "fields": {
          "満潮": {
           "array": 2,
-          "item": "string(01:00 +1.92m)"
+          "item": "string(02:00 +1.78m)"
          },
          "干潮": {
           "array": 2,
-          "item": "string(07:00 -2.37m)"
+          "item": "string(08:00 -2.13m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -2650,11 +2966,11 @@
         "fields": {
          "満潮": {
           "array": 2,
-          "item": "string(01:00 +1.21m)"
+          "item": "string(02:00 +1.15m)"
          },
          "干潮": {
           "array": 2,
-          "item": "string(07:00 -1.54m)"
+          "item": "string(08:00 -1.40m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -2671,11 +2987,11 @@
         "fields": {
          "満潮": {
           "array": 2,
-          "item": "string(10:00 +1.54m)"
+          "item": "string(11:00 +1.40m)"
          },
          "干潮": {
           "array": 2,
-          "item": "string(03:00 -1.19m)"
+          "item": "string(04:00 -0.99m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -2692,11 +3008,32 @@
         "fields": {
          "満潮": {
           "array": 1,
-          "item": "string(11:00 +1.16m)"
+          "item": "string(12:00 +1.06m)"
          },
          "干潮": {
           "array": 2,
-          "item": "string(05:00 -0.74m)"
+          "item": "string(05:00 -0.56m)"
+         },
+         "現在潮位": "number",
+         "干満差": "number"
+        }
+       },
+       "24": {
+        "object": 4,
+        "keys": [
+         "満潮",
+         "干潮",
+         "現在潮位",
+         "干満差"
+        ],
+        "fields": {
+         "満潮": {
+          "array": 2,
+          "item": "string(11:00 +1.57m)"
+         },
+         "干潮": {
+          "array": 2,
+          "item": "string(04:00 -1.13m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -2713,11 +3050,32 @@
         "fields": {
          "満潮": {
           "array": 2,
-          "item": "string(07:00 +0.84m)"
+          "item": "string(08:00 +0.76m)"
          },
          "干潮": {
-          "array": 1,
-          "item": "string(12:00 +0.18m)"
+          "array": 2,
+          "item": "string(01:00 -0.86m)"
+         },
+         "現在潮位": "number",
+         "干満差": "number"
+        }
+       },
+       "06": {
+        "object": 4,
+        "keys": [
+         "満潮",
+         "干潮",
+         "現在潮位",
+         "干満差"
+        ],
+        "fields": {
+         "満潮": {
+          "array": 2,
+          "item": "string(08:00 +0.74m)"
+         },
+         "干潮": {
+          "array": 2,
+          "item": "string(01:00 -0.80m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -2734,11 +3092,11 @@
         "fields": {
          "満潮": {
           "array": 2,
-          "item": "string(07:00 +0.88m)"
+          "item": "string(09:00 +0.85m)"
          },
          "干潮": {
           "array": 2,
-          "item": "string(01:00 -1.08m)"
+          "item": "string(01:00 -0.91m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -2755,11 +3113,11 @@
         "fields": {
          "満潮": {
           "array": 2,
-          "item": "string(08:00 +0.93m)"
+          "item": "string(09:00 +0.89m)"
          },
          "干潮": {
           "array": 2,
-          "item": "string(01:00 -1.13m)"
+          "item": "string(01:00 -0.94m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -2769,13 +3127,13 @@
      }
     }
    },
-   "head": "{\"updatedJst\":\"2026-10-29 01:56\",\"開催日\":\"20261029\",\"潮回り\":\"中潮\",\"source\":\"open-meteo Marine（潮位・事実情報／荒れ予想には用いない）\",\"stadiums\":{\"03\":{\"満潮\":[\"07:00 +0.84m\",\"17:00 +0.91m\"],\"干潮\":[\"12:00 +0.18m\"],\"現在潮位\":-0.48,\"干満差\":1.8},\"07\":{\"満潮\":[\"07:00 +0.88m\",\"18:00 +0.92m\"],\"干潮\":[\"01:00 -1.08m\",\"13:00 +0.03m\"],\"現在潮位\":-0"
+   "head": "{\"updatedJst\":\"2026-10-30 02:13\",\"開催日\":\"20261030\",\"潮回り\":\"中潮\",\"source\":\"open-meteo Marine（潮位・事実情報／荒れ予想には用いない）\",\"stadiums\":{\"03\":{\"満潮\":[\"08:00 +0.76m\",\"18:00 +0.95m\"],\"干潮\":[\"01:00 -0.86m\",\"13:00 +0.36m\"],\"現在潮位\":-0.69,\"干満差\":1.81},\"06\":{\"満潮\":[\"08:00 +0.74m\",\"19:00 +0.79m\"],\"干潮\":[\"01:00 -0.80m\",\"13:00 +0"
   },
   {
    "path": "/data/maezuke.json",
    "status": 200,
    "kind": "json",
-   "bytes": 79440,
+   "bytes": 79531,
    "shape": {
     "object": 7,
     "keys": [
@@ -2794,11 +3152,11 @@
       "item": "string(20250715)"
      },
      "レース数": "number",
-     "生成": "string(2026-10-29 04:47 JST)",
+     "生成": "string(2026-10-30 04:48 JST)",
      "定義": "string(前づけ＝進入の並びで順番を崩して枠より内のコースに入った艇。ほかの艇が外へ回って)",
      "形式": "string(選手[登番] = [走, 1着, 2着, 3着, {入ったコース: [走, 1着)",
      "選手": {
-      "object": 1478,
+      "object": 1479,
       "keys": [
        "2538",
        "2878",
@@ -2884,13 +3242,13 @@
      }
     }
    },
-   "head": "{\"出典\":\"results/（公式 競走成績）\",\"期間\":[\"20250715\",\"20261028\"],\"レース数\":71418,\"生成\":\"2026-10-29 04:47 JST\",\"定義\":\"前づけ＝進入の並びで順番を崩して枠より内のコースに入った艇。ほかの艇が外へ回って内へずれただけの艇は含めない。コースは欠場を除いた並びの順位。\",\"形式\":\"選手[登番] = [走, 1着, 2着, 3着, {入ったコース: [走, 1着, 2着, 3着]}]\",\"選手\":{\"2538\":[11,0,0,2,{\"2\":[2,0,0,0],\"3\":[1,0,0,1],\"4\":[4,0,0,1],"
+   "head": "{\"出典\":\"results/（公式 競走成績）\",\"期間\":[\"20250715\",\"20261029\"],\"レース数\":71538,\"生成\":\"2026-10-30 04:48 JST\",\"定義\":\"前づけ＝進入の並びで順番を崩して枠より内のコースに入った艇。ほかの艇が外へ回って内へずれただけの艇は含めない。コースは欠場を除いた並びの順位。\",\"形式\":\"選手[登番] = [走, 1着, 2着, 3着, {入ったコース: [走, 1着, 2着, 3着]}]\",\"選手\":{\"2538\":[11,0,0,2,{\"2\":[2,0,0,0],\"3\":[1,0,0,1],\"4\":[4,0,0,1],"
   },
   {
    "path": "/data/nigeSecond.json",
    "status": 200,
    "kind": "json",
-   "bytes": 796170,
+   "bytes": 796116,
    "shape": {
     "object": 4,
     "keys": [
@@ -2913,8 +3271,8 @@
        "daysAdded"
       ],
       "fields": {
-       "from": "string(20241028)",
-       "to": "string(20261027)",
+       "from": "string(20241029)",
+       "to": "string(20261028)",
        "periods": {
         "array": 5,
         "item": "string(2m)"
@@ -2941,7 +3299,7 @@
         "item": "number"
        },
        "cells": "number",
-       "generated": "string(2026-10-28 07:29 JST)",
+       "generated": "string(2026-10-29 07:45 JST)",
        "daysAdded": "number"
       }
      },
@@ -3679,13 +4037,13 @@
      }
     }
    },
-   "head": "{\"meta\":{\"from\":\"20241028\",\"to\":\"20261027\",\"periods\":[\"2m\",\"3m\",\"6m\",\"1y\",\"2y\"],\"periodDays\":{\"2m\":61,\"3m\":92,\"6m\":183,\"1y\":365,\"2y\":730},\"races\":[4896,7404,14827,29177,57854],\"cells\":9699,\"generated\":\"2026-10-28 07:29 JST\",\"daysAdded\":3},\"base\":[[1655,1451,922,625,243],[2510,2162,1403,937,392],[505"
+   "head": "{\"meta\":{\"from\":\"20241029\",\"to\":\"20261028\",\"periods\":[\"2m\",\"3m\",\"6m\",\"1y\",\"2y\"],\"periodDays\":{\"2m\":61,\"3m\":92,\"6m\":183,\"1y\":365,\"2y\":730},\"races\":[4869,7388,14801,29170,57812],\"cells\":9699,\"generated\":\"2026-10-29 07:45 JST\",\"daysAdded\":3},\"base\":[[1640,1444,927,621,237],[2503,2159,1401,934,391],[504"
   },
   {
    "path": "/data/wakuStats.json",
    "status": 200,
    "kind": "json",
-   "bytes": 756599,
+   "bytes": 756430,
    "shape": {
     "object": 4,
     "keys": [
@@ -3708,8 +4066,8 @@
        "generated"
       ],
       "fields": {
-       "from": "string(20241028)",
-       "to": "string(20261027)",
+       "from": "string(20241029)",
+       "to": "string(20261028)",
        "periods": {
         "array": 5,
         "item": "string(2m)"
@@ -3734,7 +4092,7 @@
        "runs": "number",
        "cells": "number",
        "k1Blank": "number",
-       "generated": "string(2026-10-28 07:34 JST)"
+       "generated": "string(2026-10-29 07:50 JST)"
       }
      },
      "base": {
@@ -4618,13 +4976,13 @@
      }
     }
    },
-   "head": "{\"meta\":{\"from\":\"20241028\",\"to\":\"20261027\",\"periods\":[\"2m\",\"3m\",\"6m\",\"1y\",\"2y\"],\"periodDays\":{\"2m\":61,\"3m\":92,\"6m\":183,\"1y\":365,\"2y\":730},\"runs\":667602,\"cells\":9839,\"k1Blank\":0,\"generated\":\"2026-10-28 07:34 JST\"},\"base\":[{\"1\":[9379,5165,6821,7627],\"2\":[9376,1312,3555,5324],\"3\":[9379,1202,3283,5110],"
+   "head": "{\"meta\":{\"from\":\"20241029\",\"to\":\"20261028\",\"periods\":[\"2m\",\"3m\",\"6m\",\"1y\",\"2y\"],\"periodDays\":{\"2m\":61,\"3m\":92,\"6m\":183,\"1y\":365,\"2y\":730},\"runs\":667266,\"cells\":9837,\"k1Blank\":0,\"generated\":\"2026-10-29 07:50 JST\"},\"base\":[{\"1\":[9359,5132,6789,7599],\"2\":[9355,1322,3551,5307],\"3\":[9359,1201,3282,5105],"
   },
   {
    "path": "/data/gradeSchedule.json",
    "status": 200,
    "kind": "json",
-   "bytes": 4957,
+   "bytes": 5546,
    "shape": {
     "object": 2,
     "keys": [
@@ -4632,16 +4990,16 @@
      "days"
     ],
     "fields": {
-     "updated": "string(2026-10-29 05:16)",
+     "updated": "string(2026-10-30 05:37)",
      "days": {
       "object": 2,
       "keys": [
-       "20261029",
-       "20261030"
+       "20261030",
+       "20261031"
       ],
       "fields": {
-       "20261029": {
-        "object": 10,
+       "20261030": {
+        "object": 12,
         "keys": [
          "13",
          "14",
@@ -4649,8 +5007,10 @@
          "16",
          "18",
          "23",
+         "24",
          "01",
          "03",
+         "06",
          "07",
          "08"
         ],
@@ -4727,6 +5087,18 @@
            "レディース"
           ]
          },
+         "24": {
+          "object": 7,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日",
+           "女子",
+           "出走",
+           "レディース"
+          ]
+         },
          "01": {
           "object": 7,
           "keys": [
@@ -4740,6 +5112,18 @@
           ]
          },
          "03": {
+          "object": 7,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日",
+           "女子",
+           "出走",
+           "レディース"
+          ]
+         },
+         "06": {
           "object": 7,
           "keys": [
            "区分",
@@ -4774,8 +5158,8 @@
          }
         }
        },
-       "20261030": {
-        "object": 12,
+       "20261031": {
+        "object": 13,
         "keys": [
          "13",
          "14",
@@ -4784,11 +5168,12 @@
          "18",
          "23",
          "24",
-         "01",
+         "02",
          "03",
+         "04",
          "06",
          "07",
-         "08"
+         "09"
         ],
         "fields": {
          "13": {
@@ -4854,7 +5239,7 @@
            "終了日"
           ]
          },
-         "01": {
+         "02": {
           "object": 4,
           "keys": [
            "区分",
@@ -4864,6 +5249,15 @@
           ]
          },
          "03": {
+          "object": 4,
+          "keys": [
+           "区分",
+           "節名",
+           "開始日",
+           "終了日"
+          ]
+         },
+         "04": {
           "object": 4,
           "keys": [
            "区分",
@@ -4889,15 +5283,6 @@
            "開始日",
            "終了日"
           ]
-         },
-         "08": {
-          "object": 4,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日"
-          ]
          }
         }
        }
@@ -4905,7 +5290,7 @@
      }
     }
    },
-   "head": "{\n  \"updated\": \"2026-10-29 05:16\",\n  \"days\": {\n    \"20261029\": {\n      \"01\": {\n        \"区分\": \"ヴィーナスシリーズ\",\n        \"節名\": \"第１９回マクール杯　ヴィーナスシリーズ第１６戦\",\n        \"開始日\": \"20261025\",\n        \"終了日\": \"20261030\",\n        \"女子\": 46,\n        \"出走\": 46,\n        \"レディース\": true\n      },\n      \"03\": {\n        \"区分\": \"一般\""
+   "head": "{\n  \"updated\": \"2026-10-30 05:37\",\n  \"days\": {\n    \"20261030\": {\n      \"01\": {\n        \"区分\": \"ヴィーナスシリーズ\",\n        \"節名\": \"第１９回マクール杯　ヴィーナスシリーズ第１６戦\",\n        \"開始日\": \"20261025\",\n        \"終了日\": \"20261030\",\n        \"女子\": 45,\n        \"出走\": 45,\n        \"レディース\": true\n      },\n      \"03\": {\n        \"区分\": \"一般\""
   },
   {
    "path": "/data/chushiToday.json?_=",
@@ -4921,8 +5306,8 @@
      "中止"
     ],
     "fields": {
-     "開催日": "string(20261029)",
-     "取得時刻": "string(2026-10-29T01:05:27+09:00)",
+     "開催日": "string(20261030)",
+     "取得時刻": "string(2026-10-30T02:03:37+09:00)",
      "出典": "string(boatrace.jp 本日のレース一覧)",
      "中止": {
       "object": 0,
@@ -4931,13 +5316,13 @@
      }
     }
    },
-   "head": "{\n \"開催日\": \"20261029\",\n \"取得時刻\": \"2026-10-29T01:05:27+09:00\",\n \"出典\": \"boatrace.jp 本日のレース一覧\",\n \"中止\": {}\n}\n"
+   "head": "{\n \"開催日\": \"20261030\",\n \"取得時刻\": \"2026-10-30T02:03:37+09:00\",\n \"出典\": \"boatrace.jp 本日のレース一覧\",\n \"中止\": {}\n}\n"
   },
   {
    "path": "/data/inSurvival.json",
    "status": 200,
    "kind": "json",
-   "bytes": 16144,
+   "bytes": 16104,
    "shape": {
     "object": 4,
     "keys": [
@@ -4947,7 +5332,7 @@
      "日"
     ],
     "fields": {
-     "生成時刻": "string(2026-10-29 04:47:20 JST)",
+     "生成時刻": "string(2026-10-30 04:48:33 JST)",
      "定義": "string(①（1号艇）が3着以内なら0、4着以下（着外）なら1、判定不能は-。各値は12文)",
      "期間": {
       "object": 3,
@@ -4957,15 +5342,14 @@
        "日数"
       ],
       "fields": {
-       "開始": "string(20260831)",
-       "終了": "string(20261028)",
+       "開始": "string(20260901)",
+       "終了": "string(20261029)",
        "日数": "number"
       }
      },
      "日": {
       "object": 59,
       "keys": [
-       "20260831",
        "20260901",
        "20260902",
        "20260903",
@@ -4994,40 +5378,10 @@
        "20260926",
        "20260927",
        "20260928",
-       "20260929"
+       "20260929",
+       "20260930"
       ],
       "fields": {
-       "20260831": {
-        "object": 12,
-        "keys": [
-         "11",
-         "16",
-         "18",
-         "19",
-         "20",
-         "21",
-         "23",
-         "04",
-         "05",
-         "06",
-         "07",
-         "08"
-        ],
-        "fields": {
-         "11": "string(100100000000)",
-         "16": "string(000001000010)",
-         "18": "string(100001100010)",
-         "19": "string(000001010000)",
-         "20": "string(000000000000)",
-         "21": "string(000001000000)",
-         "23": "string(000010011000)",
-         "04": "string(011001000110)",
-         "05": "string(000010100100)",
-         "06": "string(000001100000)",
-         "07": "string(010000000000)",
-         "08": "string(001000000000)"
-        }
-       },
        "20260901": {
         "object": 12,
         "keys": [
@@ -5368,12 +5722,44 @@
          "05": "string(100110000000)",
          "06": "string(000101100000)"
         }
+       },
+       "20260912": {
+        "object": 13,
+        "keys": [
+         "10",
+         "12",
+         "16",
+         "17",
+         "18",
+         "20",
+         "21",
+         "24",
+         "02",
+         "05",
+         "06",
+         "08",
+         "09"
+        ],
+        "fields": {
+         "10": "string(000001000000)",
+         "12": "string(010001000000)",
+         "16": "string(101100000000)",
+         "17": "string(001110001000)",
+         "18": "string(000000000000)",
+         "20": "string(001100000010)",
+         "21": "string(000000000000)",
+         "24": "string(010010001000)",
+         "02": "string(011100000000)",
+         "05": "string(000100000000)",
+         "06": "string(000000010000)",
+         "08": "string(000001001000)"
+        }
        }
       }
      }
     }
    },
-   "head": "{\"生成時刻\":\"2026-10-29 04:47:20 JST\",\"定義\":\"①（1号艇）が3着以内なら0、4着以下（着外）なら1、判定不能は-。各値は12文字でi文字目が(i+1)R。\",\"期間\":{\"開始\":\"20260831\",\"終了\":\"20261028\",\"日数\":59},\"日\":{\"20261028\":{\"01\":\"00001000000-\",\"03\":\"01001-------\",\"07\":\"000100000000\",\"08\":\"010100011101\",\"09\":\"001001000000\",\"10\":\"000001000101\",\"13\":\"100010000000\","
+   "head": "{\"生成時刻\":\"2026-10-30 04:48:33 JST\",\"定義\":\"①（1号艇）が3着以内なら0、4着以下（着外）なら1、判定不能は-。各値は12文字でi文字目が(i+1)R。\",\"期間\":{\"開始\":\"20260901\",\"終了\":\"20261029\",\"日数\":59},\"日\":{\"20261029\":{\"01\":\"101000000000\",\"03\":\"001011100000\",\"07\":\"000010000000\",\"08\":\"000000000000\",\"13\":\"000010100000\",\"14\":\"010100010110\",\"15\":\"000000000000\","
   },
   {
    "path": "/racers/.json?_=",
@@ -5395,7 +5781,7 @@
      "選手"
     ],
     "fields": {
-     "生成時刻": "string(2026-10-29T04:47:33+09:00)",
+     "生成時刻": "string(2026-10-30T04:48:39+09:00)",
      "集計期間": {
       "object": 2,
       "keys": [
@@ -5404,7 +5790,7 @@
       ],
       "fields": {
        "from": "string(20250715)",
-       "to": "string(20261029)"
+       "to": "string(20261030)"
       }
      },
      "中央値": {
@@ -6452,13 +6838,13 @@
      }
     }
    },
-   "head": "{\"生成時刻\":\"2026-10-29T04:47:33+09:00\",\"集計期間\":{\"from\":\"20250715\",\"to\":\"20261029\"},\"中央値\":{\"1\":2.1,\"2\":3.2,\"3\":3.3,\"4\":3.6,\"5\":4.0,\"6\":4.5},\"選手\":{\"2538\":{\"1\":{\"n\":10,\"chaku\":[5,6,1,3,5,4,6,5,5,6],\"avg\":4.6,\"from\":\"20260611\",\"to\":\"20261027\"},\"2\":{\"n\":10,\"chaku\":[4,6,4,2,6,5,3,2,6,2],\"avg\":4.0,\"from\":\"2026"
+   "head": "{\"生成時刻\":\"2026-10-30T04:48:39+09:00\",\"集計期間\":{\"from\":\"20250715\",\"to\":\"20261030\"},\"中央値\":{\"1\":2.1,\"2\":3.2,\"3\":3.3,\"4\":3.6,\"5\":4.0,\"6\":4.5},\"選手\":{\"2538\":{\"1\":{\"n\":10,\"chaku\":[5,6,1,3,5,4,6,5,5,6],\"avg\":4.6,\"from\":\"20260611\",\"to\":\"20261027\"},\"2\":{\"n\":10,\"chaku\":[4,6,4,2,6,5,3,2,6,2],\"avg\":4.0,\"from\":\"2026"
   },
   {
    "path": "/data/tenjiStats.json",
    "status": 200,
    "kind": "json",
-   "bytes": 215778,
+   "bytes": 215690,
    "shape": {
     "object": 2,
     "keys": [
@@ -6476,7 +6862,7 @@
       ],
       "fields": {
        "from": "string(20161101)",
-       "to": "string(20261026)",
+       "to": "string(20261027)",
        "racers": "number",
        "avg": {
         "object": 3,
@@ -6503,7 +6889,7 @@
       }
      },
      "r": {
-      "object": 1642,
+      "object": 1641,
       "keys": [
        "2538",
        "2878",
@@ -6829,7 +7215,7 @@
      }
     }
    },
-   "head": "{\"meta\":{\"from\":\"20161101\",\"to\":\"20261026\",\"racers\":1642,\"avg\":{\"g\":[30.9,49.7,65.0],\"n\":[17.7,35.3,52.4],\"b\":[9.3,22.9,39.1]}},\"r\":{\"2538\":{\"s\":\"201611\",\"g\":[64,6,21,36,24.0,36.6,45.5],\"n\":[1251,67,212,429,232.2,469.1,687.0],\"b\":[520,14,57,146,46.5,124.5,212.6]},\"2878\":{\"s\":\"201611\",\"g\":[91,33,61,7"
+   "head": "{\"meta\":{\"from\":\"20161101\",\"to\":\"20261027\",\"racers\":1641,\"avg\":{\"g\":[30.9,49.7,65.0],\"n\":[17.7,35.3,52.4],\"b\":[9.3,22.9,39.0]}},\"r\":{\"2538\":{\"s\":\"201611\",\"g\":[64,6,21,36,24.0,36.6,45.5],\"n\":[1252,67,212,429,232.8,469.9,687.8],\"b\":[520,14,57,146,46.5,124.5,212.6]},\"2878\":{\"s\":\"201611\",\"g\":[91,33,61,7"
   },
   {
    "path": "/assets/kata/highlights.css?v=13855a28",
@@ -6881,18 +7267,18 @@
    "path": "/choukan/?d=${KAISAI}&j=${String(a.jcd||",
    "status": 200,
    "kind": "html",
-   "bytes": 8184,
+   "bytes": 9539,
    "title": "場の朝刊｜データ攻め",
    "scripts": [
     "../assets/guard.js"
    ],
-   "inlineScriptBytes": 3088
+   "inlineScriptBytes": 3116
   },
   {
    "path": "/highlights/racerStatsToday.json?_=",
    "status": 200,
    "kind": "json",
-   "bytes": 150047,
+   "bytes": 142396,
    "shape": {
     "object": 4,
     "keys": [
@@ -6903,7 +7289,7 @@
     ],
     "fields": {
      "asOf": "string(unknown)",
-     "generated": "string(2026-10-29T04:52:11+09:00)",
+     "generated": "string(2026-10-30T05:38:05+09:00)",
      "sources": {
       "object": 4,
       "keys": [
@@ -6920,23 +7306,22 @@
       }
      },
      "players": {
-      "object": 719,
+      "object": 682,
       "keys": [
        "2538",
        "3024",
        "3158",
+       "3211",
        "3224",
        "3226",
-       "3251",
        "3256",
-       "3257",
        "3277",
        "3282",
        "3293",
-       "3294",
        "3300",
        "3303",
        "3306",
+       "3315",
        "3319",
        "3333",
        "3334",
@@ -6944,14 +7329,15 @@
        "3362",
        "3377",
        "3381",
-       "3401",
        "3406",
        "3411",
        "3412",
        "3415",
        "3419",
        "3422",
-       "3432"
+       "3432",
+       "3434",
+       "3439"
       ],
       "fields": {
        "2538": {
@@ -7059,6 +7445,41 @@
          "yusyo": "number"
         }
        },
+       "3211": {
+        "object": 16,
+        "keys": [
+         "rank",
+         "branch",
+         "home",
+         "age",
+         "ht",
+         "wt",
+         "blood",
+         "avgst",
+         "syutsu",
+         "w1",
+         "w2",
+         "yusyo",
+         "f",
+         "out",
+         "fuku",
+         "c1"
+        ],
+        "fields": {
+         "rank": "string(B1)",
+         "branch": "string(佐賀)",
+         "home": "string(佐賀)",
+         "age": "number",
+         "ht": "number",
+         "wt": "number",
+         "blood": "string(A)",
+         "avgst": "string(0.18)",
+         "syutsu": "number",
+         "w1": "number",
+         "w2": "number",
+         "yusyo": "number"
+        }
+       },
        "3224": {
         "object": 16,
         "keys": [
@@ -7129,41 +7550,6 @@
          "yusyo": "number"
         }
        },
-       "3251": {
-        "object": 16,
-        "keys": [
-         "rank",
-         "branch",
-         "home",
-         "age",
-         "ht",
-         "wt",
-         "blood",
-         "avgst",
-         "syutsu",
-         "w1",
-         "w2",
-         "yusyo",
-         "f",
-         "out",
-         "fuku",
-         "c1"
-        ],
-        "fields": {
-         "rank": "string(A2)",
-         "branch": "string(埼玉)",
-         "home": "string(埼玉)",
-         "age": "number",
-         "ht": "number",
-         "wt": "number",
-         "blood": "string(B)",
-         "avgst": "string(0.20)",
-         "syutsu": "number",
-         "w1": "number",
-         "w2": "number",
-         "yusyo": "number"
-        }
-       },
        "3256": {
         "object": 16,
         "keys": [
@@ -7193,41 +7579,6 @@
          "wt": "number",
          "blood": "string(A)",
          "avgst": "string(0.15)",
-         "syutsu": "number",
-         "w1": "number",
-         "w2": "number",
-         "yusyo": "number"
-        }
-       },
-       "3257": {
-        "object": 16,
-        "keys": [
-         "rank",
-         "branch",
-         "home",
-         "age",
-         "ht",
-         "wt",
-         "blood",
-         "avgst",
-         "syutsu",
-         "w1",
-         "w2",
-         "yusyo",
-         "f",
-         "out",
-         "fuku",
-         "c1"
-        ],
-        "fields": {
-         "rank": "string(A1)",
-         "branch": "string(福岡)",
-         "home": "string(福岡)",
-         "age": "number",
-         "ht": "number",
-         "wt": "number",
-         "blood": "string(O)",
-         "avgst": "string(0.13)",
          "syutsu": "number",
          "w1": "number",
          "w2": "number",
@@ -7339,7 +7690,42 @@
          "yusyo": "number"
         }
        },
-       "3294": {
+       "3300": {
+        "object": 16,
+        "keys": [
+         "rank",
+         "branch",
+         "home",
+         "age",
+         "ht",
+         "wt",
+         "blood",
+         "avgst",
+         "syutsu",
+         "w1",
+         "w2",
+         "yusyo",
+         "f",
+         "out",
+         "fuku",
+         "c1"
+        ],
+        "fields": {
+         "rank": "string(A2)",
+         "branch": "string(岡山)",
+         "home": "string(岡山)",
+         "age": "number",
+         "ht": "number",
+         "wt": "number",
+         "blood": "string(O)",
+         "avgst": "string(0.16)",
+         "syutsu": "number",
+         "w1": "number",
+         "w2": "number",
+         "yusyo": "number"
+        }
+       },
+       "3303": {
         "object": 16,
         "keys": [
          "rank",
@@ -7361,13 +7747,13 @@
         ],
         "fields": {
          "rank": "string(B1)",
-         "branch": "string(静岡)",
-         "home": "string(静岡)",
+         "branch": "string(東京)",
+         "home": "string(神奈川)",
          "age": "number",
          "ht": "number",
          "wt": "number",
-         "blood": "string(A)",
-         "avgst": "string(0.17)",
+         "blood": "string(AB)",
+         "avgst": "string(0.20)",
          "syutsu": "number",
          "w1": "number",
          "w2": "number",
@@ -7378,10 +7764,160 @@
      }
     }
    },
-   "head": "{\"asOf\":\"unknown\",\"generated\":\"2026-10-29T04:52:11+09:00\",\"sources\":{\"highlights.json\":445,\"highlights_next.json\":445,\"highlights_prev.json\":501,\"highlights_prev2.json\":634},\"players\":{\"2538\":{\"rank\":\"B1\",\"branch\":\"東京\",\"home\":\"千葉\",\"age\":77,\"ht\":163,\"wt\":54,\"blood\":\"AB\",\"avgst\":\"0.21\",\"syutsu\":93,\"w1"
+   "head": "{\"asOf\":\"unknown\",\"generated\":\"2026-10-30T05:38:05+09:00\",\"sources\":{\"highlights.json\":530,\"highlights_next.json\":530,\"highlights_prev.json\":445,\"highlights_prev2.json\":501},\"players\":{\"2538\":{\"rank\":\"B1\",\"branch\":\"東京\",\"home\":\"千葉\",\"age\":77,\"ht\":163,\"wt\":54,\"blood\":\"AB\",\"avgst\":\"0.21\",\"syutsu\":93,\"w1"
   },
   {
    "path": "/highlights/highlights_prev.json",
+   "status": 200,
+   "kind": "json",
+   "bytes": 747453,
+   "shape": {
+    "object": 7,
+    "keys": [
+     "生成時刻",
+     "開催日",
+     "確定イン率場",
+     "モーター新替",
+     "1コース1着率の基準",
+     "レース数",
+     "レース"
+    ],
+    "fields": {
+     "生成時刻": "string(2026-10-29T22:10:33+09:00)",
+     "開催日": "string(20261029)",
+     "確定イン率場": {
+      "array": 6,
+      "item": "string(下関)"
+     },
+     "モーター新替": {
+      "object": 4,
+      "keys": [
+       "15",
+       "17",
+       "23",
+       "08"
+      ],
+      "fields": {
+       "15": {
+        "object": 3,
+        "keys": [
+         "新替日",
+         "節名",
+         "記録"
+        ],
+        "fields": {
+         "新替日": "string(20260917)",
+         "節名": "string(第１回香川ファイブアローズカップ)",
+         "記録": "string(manual)"
+        }
+       },
+       "17": {
+        "object": 3,
+        "keys": [
+         "新替日",
+         "節名",
+         "記録"
+        ],
+        "fields": {
+         "新替日": "string(20261020)",
+         "節名": "string(第４７回報知エキサイトカップＢＴＳ尾道開設６周年)",
+         "記録": "string(auto)"
+        }
+       },
+       "23": {
+        "object": 3,
+        "keys": [
+         "新替日",
+         "節名",
+         "記録"
+        ],
+        "fields": {
+         "新替日": "string(20260916)",
+         "節名": "string(唐津うまかもんカップ)",
+         "記録": "string(manual)"
+        }
+       },
+       "08": {
+        "object": 3,
+        "keys": [
+         "新替日",
+         "節名",
+         "記録"
+        ],
+        "fields": {
+         "新替日": "string(20261006)",
+         "節名": "string(生誕２５周年記念トコタンカップ)",
+         "記録": "string(auto)"
+        }
+       }
+      }
+     },
+     "1コース1着率の基準": {
+      "object": 5,
+      "keys": [
+       "中央値",
+       "人数",
+       "最低走数",
+       "集計日",
+       "出典"
+      ],
+      "fields": {
+       "中央値": "number",
+       "人数": "number",
+       "最低走数": "number",
+       "集計日": "string(2026-10-29)",
+       "出典": "string(データ攻め（YouTube あべけん）)"
+      }
+     },
+     "レース数": "number",
+     "レース": {
+      "array": 120,
+      "item": {
+       "object": 20,
+       "keys": [
+        "場名",
+        "場コード",
+        "レース",
+        "締切時刻",
+        "節名",
+        "企画名",
+        "日目",
+        "波乱",
+        "波乱指数",
+        "イン堅",
+        "モーター使用",
+        "イン1着率",
+        "モーター場平均",
+        "艇",
+        "見立て",
+        "展開",
+        "波及",
+        "downFactors",
+        "collapse",
+        "分類"
+       ],
+       "fields": {
+        "場名": "string(桐生)",
+        "場コード": "string(01)",
+        "レース": "string(1R)",
+        "締切時刻": "string(15:19)",
+        "節名": "string(第１９回マクール杯 ヴィーナスシリーズ第１６戦)",
+        "企画名": "string(一般)",
+        "日目": "string(５日目)",
+        "波乱": "number",
+        "波乱指数": "number",
+        "イン堅": "boolean",
+        "モーター使用": "boolean",
+        "イン1着率": "number"
+       }
+      }
+     }
+    }
+   },
+   "head": "{\"生成時刻\":\"2026-10-29T22:10:33+09:00\",\"開催日\":\"20261029\",\"確定イン率場\":[\"下関\",\"大村\",\"尼崎\",\"常滑\",\"徳山\",\"芦屋\"],\"モーター新替\":{\"08\":{\"新替日\":\"20261006\",\"節名\":\"生誕２５周年記念トコタンカップ\",\"記録\":\"auto\"},\"15\":{\"新替日\":\"20260917\",\"節名\":\"第１回香川ファイブアローズカップ\",\"記録\":\"manual\"},\"17\":{\"新替日\":\"20261020\",\"節名\":\"第４７回報知エキサイトカップＢＴＳ尾道開設６周年\",\"記録\":\"auto\"},\"23\":{\""
+  },
+  {
+   "path": "/highlights/highlights_prev2.json",
    "status": 200,
    "kind": "json",
    "bytes": 849747,
@@ -7529,156 +8065,6 @@
     }
    },
    "head": "{\"生成時刻\":\"2026-10-28T22:10:15+09:00\",\"開催日\":\"20261028\",\"確定イン率場\":[\"下関\",\"大村\",\"尼崎\",\"常滑\",\"徳山\",\"芦屋\"],\"モーター新替\":{\"08\":{\"新替日\":\"20261006\",\"節名\":\"生誕２５周年記念トコタンカップ\",\"記録\":\"auto\"},\"15\":{\"新替日\":\"20260917\",\"節名\":\"第１回香川ファイブアローズカップ\",\"記録\":\"manual\"},\"17\":{\"新替日\":\"20261020\",\"節名\":\"第４７回報知エキサイトカップＢＴＳ尾道開設６周年\",\"記録\":\"auto\"},\"23\":{\""
-  },
-  {
-   "path": "/highlights/highlights_prev2.json",
-   "status": 200,
-   "kind": "json",
-   "bytes": 1054704,
-   "shape": {
-    "object": 7,
-    "keys": [
-     "生成時刻",
-     "開催日",
-     "確定イン率場",
-     "モーター新替",
-     "1コース1着率の基準",
-     "レース数",
-     "レース"
-    ],
-    "fields": {
-     "生成時刻": "string(2026-10-27T23:29:25+09:00)",
-     "開催日": "string(20261027)",
-     "確定イン率場": {
-      "array": 6,
-      "item": "string(下関)"
-     },
-     "モーター新替": {
-      "object": 4,
-      "keys": [
-       "15",
-       "17",
-       "23",
-       "08"
-      ],
-      "fields": {
-       "15": {
-        "object": 3,
-        "keys": [
-         "新替日",
-         "節名",
-         "記録"
-        ],
-        "fields": {
-         "新替日": "string(20260917)",
-         "節名": "string(第１回香川ファイブアローズカップ)",
-         "記録": "string(manual)"
-        }
-       },
-       "17": {
-        "object": 3,
-        "keys": [
-         "新替日",
-         "節名",
-         "記録"
-        ],
-        "fields": {
-         "新替日": "string(20261020)",
-         "節名": "string(第４７回報知エキサイトカップＢＴＳ尾道開設６周年)",
-         "記録": "string(auto)"
-        }
-       },
-       "23": {
-        "object": 3,
-        "keys": [
-         "新替日",
-         "節名",
-         "記録"
-        ],
-        "fields": {
-         "新替日": "string(20260916)",
-         "節名": "string(唐津うまかもんカップ)",
-         "記録": "string(manual)"
-        }
-       },
-       "08": {
-        "object": 3,
-        "keys": [
-         "新替日",
-         "節名",
-         "記録"
-        ],
-        "fields": {
-         "新替日": "string(20261006)",
-         "節名": "string(生誕２５周年記念トコタンカップ)",
-         "記録": "string(auto)"
-        }
-       }
-      }
-     },
-     "1コース1着率の基準": {
-      "object": 5,
-      "keys": [
-       "中央値",
-       "人数",
-       "最低走数",
-       "集計日",
-       "出典"
-      ],
-      "fields": {
-       "中央値": "number",
-       "人数": "number",
-       "最低走数": "number",
-       "集計日": "string(2026-10-27)",
-       "出典": "string(データ攻め（YouTube あべけん）)"
-      }
-     },
-     "レース数": "number",
-     "レース": {
-      "array": 168,
-      "item": {
-       "object": 20,
-       "keys": [
-        "場名",
-        "場コード",
-        "レース",
-        "締切時刻",
-        "節名",
-        "企画名",
-        "日目",
-        "波乱",
-        "波乱指数",
-        "イン堅",
-        "モーター使用",
-        "イン1着率",
-        "モーター場平均",
-        "艇",
-        "見立て",
-        "展開",
-        "波及",
-        "downFactors",
-        "collapse",
-        "分類"
-       ],
-       "fields": {
-        "場名": "string(桐生)",
-        "場コード": "string(01)",
-        "レース": "string(1R)",
-        "締切時刻": "string(15:22)",
-        "節名": "string(第１９回マクール杯 ヴィーナスシリーズ第１６戦)",
-        "企画名": "string(予選)",
-        "日目": "string(３日目)",
-        "波乱": "number",
-        "波乱指数": "number",
-        "イン堅": "boolean",
-        "モーター使用": "boolean",
-        "イン1着率": "number"
-       }
-      }
-     }
-    }
-   },
-   "head": "{\"生成時刻\":\"2026-10-27T23:29:25+09:00\",\"開催日\":\"20261027\",\"確定イン率場\":[\"下関\",\"大村\",\"尼崎\",\"常滑\",\"徳山\",\"芦屋\"],\"モーター新替\":{\"08\":{\"新替日\":\"20261006\",\"節名\":\"生誕２５周年記念トコタンカップ\",\"記録\":\"auto\"},\"15\":{\"新替日\":\"20260917\",\"節名\":\"第１回香川ファイブアローズカップ\",\"記録\":\"manual\"},\"17\":{\"新替日\":\"20261020\",\"節名\":\"第４７回報知エキサイトカップＢＴＳ尾道開設６周年\",\"記録\":\"auto\"},\"23\":{\""
   },
   {
    "path": "/data/kansenki/glossary.json?_=",
@@ -7879,297 +8265,10 @@
    "head": "{\n  \"_meta\": {\n    \"purpose\": \"観戦記カードのglossaryTermsチップから引く用語辞書。事実定義のみ。予想・確率・煽り・射幸を促す表現は入れない。\",\n    \"note\": \"yomi=ふりがな、desc=1〜2文の事実定義。記事に出た語＋基礎語＋場内用語に限定。無い語はチップtap無効（捏造しない）。\"\n  },\n  \"万舟\": {\n    \"yomi\": \"まんしゅう\",\n    \"desc\": \"3連単の払戻金が1万円以上になること。高配当の目安として使われる。\",\n    \"example\": \"3連単が1万円を超え、万舟となった。\"\n  },\n"
   },
   {
-   "path": "/data/gradeSchedule.json?_=",
-   "status": 200,
-   "kind": "json",
-   "bytes": 4957,
-   "shape": {
-    "object": 2,
-    "keys": [
-     "updated",
-     "days"
-    ],
-    "fields": {
-     "updated": "string(2026-10-29 05:16)",
-     "days": {
-      "object": 2,
-      "keys": [
-       "20261029",
-       "20261030"
-      ],
-      "fields": {
-       "20261029": {
-        "object": 10,
-        "keys": [
-         "13",
-         "14",
-         "15",
-         "16",
-         "18",
-         "23",
-         "01",
-         "03",
-         "07",
-         "08"
-        ],
-        "fields": {
-         "13": {
-          "object": 7,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日",
-           "女子",
-           "出走",
-           "レディース"
-          ]
-         },
-         "14": {
-          "object": 7,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日",
-           "女子",
-           "出走",
-           "レディース"
-          ]
-         },
-         "15": {
-          "object": 7,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日",
-           "女子",
-           "出走",
-           "レディース"
-          ]
-         },
-         "16": {
-          "object": 7,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日",
-           "女子",
-           "出走",
-           "レディース"
-          ]
-         },
-         "18": {
-          "object": 7,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日",
-           "女子",
-           "出走",
-           "レディース"
-          ]
-         },
-         "23": {
-          "object": 7,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日",
-           "女子",
-           "出走",
-           "レディース"
-          ]
-         },
-         "01": {
-          "object": 7,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日",
-           "女子",
-           "出走",
-           "レディース"
-          ]
-         },
-         "03": {
-          "object": 7,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日",
-           "女子",
-           "出走",
-           "レディース"
-          ]
-         },
-         "07": {
-          "object": 7,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日",
-           "女子",
-           "出走",
-           "レディース"
-          ]
-         },
-         "08": {
-          "object": 4,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日"
-          ]
-         }
-        }
-       },
-       "20261030": {
-        "object": 12,
-        "keys": [
-         "13",
-         "14",
-         "15",
-         "16",
-         "18",
-         "23",
-         "24",
-         "01",
-         "03",
-         "06",
-         "07",
-         "08"
-        ],
-        "fields": {
-         "13": {
-          "object": 4,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日"
-          ]
-         },
-         "14": {
-          "object": 4,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日"
-          ]
-         },
-         "15": {
-          "object": 4,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日"
-          ]
-         },
-         "16": {
-          "object": 4,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日"
-          ]
-         },
-         "18": {
-          "object": 4,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日"
-          ]
-         },
-         "23": {
-          "object": 4,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日"
-          ]
-         },
-         "24": {
-          "object": 4,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日"
-          ]
-         },
-         "01": {
-          "object": 4,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日"
-          ]
-         },
-         "03": {
-          "object": 4,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日"
-          ]
-         },
-         "06": {
-          "object": 4,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日"
-          ]
-         },
-         "07": {
-          "object": 4,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日"
-          ]
-         },
-         "08": {
-          "object": 4,
-          "keys": [
-           "区分",
-           "節名",
-           "開始日",
-           "終了日"
-          ]
-         }
-        }
-       }
-      }
-     }
-    }
-   },
-   "head": "{\n  \"updated\": \"2026-10-29 05:16\",\n  \"days\": {\n    \"20261029\": {\n      \"01\": {\n        \"区分\": \"ヴィーナスシリーズ\",\n        \"節名\": \"第１９回マクール杯　ヴィーナスシリーズ第１６戦\",\n        \"開始日\": \"20261025\",\n        \"終了日\": \"20261030\",\n        \"女子\": 46,\n        \"出走\": 46,\n        \"レディース\": true\n      },\n      \"03\": {\n        \"区分\": \"一般\""
-  },
-  {
    "path": "/data/tenjiStats.json?_=",
    "status": 200,
    "kind": "json",
-   "bytes": 215778,
+   "bytes": 215690,
    "shape": {
     "object": 2,
     "keys": [
@@ -8187,7 +8286,7 @@
       ],
       "fields": {
        "from": "string(20161101)",
-       "to": "string(20261026)",
+       "to": "string(20261027)",
        "racers": "number",
        "avg": {
         "object": 3,
@@ -8214,7 +8313,7 @@
       }
      },
      "r": {
-      "object": 1642,
+      "object": 1641,
       "keys": [
        "2538",
        "2878",
@@ -8540,13 +8639,13 @@
      }
     }
    },
-   "head": "{\"meta\":{\"from\":\"20161101\",\"to\":\"20261026\",\"racers\":1642,\"avg\":{\"g\":[30.9,49.7,65.0],\"n\":[17.7,35.3,52.4],\"b\":[9.3,22.9,39.1]}},\"r\":{\"2538\":{\"s\":\"201611\",\"g\":[64,6,21,36,24.0,36.6,45.5],\"n\":[1251,67,212,429,232.2,469.1,687.0],\"b\":[520,14,57,146,46.5,124.5,212.6]},\"2878\":{\"s\":\"201611\",\"g\":[91,33,61,7"
+   "head": "{\"meta\":{\"from\":\"20161101\",\"to\":\"20261027\",\"racers\":1641,\"avg\":{\"g\":[30.9,49.7,65.0],\"n\":[17.7,35.3,52.4],\"b\":[9.3,22.9,39.0]}},\"r\":{\"2538\":{\"s\":\"201611\",\"g\":[64,6,21,36,24.0,36.6,45.5],\"n\":[1252,67,212,429,232.8,469.9,687.8],\"b\":[520,14,57,146,46.5,124.5,212.6]},\"2878\":{\"s\":\"201611\",\"g\":[91,33,61,7"
   },
   {
    "path": "/highlights/highlights_next.json",
    "status": 200,
    "kind": "json",
-   "bytes": 729331,
+   "bytes": 913833,
    "shape": {
     "object": 8,
     "keys": [
@@ -8560,8 +8659,8 @@
      "場別"
     ],
     "fields": {
-     "生成時刻": "string(2026-10-28T22:10:16+09:00)",
-     "開催日": "string(20261029)",
+     "生成時刻": "string(2026-10-29T22:10:34+09:00)",
+     "開催日": "string(20261030)",
      "プレビュー": "boolean",
      "確定イン率場": {
       "array": 6,
@@ -8632,7 +8731,7 @@
      },
      "レース数": "number",
      "レース": {
-      "array": 120,
+      "array": 144,
       "item": {
        "object": 19,
        "keys": [
@@ -8660,10 +8759,10 @@
         "場名": "string(桐生)",
         "場コード": "string(01)",
         "レース": "string(1R)",
-        "締切時刻": "string(15:19)",
+        "締切時刻": "string(15:21)",
         "節名": "string(第１９回マクール杯 ヴィーナスシリーズ第１６戦)",
         "企画名": "string(一般)",
-        "日目": "string(５日目)",
+        "日目": "string(最終日)",
         "波乱": "number",
         "波乱指数": "number",
         "イン堅": "boolean",
@@ -8673,7 +8772,7 @@
       }
      },
      "場別": {
-      "object": 10,
+      "object": 12,
       "keys": [
        "13",
        "14",
@@ -8681,8 +8780,10 @@
        "16",
        "18",
        "23",
+       "24",
        "01",
        "03",
+       "06",
        "07",
        "08"
       ],
@@ -8777,6 +8878,21 @@
          "レース数": "number"
         }
        },
+       "24": {
+        "object": 4,
+        "keys": [
+         "場名",
+         "generatedAt",
+         "partial",
+         "レース数"
+        ],
+        "fields": {
+         "場名": "string(大村)",
+         "generatedAt": "string(22:10)",
+         "partial": "boolean",
+         "レース数": "number"
+        }
+       },
        "01": {
         "object": 4,
         "keys": [
@@ -8802,6 +8918,21 @@
         ],
         "fields": {
          "場名": "string(江戸川)",
+         "generatedAt": "string(22:10)",
+         "partial": "boolean",
+         "レース数": "number"
+        }
+       },
+       "06": {
+        "object": 4,
+        "keys": [
+         "場名",
+         "generatedAt",
+         "partial",
+         "レース数"
+        ],
+        "fields": {
+         "場名": "string(浜名湖)",
          "generatedAt": "string(22:10)",
          "partial": "boolean",
          "レース数": "number"
@@ -8841,7 +8972,7 @@
      }
     }
    },
-   "head": "{\"生成時刻\":\"2026-10-28T22:10:16+09:00\",\"開催日\":\"20261029\",\"プレビュー\":true,\"確定イン率場\":[\"下関\",\"大村\",\"尼崎\",\"常滑\",\"徳山\",\"芦屋\"],\"モーター新替\":{\"08\":{\"新替日\":\"20261006\",\"節名\":\"生誕２５周年記念トコタンカップ\",\"記録\":\"auto\"},\"15\":{\"新替日\":\"20260917\",\"節名\":\"第１回香川ファイブアローズカップ\",\"記録\":\"manual\"},\"17\":{\"新替日\":\"20261020\",\"節名\":\"第４７回報知エキサイトカップＢＴＳ尾道開設６周年\",\"記録\":\"a"
+   "head": "{\"生成時刻\":\"2026-10-29T22:10:34+09:00\",\"開催日\":\"20261030\",\"プレビュー\":true,\"確定イン率場\":[\"下関\",\"大村\",\"尼崎\",\"常滑\",\"徳山\",\"芦屋\"],\"モーター新替\":{\"08\":{\"新替日\":\"20261006\",\"節名\":\"生誕２５周年記念トコタンカップ\",\"記録\":\"auto\"},\"15\":{\"新替日\":\"20260917\",\"節名\":\"第１回香川ファイブアローズカップ\",\"記録\":\"manual\"},\"17\":{\"新替日\":\"20261020\",\"節名\":\"第４７回報知エキサイトカップＢＴＳ尾道開設６周年\",\"記録\":\"a"
   },
   {
    "path": "/data/liveWeather.json?_=",
@@ -8857,8 +8988,8 @@
      "stadiums"
     ],
     "fields": {
-     "updatedJst": "string(2026-10-29 01:05)",
-     "開催日": "string(20261029)",
+     "updatedJst": "string(2026-10-30 02:03)",
+     "開催日": "string(20261030)",
      "source": "string(boatrace.jp beforeinfo（実況・水面気象）)",
      "stadiums": {
       "object": 0,
@@ -8867,13 +8998,13 @@
      }
     }
    },
-   "head": "{\"updatedJst\":\"2026-10-29 01:05\",\"開催日\":\"20261029\",\"source\":\"boatrace.jp beforeinfo（実況・水面気象）\",\"stadiums\":{}}"
+   "head": "{\"updatedJst\":\"2026-10-30 02:03\",\"開催日\":\"20261030\",\"source\":\"boatrace.jp beforeinfo（実況・水面気象）\",\"stadiums\":{}}"
   },
   {
    "path": "/data/weather.json?_=",
    "status": 200,
    "kind": "json",
-   "bytes": 89205,
+   "bytes": 90083,
    "shape": {
     "object": 3,
     "keys": [
@@ -8882,7 +9013,7 @@
      "stadiums"
     ],
     "fields": {
-     "updated": "string(2026-10-29 05:13)",
+     "updated": "string(2026-10-30 03:24)",
      "note": "string(Open-Meteo予報。風速はm/s、degは風が吹いてくる方位(0=北)。向)",
      "stadiums": {
       "object": 24,
@@ -9193,7 +9324,7 @@
      }
     }
    },
-   "head": "{\"updated\":\"2026-10-29 05:13\",\"note\":\"Open-Meteo予報。風速はm/s、degは風が吹いてくる方位(0=北)。向かい風/追い風判定は各場のスタート方位確定後。\",\"stadiums\":{\"01\":{\"name\":\"桐生\",\"hourly\":[{\"time\":\"2026-10-29T00:00\",\"wind\":1.0,\"deg\":180,\"dir\":\"南\",\"wx\":\"快晴\"},{\"time\":\"2026-10-29T01:00\",\"wind\":1.4,\"deg\":163,\"dir\":\"南南東\",\"wx\":\"快晴\"},{\"time\":\"2026-10-"
+   "head": "{\"updated\":\"2026-10-30 03:24\",\"note\":\"Open-Meteo予報。風速はm/s、degは風が吹いてくる方位(0=北)。向かい風/追い風判定は各場のスタート方位確定後。\",\"stadiums\":{\"01\":{\"name\":\"桐生\",\"hourly\":[{\"time\":\"2026-10-30T00:00\",\"wind\":0.6,\"deg\":351,\"dir\":\"北\",\"wx\":\"晴\"},{\"time\":\"2026-10-30T01:00\",\"wind\":0.5,\"deg\":338,\"dir\":\"北北西\",\"wx\":\"晴\"},{\"time\":\"2026-10-30"
   },
   {
    "path": "/data/windTendency.json?_=",
@@ -9431,7 +9562,7 @@
    "path": "/data/tideToday.json?_=",
    "status": 200,
    "kind": "json",
-   "bytes": 1271,
+   "bytes": 1572,
    "shape": {
     "object": 5,
     "keys": [
@@ -9442,12 +9573,12 @@
      "stadiums"
     ],
     "fields": {
-     "updatedJst": "string(2026-10-29 01:56)",
-     "開催日": "string(20261029)",
+     "updatedJst": "string(2026-10-30 02:13)",
+     "開催日": "string(20261030)",
      "潮回り": "string(中潮)",
      "source": "string(open-meteo Marine（潮位・事実情報／荒れ予想には用いない）)",
      "stadiums": {
-      "object": 9,
+      "object": 11,
       "keys": [
        "13",
        "14",
@@ -9455,7 +9586,9 @@
        "16",
        "18",
        "23",
+       "24",
        "03",
+       "06",
        "07",
        "08"
       ],
@@ -9470,12 +9603,12 @@
         ],
         "fields": {
          "満潮": {
-          "array": 2,
-          "item": "string(07:00 +1.05m)"
+          "array": 3,
+          "item": "string(07:00 +1.00m)"
          },
          "干潮": {
-          "array": 2,
-          "item": "string(01:00 -0.84m)"
+          "array": 3,
+          "item": "string(01:00 -0.70m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -9492,11 +9625,11 @@
         "fields": {
          "満潮": {
           "array": 2,
-          "item": "string(06:00 +0.91m)"
+          "item": "string(06:00 +0.89m)"
          },
          "干潮": {
           "array": 1,
-          "item": "string(10:00 -0.22m)"
+          "item": "string(11:00 -0.14m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -9513,11 +9646,11 @@
         "fields": {
          "満潮": {
           "array": 2,
-          "item": "string(01:00 +1.92m)"
+          "item": "string(02:00 +1.78m)"
          },
          "干潮": {
           "array": 2,
-          "item": "string(07:00 -2.37m)"
+          "item": "string(08:00 -2.13m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -9534,11 +9667,11 @@
         "fields": {
          "満潮": {
           "array": 2,
-          "item": "string(01:00 +1.21m)"
+          "item": "string(02:00 +1.15m)"
          },
          "干潮": {
           "array": 2,
-          "item": "string(07:00 -1.54m)"
+          "item": "string(08:00 -1.40m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -9555,11 +9688,11 @@
         "fields": {
          "満潮": {
           "array": 2,
-          "item": "string(10:00 +1.54m)"
+          "item": "string(11:00 +1.40m)"
          },
          "干潮": {
           "array": 2,
-          "item": "string(03:00 -1.19m)"
+          "item": "string(04:00 -0.99m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -9576,11 +9709,32 @@
         "fields": {
          "満潮": {
           "array": 1,
-          "item": "string(11:00 +1.16m)"
+          "item": "string(12:00 +1.06m)"
          },
          "干潮": {
           "array": 2,
-          "item": "string(05:00 -0.74m)"
+          "item": "string(05:00 -0.56m)"
+         },
+         "現在潮位": "number",
+         "干満差": "number"
+        }
+       },
+       "24": {
+        "object": 4,
+        "keys": [
+         "満潮",
+         "干潮",
+         "現在潮位",
+         "干満差"
+        ],
+        "fields": {
+         "満潮": {
+          "array": 2,
+          "item": "string(11:00 +1.57m)"
+         },
+         "干潮": {
+          "array": 2,
+          "item": "string(04:00 -1.13m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -9597,11 +9751,32 @@
         "fields": {
          "満潮": {
           "array": 2,
-          "item": "string(07:00 +0.84m)"
+          "item": "string(08:00 +0.76m)"
          },
          "干潮": {
-          "array": 1,
-          "item": "string(12:00 +0.18m)"
+          "array": 2,
+          "item": "string(01:00 -0.86m)"
+         },
+         "現在潮位": "number",
+         "干満差": "number"
+        }
+       },
+       "06": {
+        "object": 4,
+        "keys": [
+         "満潮",
+         "干潮",
+         "現在潮位",
+         "干満差"
+        ],
+        "fields": {
+         "満潮": {
+          "array": 2,
+          "item": "string(08:00 +0.74m)"
+         },
+         "干潮": {
+          "array": 2,
+          "item": "string(01:00 -0.80m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -9618,11 +9793,11 @@
         "fields": {
          "満潮": {
           "array": 2,
-          "item": "string(07:00 +0.88m)"
+          "item": "string(09:00 +0.85m)"
          },
          "干潮": {
           "array": 2,
-          "item": "string(01:00 -1.08m)"
+          "item": "string(01:00 -0.91m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -9639,11 +9814,11 @@
         "fields": {
          "満潮": {
           "array": 2,
-          "item": "string(08:00 +0.93m)"
+          "item": "string(09:00 +0.89m)"
          },
          "干潮": {
           "array": 2,
-          "item": "string(01:00 -1.13m)"
+          "item": "string(01:00 -0.94m)"
          },
          "現在潮位": "number",
          "干満差": "number"
@@ -9653,13 +9828,13 @@
      }
     }
    },
-   "head": "{\"updatedJst\":\"2026-10-29 01:56\",\"開催日\":\"20261029\",\"潮回り\":\"中潮\",\"source\":\"open-meteo Marine（潮位・事実情報／荒れ予想には用いない）\",\"stadiums\":{\"03\":{\"満潮\":[\"07:00 +0.84m\",\"17:00 +0.91m\"],\"干潮\":[\"12:00 +0.18m\"],\"現在潮位\":-0.48,\"干満差\":1.8},\"07\":{\"満潮\":[\"07:00 +0.88m\",\"18:00 +0.92m\"],\"干潮\":[\"01:00 -1.08m\",\"13:00 +0.03m\"],\"現在潮位\":-0"
+   "head": "{\"updatedJst\":\"2026-10-30 02:13\",\"開催日\":\"20261030\",\"潮回り\":\"中潮\",\"source\":\"open-meteo Marine（潮位・事実情報／荒れ予想には用いない）\",\"stadiums\":{\"03\":{\"満潮\":[\"08:00 +0.76m\",\"18:00 +0.95m\"],\"干潮\":[\"01:00 -0.86m\",\"13:00 +0.36m\"],\"現在潮位\":-0.69,\"干満差\":1.81},\"06\":{\"満潮\":[\"08:00 +0.74m\",\"19:00 +0.79m\"],\"干潮\":[\"01:00 -0.80m\",\"13:00 +0"
   },
   {
    "path": "/data/e30PlayerStats.json?_=",
    "status": 200,
    "kind": "json",
-   "bytes": 1533581,
+   "bytes": 1533937,
    "shape": {
     "object": 9,
     "keys": [
@@ -9674,7 +9849,7 @@
      "選手成績"
     ],
     "fields": {
-     "生成時刻JST": "string(2026-10-28 05:20)",
+     "生成時刻JST": "string(2026-10-30 05:45)",
      "出典": "string(BoatraceOpenAPI/results ミラー（mbrace由来・Git)",
      "集計期間": {
       "object": 3,
@@ -9685,7 +9860,7 @@
       ],
       "fields": {
        "開始": "string(20250715)",
-       "終了": "string(20261027)",
+       "終了": "string(20261029)",
        "開催日数": "number"
       }
      },
@@ -10130,13 +10305,13 @@
      }
     }
    },
-   "head": "{\n \"生成時刻JST\": \"2026-10-28 05:20\",\n \"出典\": \"BoatraceOpenAPI/results ミラー（mbrace由来・GitHub配信）\",\n \"集計期間\": {\n  \"開始\": \"20250715\",\n  \"終了\": \"20261027\",\n  \"開催日数\": 408\n },\n \"対象場\": {\n  \"03\": {\n   \"場名\": \"江戸川\",\n   \"E30開始日\": \"20260511\"\n  },\n  \"04\": {\n   \"場名\": \"平和島\",\n   \"E30開始日\": \"20260618\"\n  },\n  \"05\": {\n   \"場名\": \""
+   "head": "{\n \"生成時刻JST\": \"2026-10-30 05:45\",\n \"出典\": \"BoatraceOpenAPI/results ミラー（mbrace由来・GitHub配信）\",\n \"集計期間\": {\n  \"開始\": \"20250715\",\n  \"終了\": \"20261029\",\n  \"開催日数\": 410\n },\n \"対象場\": {\n  \"03\": {\n   \"場名\": \"江戸川\",\n   \"E30開始日\": \"20260511\"\n  },\n  \"04\": {\n   \"場名\": \"平和島\",\n   \"E30開始日\": \"20260618\"\n  },\n  \"05\": {\n   \"場名\": \""
   },
   {
    "path": "/data/nigeSecond.json?_=",
    "status": 200,
    "kind": "json",
-   "bytes": 796170,
+   "bytes": 796116,
    "shape": {
     "object": 4,
     "keys": [
@@ -10159,8 +10334,8 @@
        "daysAdded"
       ],
       "fields": {
-       "from": "string(20241028)",
-       "to": "string(20261027)",
+       "from": "string(20241029)",
+       "to": "string(20261028)",
        "periods": {
         "array": 5,
         "item": "string(2m)"
@@ -10187,7 +10362,7 @@
         "item": "number"
        },
        "cells": "number",
-       "generated": "string(2026-10-28 07:29 JST)",
+       "generated": "string(2026-10-29 07:45 JST)",
        "daysAdded": "number"
       }
      },
@@ -10925,15 +11100,15 @@
      }
     }
    },
-   "head": "{\"meta\":{\"from\":\"20241028\",\"to\":\"20261027\",\"periods\":[\"2m\",\"3m\",\"6m\",\"1y\",\"2y\"],\"periodDays\":{\"2m\":61,\"3m\":92,\"6m\":183,\"1y\":365,\"2y\":730},\"races\":[4896,7404,14827,29177,57854],\"cells\":9699,\"generated\":\"2026-10-28 07:29 JST\",\"daysAdded\":3},\"base\":[[1655,1451,922,625,243],[2510,2162,1403,937,392],[505"
+   "head": "{\"meta\":{\"from\":\"20241029\",\"to\":\"20261028\",\"periods\":[\"2m\",\"3m\",\"6m\",\"1y\",\"2y\"],\"periodDays\":{\"2m\":61,\"3m\":92,\"6m\":183,\"1y\":365,\"2y\":730},\"races\":[4869,7388,14801,29170,57812],\"cells\":9699,\"generated\":\"2026-10-29 07:45 JST\",\"daysAdded\":3},\"base\":[[1640,1444,927,621,237],[2503,2159,1401,934,391],[504"
   },
   {
    "path": "/racers/racers_today.csv?_=",
    "status": 200,
    "kind": "csv",
-   "bytes": 185667,
-   "rows": 722,
-   "head": "場名,場コード,開催日,レース,枠,登録番号,級別,氏名,F数,L数,平均ST,全国勝率,全国2連率,全国3連率,当地勝率,当地2連率,当地3連率,モーターNo,モーター2連率,モーター3連率,ボートNo,ボート2連率,ボート3連率,1日目成績,2日目成績,3日目成績,4日目成績,5日目成績,6日目成績,支部,出身,年齢,締切時刻,節名,企画名,日目\n桐生,01,20261029,1R,1,5108,B2,柴田　　愛梨,0,0,0.25,2.75,7.50,17.50,2.23,5.71,14.29,21,37.78,54.67,73,36.76,52.94,6R/3/.35/5,1R/1/."
+   "bytes": 226587,
+   "rows": 866,
+   "head": "場名,場コード,開催日,レース,枠,登録番号,級別,氏名,F数,L数,平均ST,全国勝率,全国2連率,全国3連率,当地勝率,当地2連率,当地3連率,モーターNo,モーター2連率,モーター3連率,ボートNo,ボート2連率,ボート3連率,1日目成績,2日目成績,3日目成績,4日目成績,5日目成績,6日目成績,支部,出身,年齢,締切時刻,節名,企画名,日目\n桐生,01,20261030,1R,1,5306,B1,河内　悠利杏,1,0,0.19,2.38,5.88,8.82,2.50,3.23,11.29,26,30.84,49.07,44,37.09,56.34,1R/1/.24/4 7R/4/.1"
   },
   {
    "path": "/highlights/.json?_=",
@@ -11352,7 +11527,7 @@
         "レース数"
        ],
        "fields": {
-        "開催日": "string(20261028)",
+        "開催日": "string(20261029)",
         "場数": "number",
         "レース数": "number"
        }
@@ -11360,7 +11535,7 @@
      }
     }
    },
-   "head": "{\"件数\":29,\"日付\":[{\"開催日\":\"20261028\",\"場数\":11,\"レース数\":124},{\"開催日\":\"20261027\",\"場数\":14,\"レース数\":168},{\"開催日\":\"20261026\",\"場数\":12,\"レース数\":144},{\"開催日\":\"20261025\",\"場数\":14,\"レース数\":167},{\"開催日\":\"20261024\",\"場数\":14,\"レース数\":168},{\"開催日\":\"20261023\",\"場数\":14,\"レース数\":168},{\"開催日\":\"20261022\",\"場数\":14,\"レース数\":168},{\"開催日\":\"20261021\",\""
+   "head": "{\"件数\":29,\"日付\":[{\"開催日\":\"20261029\",\"場数\":10,\"レース数\":120},{\"開催日\":\"20261028\",\"場数\":11,\"レース数\":124},{\"開催日\":\"20261027\",\"場数\":14,\"レース数\":168},{\"開催日\":\"20261026\",\"場数\":12,\"レース数\":144},{\"開催日\":\"20261025\",\"場数\":14,\"レース数\":167},{\"開催日\":\"20261024\",\"場数\":14,\"レース数\":168},{\"開催日\":\"20261023\",\"場数\":14,\"レース数\":168},{\"開催日\":\"20261022\",\""
   },
   {
    "path": "/results/data/",
@@ -14190,7 +14365,7 @@
      }
     }
    },
-   "head": "{\n  \"title\": \"3連単 最多出目（過去実績）\",\n  \"source\": \"公式競走成績（3連単払戻の集計）\",\n  \"note\": \"過去に出た回数であり、次のレースの予想ではありません。\",\n  \"venueCount\": 24,\n  \"venues\": {\n    \"13\": {\n      \"stadium\": \"尼崎\",\n      \"jcd\": 13,\n      \"slug\": \"amagasaki\",\n      \"combo\": \"1-2-3\",\n      \"count\": 190,\n      \"races\": 2809,\n      \"share\": 6.8"
+   "head": "{\n  \"title\": \"3連単 最多出目（過去実績）\",\n  \"source\": \"公式競走成績（3連単払戻の集計）\",\n  \"note\": \"過去に出た回数であり、次のレースの予想ではありません。\",\n  \"venueCount\": 24,\n  \"venues\": {\n    \"13\": {\n      \"stadium\": \"尼崎\",\n      \"jcd\": 13,\n      \"slug\": \"amagasaki\",\n      \"combo\": \"1-2-3\",\n      \"count\": 192,\n      \"races\": 2821,\n      \"share\": 6.8"
   },
   {
    "path": "/payouts/boat1Second.json?v=",
@@ -14724,13 +14899,13 @@
      }
     }
    },
-   "head": "{\n  \"title\": \"1号艇が1着だったときの2着内訳（過去実績）\",\n  \"source\": \"公式競走成績（3連単払戻の集計）\",\n  \"note\": \"過去に出た回数の割合であり、次のレースの予想ではありません。\",\n  \"venueCount\": 24,\n  \"venues\": {\n    \"13\": {\n      \"stadium\": \"尼崎\",\n      \"jcd\": 13,\n      \"slug\": \"amagasaki\",\n      \"races\": 2809,\n      \"firstBoat1\": 1666,\n      \"firstBoat1Rate\": 5"
+   "head": "{\n  \"title\": \"1号艇が1着だったときの2着内訳（過去実績）\",\n  \"source\": \"公式競走成績（3連単払戻の集計）\",\n  \"note\": \"過去に出た回数の割合であり、次のレースの予想ではありません。\",\n  \"venueCount\": 24,\n  \"venues\": {\n    \"13\": {\n      \"stadium\": \"尼崎\",\n      \"jcd\": 13,\n      \"slug\": \"amagasaki\",\n      \"races\": 2821,\n      \"firstBoat1\": 1673,\n      \"firstBoat1Rate\": 5"
   },
   {
    "path": "/payouts/champRace.json?v=",
    "status": 200,
    "kind": "json",
-   "bytes": 240892,
+   "bytes": 241411,
    "shape": {
     "object": 5,
     "keys": [
@@ -14809,7 +14984,7 @@
           }
          },
          "races": {
-          "array": 44,
+          "array": 45,
           "item": {
            "object": 4,
            "keys": [
@@ -15395,7 +15570,7 @@
       ],
       "fields": {
        "from": "string(2025/07/15)",
-       "to": "string(2026/10/27)",
+       "to": "string(2026/10/28)",
        "days": "number"
       }
      },
@@ -15517,7 +15692,7 @@
      }
     }
    },
-   "head": "{\n  \"title\": \"万舟のツボ 総合\",\n  \"source\": \"BoatraceOpenAPI(v2) / 公式競走成績\",\n  \"threshold\": 10000,\n  \"period\": {\n    \"from\": \"2025/07/15\",\n    \"to\": \"2026/10/27\",\n    \"days\": 470\n  },\n  \"venueCount\": 24,\n  \"totalRaces\": 71295,\n  \"manTotal\": 11791,\n  \"topPayouts\": [\n    {\n      \"stadium\": \"常滑\",\n      \"jcd\": "
+   "head": "{\n  \"title\": \"万舟のツボ 総合\",\n  \"source\": \"BoatraceOpenAPI(v2) / 公式競走成績\",\n  \"threshold\": 10000,\n  \"period\": {\n    \"from\": \"2025/07/15\",\n    \"to\": \"2026/10/28\",\n    \"days\": 471\n  },\n  \"venueCount\": 24,\n  \"totalRaces\": 71419,\n  \"manTotal\": 11813,\n  \"topPayouts\": [\n    {\n      \"stadium\": \"常滑\",\n      \"jcd\": "
   },
   {
    "path": "/data/rankHistory.json",
@@ -15667,7 +15842,7 @@
    "path": "/data/motorUsage.json",
    "status": 200,
    "kind": "json",
-   "bytes": 421162,
+   "bytes": 421130,
    "shape": {
     "object": 8,
     "keys": [
@@ -15681,12 +15856,12 @@
      "motors"
     ],
     "fields": {
-     "updated": "string(2026-10-28 06:07)",
+     "updated": "string(2026-10-30 06:06)",
      "schema": "string(venueWindow-1)",
      "source": "string(mbrace競走成績(K)由来・自前集計)",
      "note": "string(走行数はモーター新替(推定)以降の実測カウント。新替日は公式非公開のため、公式の)",
      "coverageFrom": "string(20161101)",
-     "coverageTo": "string(20261027)",
+     "coverageTo": "string(20261029)",
      "venues": {
       "object": 24,
       "keys": [
@@ -15781,7 +15956,7 @@
          "fitError": "number",
          "matched": "number",
          "startSource": "string(公式)",
-         "officialAsOf": "string(20261028)"
+         "officialAsOf": "string(20261030)"
         }
        },
        "14": {
@@ -15798,7 +15973,7 @@
          "fitError": "number",
          "matched": "number",
          "startSource": "string(公式)",
-         "officialAsOf": "string(20261025)"
+         "officialAsOf": "string(20261030)"
         }
        },
        "15": {
@@ -15832,7 +16007,7 @@
          "fitError": "number",
          "matched": "number",
          "startSource": "string(公式)",
-         "officialAsOf": "string(20261028)"
+         "officialAsOf": "string(20261030)"
         }
        },
        "17": {
@@ -15864,7 +16039,7 @@
          "fitError": "number",
          "matched": "number",
          "startSource": "string(公式)",
-         "officialAsOf": "string(20261023)"
+         "officialAsOf": "string(20261030)"
         }
        },
        "19": {
@@ -15978,7 +16153,7 @@
          "2連": "number",
          "3連": "number",
          "窓内初出日": "string(20251227)",
-         "最新日": "string(20261027)",
+         "最新日": "string(20261029)",
          "2連率": "number",
          "3連率": "number",
          "公式2連率": "number"
@@ -16007,7 +16182,7 @@
          "2連": "number",
          "3連": "number",
          "窓内初出日": "string(20251227)",
-         "最新日": "string(20261027)",
+         "最新日": "string(20261029)",
          "2連率": "number",
          "3連率": "number",
          "公式2連率": "number"
@@ -16036,7 +16211,7 @@
          "2連": "number",
          "3連": "number",
          "窓内初出日": "string(20251227)",
-         "最新日": "string(20261027)",
+         "最新日": "string(20261029)",
          "2連率": "number",
          "3連率": "number",
          "公式2連率": "number"
@@ -16065,7 +16240,7 @@
          "2連": "number",
          "3連": "number",
          "窓内初出日": "string(20251227)",
-         "最新日": "string(20261027)",
+         "最新日": "string(20261029)",
          "2連率": "number",
          "3連率": "number",
          "公式2連率": "number"
@@ -16121,7 +16296,7 @@
          "2連": "number",
          "3連": "number",
          "窓内初出日": "string(20251227)",
-         "最新日": "string(20261027)",
+         "最新日": "string(20261029)",
          "2連率": "number",
          "3連率": "number",
          "公式2連率": "number"
@@ -16150,7 +16325,7 @@
          "2連": "number",
          "3連": "number",
          "窓内初出日": "string(20251227)",
-         "最新日": "string(20261027)",
+         "最新日": "string(20261029)",
          "2連率": "number",
          "3連率": "number",
          "公式2連率": "number"
@@ -16179,7 +16354,7 @@
          "2連": "number",
          "3連": "number",
          "窓内初出日": "string(20251227)",
-         "最新日": "string(20261027)",
+         "最新日": "string(20261029)",
          "2連率": "number",
          "3連率": "number",
          "公式2連率": "number"
@@ -16208,7 +16383,7 @@
          "2連": "number",
          "3連": "number",
          "窓内初出日": "string(20251227)",
-         "最新日": "string(20261027)",
+         "最新日": "string(20261029)",
          "2連率": "number",
          "3連率": "number",
          "公式2連率": "number"
@@ -16264,7 +16439,7 @@
          "2連": "number",
          "3連": "number",
          "窓内初出日": "string(20251227)",
-         "最新日": "string(20261027)",
+         "最新日": "string(20261029)",
          "2連率": "number",
          "3連率": "number",
          "公式2連率": "number"
@@ -16301,13 +16476,13 @@
      }
     }
    },
-   "head": "{\n  \"updated\": \"2026-10-28 06:07\",\n  \"schema\": \"venueWindow-1\",\n  \"source\": \"mbrace競走成績(K)由来・自前集計\",\n  \"note\": \"走行数はモーター新替(推定)以降の実測カウント。新替日は公式非公開のため、公式のモーター2連対率（新替からの累計）と突き合わせて場ごとに逆算した推定値。推定できなかった場は出力しない（motorReplace.json に新替日の記録がある場は、その日を窓にする。venues.windowSource）。欠損期間は補完しない。公式2連率は各場の直近の節が終わった時点の値（ve"
+   "head": "{\n  \"updated\": \"2026-10-30 06:06\",\n  \"schema\": \"venueWindow-1\",\n  \"source\": \"mbrace競走成績(K)由来・自前集計\",\n  \"note\": \"走行数はモーター新替(推定)以降の実測カウント。新替日は公式非公開のため、公式のモーター2連対率（新替からの累計）と突き合わせて場ごとに逆算した推定値。推定できなかった場は出力しない（motorReplace.json に新替日の記録がある場は、その日を窓にする。venues.windowSource）。欠損期間は補完しない。公式2連率は各場の直近の節が終わった時点の値（ve"
   },
   {
    "path": "/data/motorHistory.json",
    "status": 200,
    "kind": "json",
-   "bytes": 291336,
+   "bytes": 293562,
    "shape": {
     "object": 4,
     "keys": [
@@ -16317,11 +16492,11 @@
      "sessions"
     ],
     "fields": {
-     "updated": "string(2026-10-29 05:16)",
+     "updated": "string(2026-10-30 05:37)",
      "note": "string(各場の節完結時点のモーター2連率（数字のみ・実測）。前節1位判定用。)",
      "windowNote": "string(append方式・既存レコードは不変)",
      "sessions": {
-      "array": 267,
+      "array": 269,
       "item": {
        "object": 5,
        "keys": [
@@ -16366,7 +16541,7 @@
      }
     }
    },
-   "head": "{\n  \"updated\": \"2026-10-29 05:16\",\n  \"note\": \"各場の節完結時点のモーター2連率（数字のみ・実測）。前節1位判定用。\",\n  \"windowNote\": \"append方式・既存レコードは不変\",\n  \"sessions\": [\n    {\n      \"jcd\": \"01\",\n      \"場名\": \"桐生\",\n      \"節名\": \"にっぽん未来プロジェクト競走ｉｎ桐生\",\n      \"開催日\": \"20260709\",\n      \"motors\": {\n        \"13\": 27.7,\n        \"14\": 43.8,\n   "
+   "head": "{\n  \"updated\": \"2026-10-30 05:37\",\n  \"note\": \"各場の節完結時点のモーター2連率（数字のみ・実測）。前節1位判定用。\",\n  \"windowNote\": \"append方式・既存レコードは不変\",\n  \"sessions\": [\n    {\n      \"jcd\": \"01\",\n      \"場名\": \"桐生\",\n      \"節名\": \"にっぽん未来プロジェクト競走ｉｎ桐生\",\n      \"開催日\": \"20260709\",\n      \"motors\": {\n        \"13\": 27.7,\n        \"14\": 43.8,\n   "
   },
   {
    "path": "/assets/kata/kensho.css?v=00d2b3e9",
@@ -16378,7 +16553,7 @@
    "path": "/kensho/shobugake/",
    "status": 200,
    "kind": "html",
-   "bytes": 33163,
+   "bytes": 32875,
    "title": "検証：勝負駆け ｜ データ攻め",
    "scripts": [
     "../../assets/guard.js",
@@ -16492,6 +16667,17 @@
     "../../assets/ugoki.js?v=e40e8a0a"
    ],
    "inlineScriptBytes": 6151
+  },
+  {
+   "path": "/kensho/buhin/",
+   "status": 200,
+   "kind": "html",
+   "bytes": 103061,
+   "title": "検証：部品を替えた艇を、私は展示の時計で許していた ｜ データ攻め",
+   "scripts": [
+    "../../assets/guard.js"
+   ],
+   "inlineScriptBytes": 805
   },
   {
    "path": "/assets/kata/kenshoTilt.css?v=a5460618",
@@ -16675,9 +16861,9 @@
    "path": "/racers/racers_today.csv",
    "status": 200,
    "kind": "csv",
-   "bytes": 185667,
-   "rows": 722,
-   "head": "場名,場コード,開催日,レース,枠,登録番号,級別,氏名,F数,L数,平均ST,全国勝率,全国2連率,全国3連率,当地勝率,当地2連率,当地3連率,モーターNo,モーター2連率,モーター3連率,ボートNo,ボート2連率,ボート3連率,1日目成績,2日目成績,3日目成績,4日目成績,5日目成績,6日目成績,支部,出身,年齢,締切時刻,節名,企画名,日目\n桐生,01,20261029,1R,1,5108,B2,柴田　　愛梨,0,0,0.25,2.75,7.50,17.50,2.23,5.71,14.29,21,37.78,54.67,73,36.76,52.94,6R/3/.35/5,1R/1/."
+   "bytes": 226587,
+   "rows": 866,
+   "head": "場名,場コード,開催日,レース,枠,登録番号,級別,氏名,F数,L数,平均ST,全国勝率,全国2連率,全国3連率,当地勝率,当地2連率,当地3連率,モーターNo,モーター2連率,モーター3連率,ボートNo,ボート2連率,ボート3連率,1日目成績,2日目成績,3日目成績,4日目成績,5日目成績,6日目成績,支部,出身,年齢,締切時刻,節名,企画名,日目\n桐生,01,20261030,1R,1,5306,B1,河内　悠利杏,1,0,0.19,2.38,5.88,8.82,2.50,3.23,11.29,26,30.84,49.07,44,37.09,56.34,1R/1/.24/4 7R/4/.1"
   },
   {
    "path": "/data/racerStatsCore.json",
@@ -17417,12 +17603,12 @@
    "path": "/choukan/",
    "status": 200,
    "kind": "html",
-   "bytes": 8184,
+   "bytes": 9539,
    "title": "場の朝刊｜データ攻め",
    "scripts": [
     "../assets/guard.js"
    ],
-   "inlineScriptBytes": 3088
+   "inlineScriptBytes": 3116
   },
   {
    "path": "/choukan/.json?_=",
@@ -17543,7 +17729,7 @@
    "path": "/data/venueMeta.json",
    "status": 200,
    "kind": "json",
-   "bytes": 2116,
+   "bytes": 2482,
    "shape": {
     "object": 2,
     "keys": [
@@ -17551,9 +17737,9 @@
      "venues"
     ],
     "fields": {
-     "updated": "string(2026-10-29 05:16)",
+     "updated": "string(2026-10-30 05:37)",
      "venues": {
-      "object": 10,
+      "object": 12,
       "keys": [
        "13",
        "14",
@@ -17561,8 +17747,10 @@
        "16",
        "18",
        "23",
+       "24",
        "01",
        "03",
+       "06",
        "07",
        "08"
       ],
@@ -17578,10 +17766,10 @@
         ],
         "fields": {
          "場名": "string(尼崎)",
-         "開催日": "string(20261029)",
+         "開催日": "string(20261030)",
          "節名": "string(第７３回ボートレースダービー)",
          "企画名": "string(予選)",
-         "日目": "string(３日目)"
+         "日目": "string(４日目)"
         }
        },
        "14": {
@@ -17595,10 +17783,10 @@
         ],
         "fields": {
          "場名": "string(鳴門)",
-         "開催日": "string(20261029)",
+         "開催日": "string(20261030)",
          "節名": "string(ＢＴＳオラレ美馬開設１７周年記念競走)",
          "企画名": "string(とるならなると)",
-         "日目": "string(初日)"
+         "日目": "string(２日目)"
         }
        },
        "15": {
@@ -17612,10 +17800,10 @@
         ],
         "fields": {
          "場名": "string(丸亀)",
-         "開催日": "string(20261029)",
+         "開催日": "string(20261030)",
          "節名": "string(丸亀市・北海道京極町親子都市締結１０周年記念)",
-         "企画名": "string(予選)",
-         "日目": "string(４日目)"
+         "企画名": "string(一般)",
+         "日目": "string(５日目)"
         }
        },
        "16": {
@@ -17629,10 +17817,10 @@
         ],
         "fields": {
          "場名": "string(児島)",
-         "開催日": "string(20261029)",
+         "開催日": "string(20261030)",
          "節名": "string(第８回児島商工会議所会頭賞)",
-         "企画名": "string(予選)",
-         "日目": "string(３日目)"
+         "企画名": "string(一般)",
+         "日目": "string(４日目)"
         }
        },
        "18": {
@@ -17646,10 +17834,10 @@
         ],
         "fields": {
          "場名": "string(徳山)",
-         "開催日": "string(20261029)",
+         "開催日": "string(20261030)",
          "節名": "string(マスターズリーグ第７戦)",
          "企画名": "string(朝トク予選)",
-         "日目": "string(初日)"
+         "日目": "string(２日目)"
         }
        },
        "23": {
@@ -17663,10 +17851,27 @@
         ],
         "fields": {
          "場名": "string(唐津)",
-         "開催日": "string(20261029)",
+         "開催日": "string(20261030)",
          "節名": "string(トータリゼータエンジニアリング杯)",
          "企画名": "string(朝１戦)",
-         "日目": "string(３日目)"
+         "日目": "string(４日目)"
+        }
+       },
+       "24": {
+        "object": 5,
+        "keys": [
+         "場名",
+         "開催日",
+         "節名",
+         "企画名",
+         "日目"
+        ],
+        "fields": {
+         "場名": "string(大村)",
+         "開催日": "string(20261030)",
+         "節名": "string(サンケイスポーツ杯)",
+         "企画名": "string(予選)",
+         "日目": "string(初日)"
         }
        },
        "01": {
@@ -17680,10 +17885,10 @@
         ],
         "fields": {
          "場名": "string(桐生)",
-         "開催日": "string(20261029)",
+         "開催日": "string(20261030)",
          "節名": "string(第１９回マクール杯 ヴィーナスシリーズ第１６戦)",
          "企画名": "string(一般)",
-         "日目": "string(５日目)"
+         "日目": "string(最終日)"
         }
        },
        "03": {
@@ -17697,10 +17902,27 @@
         ],
         "fields": {
          "場名": "string(江戸川)",
-         "開催日": "string(20261029)",
+         "開催日": "string(20261030)",
          "節名": "string(第５０回報知新聞社杯)",
          "企画名": "string(予選)",
-         "日目": "string(３日目)"
+         "日目": "string(４日目)"
+        }
+       },
+       "06": {
+        "object": 5,
+        "keys": [
+         "場名",
+         "開催日",
+         "節名",
+         "企画名",
+         "日目"
+        ],
+        "fields": {
+         "場名": "string(浜名湖)",
+         "開催日": "string(20261030)",
+         "節名": "string(中京スポーツもみじ杯)",
+         "企画名": "string(予選)",
+         "日目": "string(初日)"
         }
        },
        "07": {
@@ -17714,10 +17936,10 @@
         ],
         "fields": {
          "場名": "string(蒲郡)",
-         "開催日": "string(20261029)",
+         "開催日": "string(20261030)",
          "節名": "string(日刊スポーツ杯争奪 第５６回蒲郡大賞典)",
          "企画名": "string(予選)",
-         "日目": "string(３日目)"
+         "日目": "string(４日目)"
         }
        },
        "08": {
@@ -17731,23 +17953,23 @@
         ],
         "fields": {
          "場名": "string(常滑)",
-         "開催日": "string(20261029)",
+         "開催日": "string(20261030)",
          "節名": "string(スポーツ報知杯争奪第１７回ビクトリーカップ)",
          "企画名": "string(朝トコ小判Ｒ)",
-         "日目": "string(５日目)"
+         "日目": "string(最終日)"
         }
        }
       }
      }
     }
    },
-   "head": "{\n  \"updated\": \"2026-10-29 05:16\",\n  \"venues\": {\n    \"01\": {\n      \"場名\": \"桐生\",\n      \"開催日\": \"20261029\",\n      \"節名\": \"第１９回マクール杯 ヴィーナスシリーズ第１６戦\",\n      \"企画名\": \"一般\",\n      \"日目\": \"５日目\"\n    },\n    \"03\": {\n      \"場名\": \"江戸川\",\n      \"開催日\": \"20261029\",\n      \"節名\": \"第５０回報知新聞社杯\",\n      \"企画名\": \"予選\",\n      \"日目\": "
+   "head": "{\n  \"updated\": \"2026-10-30 05:37\",\n  \"venues\": {\n    \"01\": {\n      \"場名\": \"桐生\",\n      \"開催日\": \"20261030\",\n      \"節名\": \"第１９回マクール杯 ヴィーナスシリーズ第１６戦\",\n      \"企画名\": \"一般\",\n      \"日目\": \"最終日\"\n    },\n    \"03\": {\n      \"場名\": \"江戸川\",\n      \"開催日\": \"20261030\",\n      \"節名\": \"第５０回報知新聞社杯\",\n      \"企画名\": \"予選\",\n      \"日目\": "
   },
   {
    "path": "/data/motorKarte.json",
    "status": 200,
    "kind": "json",
-   "bytes": 5286937,
+   "bytes": 5327338,
    "shape": {
     "object": 3,
     "keys": [
@@ -17756,7 +17978,7 @@
      "records"
     ],
     "fields": {
-     "updated": "string(2026-10-28 20:39)",
+     "updated": "string(2026-10-29 20:46)",
      "出典": "string(boatrace.jp公式 直前情報)",
      "records": {
       "object": 1523,
@@ -17794,35 +18016,35 @@
       ],
       "fields": {
        "01_17": {
-        "array": 82,
+        "array": 83,
         "item": {
          "array": 9,
          "item": "string(20260715)"
         }
        },
        "01_56": {
-        "array": 66,
+        "array": 68,
         "item": {
          "array": 9,
          "item": "string(20260715)"
         }
        },
        "01_32": {
-        "array": 75,
+        "array": 76,
         "item": {
          "array": 9,
          "item": "string(20260715)"
         }
        },
        "01_14": {
-        "array": 66,
+        "array": 68,
         "item": {
          "array": 9,
          "item": "string(20260715)"
         }
        },
        "01_69": {
-        "array": 78,
+        "array": 79,
         "item": {
          "array": 9,
          "item": "string(20260715)"
@@ -17836,14 +18058,14 @@
         }
        },
        "01_53": {
-        "array": 87,
+        "array": 88,
         "item": {
          "array": 9,
          "item": "string(20260715)"
         }
        },
        "01_26": {
-        "array": 70,
+        "array": 72,
         "item": {
          "array": 9,
          "item": "string(20260715)"
@@ -17857,21 +18079,21 @@
         }
        },
        "01_59": {
-        "array": 67,
+        "array": 68,
         "item": {
          "array": 9,
          "item": "string(20260715)"
         }
        },
        "01_48": {
-        "array": 76,
+        "array": 77,
         "item": {
          "array": 9,
          "item": "string(20260715)"
         }
        },
        "01_65": {
-        "array": 69,
+        "array": 70,
         "item": {
          "array": 9,
          "item": "string(20260715)"
@@ -17881,7 +18103,7 @@
      }
     }
    },
-   "head": "{\"updated\":\"2026-10-28 20:39\",\"出典\":\"boatrace.jp公式 直前情報\",\"records\":{\"01_17\":[[\"20260715\",1,\"1\",\"鳥居塚 嶺王\",\"\",\"\",\"\",\"6.91\",6],[\"20260715\",6,\"5\",\"鳥居塚 嶺王\",\"\",\"\",\"\",\"6.71\",1],[\"20260716\",1,\"2\",\"鳥居塚 嶺王\",\"\",\"\",\"\",\"6.61\",2],[\"20260716\",8,\"3\",\"鳥居塚 嶺王\",\"\",\"\",\"\",\"6.85\",4],[\"20260717\",7,\"4\",\"鳥居塚 嶺王\",\"\",\"\",\"\",\"6.9"
+   "head": "{\"updated\":\"2026-10-29 20:46\",\"出典\":\"boatrace.jp公式 直前情報\",\"records\":{\"01_17\":[[\"20260715\",1,\"1\",\"鳥居塚 嶺王\",\"\",\"\",\"\",\"6.91\",6],[\"20260715\",6,\"5\",\"鳥居塚 嶺王\",\"\",\"\",\"\",\"6.71\",1],[\"20260716\",1,\"2\",\"鳥居塚 嶺王\",\"\",\"\",\"\",\"6.61\",2],[\"20260716\",8,\"3\",\"鳥居塚 嶺王\",\"\",\"\",\"\",\"6.85\",4],[\"20260717\",7,\"4\",\"鳥居塚 嶺王\",\"\",\"\",\"\",\"6.9"
   },
   {
    "path": "/players/profileLite.json",
@@ -18045,7 +18267,7 @@
    "path": "/data/playerMonthly.json",
    "status": 200,
    "kind": "json",
-   "bytes": 1760970,
+   "bytes": 1761563,
    "shape": {
     "object": 5,
     "keys": [
@@ -18056,7 +18278,7 @@
      "選手"
     ],
     "fields": {
-     "生成時刻": "string(2026-10-28T19:47:24)",
+     "生成時刻": "string(2026-10-29T19:48:35)",
      "対象月": {
       "array": 16,
       "item": "string(2025-07)"
@@ -18462,7 +18684,7 @@
      }
     }
    },
-   "head": "{\"生成時刻\":\"2026-10-28T19:47:24\",\"対象月\":[\"2025-07\",\"2025-08\",\"2025-09\",\"2025-10\",\"2025-11\",\"2025-12\",\"2026-01\",\"2026-02\",\"2026-03\",\"2026-04\",\"2026-05\",\"2026-06\",\"2026-07\",\"2026-08\",\"2026-09\",\"2026-10\"],\"対象日数\":471,\"出典\":\"公式レース結果（BoatraceOpenAPI経由・results/配下）\",\"選手\":{\"3860\":{\"氏名\":\"松本 浩貴\",\"月別\":{\"2025-07\":{\"出"
+   "head": "{\"生成時刻\":\"2026-10-29T19:48:35\",\"対象月\":[\"2025-07\",\"2025-08\",\"2025-09\",\"2025-10\",\"2025-11\",\"2025-12\",\"2026-01\",\"2026-02\",\"2026-03\",\"2026-04\",\"2026-05\",\"2026-06\",\"2026-07\",\"2026-08\",\"2026-09\",\"2026-10\"],\"対象日数\":472,\"出典\":\"公式レース結果（BoatraceOpenAPI経由・results/配下）\",\"選手\":{\"3860\":{\"氏名\":\"松本 浩貴\",\"月別\":{\"2025-07\":{\"出"
   },
   {
    "path": "/data/startLate.json",
@@ -18906,7 +19128,7 @@
    "path": "/data/racerStartOrder.json",
    "status": 200,
    "kind": "json",
-   "bytes": 556329,
+   "bytes": 556347,
    "shape": {
     "object": 10,
     "keys": [
@@ -18923,7 +19145,7 @@
     ],
     "fields": {
      "出典": "string(results/*.json)",
-     "生成": "string(2026-10-29T04:47:30+09:00)",
+     "生成": "string(2026-10-30T04:48:38+09:00)",
      "集計方法": "string(そのレースの有効艇のSTを昇順に並べた順位。同値は平均順位。フライングと欠場はそ)",
      "指標": {
       "array": 4,
@@ -18997,7 +19219,7 @@
         ],
         "fields": {
          "from": "string(20250715)",
-         "to": "string(20261029)",
+         "to": "string(20261030)",
          "採用レース数": "number",
          "除外走_欠場等": "number",
          "除外走_F": "number",
@@ -19015,8 +19237,8 @@
          "除外レース_艇数不足"
         ],
         "fields": {
-         "from": "string(20260503)",
-         "to": "string(20261029)",
+         "from": "string(20260504)",
+         "to": "string(20261030)",
          "採用レース数": "number",
          "除外走_欠場等": "number",
          "除外走_F": "number",
@@ -19341,7 +19563,7 @@
      "count": "number"
     }
    },
-   "head": "{\"出典\":\"results/*.json\",\"生成\":\"2026-10-29T04:47:30+09:00\",\"集計方法\":\"そのレースの有効艇のSTを昇順に並べた順位。同値は平均順位。フライングと欠場はその1走だけを除き、同じレースの他艇は残す。\",\"指標\":[\"N\",\"平均ST\",\"平均ST順\",\"ST1番手率\"],\"母数ガード\":20,\"言語化閾値\":0.3,\"基準\":{\"all\":{\"course\":{\"1\":[71017,0.152,3.08,24.5],\"2\":[71250,0.162,3.56,10.0],\"3\":[71200,0.157,3.28,12.9],\"4\":[712"
+   "head": "{\"出典\":\"results/*.json\",\"生成\":\"2026-10-30T04:48:38+09:00\",\"集計方法\":\"そのレースの有効艇のSTを昇順に並べた順位。同値は平均順位。フライングと欠場はその1走だけを除き、同じレースの他艇は残す。\",\"指標\":[\"N\",\"平均ST\",\"平均ST順\",\"ST1番手率\"],\"母数ガード\":20,\"言語化閾値\":0.3,\"基準\":{\"all\":{\"course\":{\"1\":[71135,0.152,3.08,24.5],\"2\":[71370,0.162,3.56,10.0],\"3\":[71320,0.157,3.28,12.9],\"4\":[713"
   },
   {
    "path": "/data/racerCourseStats.json",
@@ -19938,7 +20160,7 @@
    "path": "/data/racerSchedule.json",
    "status": 200,
    "kind": "json",
-   "bytes": 368669,
+   "bytes": 376687,
    "shape": {
     "object": 9,
     "keys": [
@@ -19955,8 +20177,8 @@
     "fields": {
      "schema": "string(racerSchedule-2)",
      "出典": "string(https://www.boatrace.jp/owpc/pc/data/rac)",
-     "取得時刻": "string(2026-10-29 03:54 JST)",
-     "生成時刻": "string(2026-10-29 03:54 JST)",
+     "取得時刻": "string(2026-10-30 03:10 JST)",
+     "生成時刻": "string(2026-10-30 03:10 JST)",
      "掲載上限": "number",
      "件数": {
       "object": 5,
@@ -20210,13 +20432,13 @@
      }
     }
    },
-   "head": "{\n  \"schema\": \"racerSchedule-2\",\n  \"出典\": \"https://www.boatrace.jp/owpc/pc/data/racersearch/profile?toban=<登番>\",\n  \"取得時刻\": \"2026-10-29 03:54 JST\",\n  \"生成時刻\": \"2026-10-29 03:54 JST\",\n  \"掲載上限\": 2,\n  \"件数\": {\"収録\":1632,\"予定あり\":1571,\"予定なし\":61,\"取得不可\":11,\"落とした節\":0},\n  \"注記\": \"公式サイトの選手ページに載っている出場予定のうち、開催が終わっていない"
+   "head": "{\n  \"schema\": \"racerSchedule-2\",\n  \"出典\": \"https://www.boatrace.jp/owpc/pc/data/racersearch/profile?toban=<登番>\",\n  \"取得時刻\": \"2026-10-30 03:10 JST\",\n  \"生成時刻\": \"2026-10-30 03:10 JST\",\n  \"掲載上限\": 2,\n  \"件数\": {\"収録\":1632,\"予定あり\":1576,\"予定なし\":56,\"取得不可\":11,\"落とした節\":0},\n  \"注記\": \"公式サイトの選手ページに載っている出場予定のうち、開催が終わっていない"
   },
   {
    "path": "/data/wakuST.json",
    "status": 200,
    "kind": "json",
-   "bytes": 643103,
+   "bytes": 642984,
    "shape": {
     "object": 3,
     "keys": [
@@ -20234,13 +20456,13 @@
        "generated"
       ],
       "fields": {
-       "from": "string(20241028)",
-       "to": "string(20261027)",
+       "from": "string(20241029)",
+       "to": "string(20261028)",
        "periods": {
         "array": 5,
         "item": "string(2m)"
        },
-       "generated": "string(2026-10-28 07:34 JST)"
+       "generated": "string(2026-10-29 07:50 JST)"
       }
      },
      "base": {
@@ -20982,7 +21204,7 @@
      }
     }
    },
-   "head": "{\"meta\":{\"from\":\"20241028\",\"to\":\"20261027\",\"periods\":[\"2m\",\"3m\",\"6m\",\"1y\",\"2y\"],\"generated\":\"2026-10-28 07:34 JST\"},\"base\":[{\"1\":[9325,1384350,54],\"2\":[9350,1483540,24],\"3\":[9350,1429140,29],\"4\":[9356,1461190,28],\"5\":[9345,1506190,31],\"6\":[9348,1634720,30]},{\"1\":[14188,2109420,88],\"2\":[14233,2260780"
+   "head": "{\"meta\":{\"from\":\"20241029\",\"to\":\"20261028\",\"periods\":[\"2m\",\"3m\",\"6m\",\"1y\",\"2y\"],\"generated\":\"2026-10-29 07:50 JST\"},\"base\":[{\"1\":[9305,1384540,54],\"2\":[9329,1482990,24],\"3\":[9332,1427740,27],\"4\":[9337,1458460,27],\"5\":[9325,1504870,31],\"6\":[9328,1632640,30]},{\"1\":[14171,2108160,87],\"2\":[14214,2259980"
   },
   {
    "path": "/data/prizeRank.json",
@@ -22268,6 +22490,80 @@
     "../assets/ugoki.js?v=e40e8a0a"
    ],
    "inlineScriptBytes": 4359
+  },
+  {
+   "path": "/kensho/buhin/buhinImg/buhinSeibi.webp",
+   "status": 200,
+   "kind": "image/webp",
+   "bytes": 61518
+  },
+  {
+   "path": "/glossary/?q=%E9%83%A8%E5%93%81%E4%BA%A4%E6%8F%9B",
+   "status": 200,
+   "kind": "html",
+   "bytes": 12722,
+   "title": "競艇用語辞典 | データ攻め",
+   "scripts": [
+    "../assets/guard.js",
+    "https://static.cloudflareinsights.com/beacon.min.js",
+    "../assets/kata/kata.js?v=ecd47e51",
+    "../assets/ugoki.js?v=e40e8a0a"
+   ],
+   "inlineScriptBytes": 4359
+  },
+  {
+   "path": "/glossary/?q=%E3%83%A2%E3%83%BC%E3%82%BF%E3%83%BC2%E9%80%A3%E7%8E%87",
+   "status": 200,
+   "kind": "html",
+   "bytes": 12722,
+   "title": "競艇用語辞典 | データ攻め",
+   "scripts": [
+    "../assets/guard.js",
+    "https://static.cloudflareinsights.com/beacon.min.js",
+    "../assets/kata/kata.js?v=ecd47e51",
+    "../assets/ugoki.js?v=e40e8a0a"
+   ],
+   "inlineScriptBytes": 4359
+  },
+  {
+   "path": "/glossary/?q=%E3%83%94%E3%82%B9%E3%83%88%E3%83%B3%E3%83%AA%E3%83%B3%E3%82%B0",
+   "status": 200,
+   "kind": "html",
+   "bytes": 12722,
+   "title": "競艇用語辞典 | データ攻め",
+   "scripts": [
+    "../assets/guard.js",
+    "https://static.cloudflareinsights.com/beacon.min.js",
+    "../assets/kata/kata.js?v=ecd47e51",
+    "../assets/ugoki.js?v=e40e8a0a"
+   ],
+   "inlineScriptBytes": 4359
+  },
+  {
+   "path": "/kensho/buhin/buhinImg/buhinMotor.webp",
+   "status": 200,
+   "kind": "image/webp",
+   "bytes": 86739
+  },
+  {
+   "path": "/glossary/?q=%E3%82%AE%E3%83%A4%E3%82%B1%E3%83%BC%E3%82%B9",
+   "status": 200,
+   "kind": "html",
+   "bytes": 12722,
+   "title": "競艇用語辞典 | データ攻め",
+   "scripts": [
+    "../assets/guard.js",
+    "https://static.cloudflareinsights.com/beacon.min.js",
+    "../assets/kata/kata.js?v=ecd47e51",
+    "../assets/ugoki.js?v=e40e8a0a"
+   ],
+   "inlineScriptBytes": 4359
+  },
+  {
+   "path": "/kensho/buhin/buhinImg/buhinCarb.webp",
+   "status": 200,
+   "kind": "image/webp",
+   "bytes": 49155
   },
   {
    "path": "/data/docs/data/racerStats.json",
