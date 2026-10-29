@@ -1,7 +1,9 @@
 name: funadata
 on:
   schedule:
-    - cron: "40 19 * * *"
+    # データ攻めは毎朝5時すぎに今日の見どころ・荒れスコアを作るので、そのあと（5:45）に読む。8:15 は読み直し（間に合わなかった日のため）
+    - cron: "45 20 * * *"
+    - cron: "15 23 * * *"
   workflow_dispatch:
     inputs:
       export:
