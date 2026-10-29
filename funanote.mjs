@@ -144,6 +144,72 @@ async function importCards(){
   return {ver, key, fetched: n, have, of: Object.keys(ix).length, code};
 }
 
+// 今日の見どころ（/highlights/highlights.json・毎朝5時ごろ作られる）と荒れスコア（/data/arare.json）を、
+// アプリで読みやすい小さな形にする。日付が今日でなければ（サイトの更新前なら）、その日付のまま書いておき、アプリは使わない
+const num2 = v => (v === null || v === undefined || v === "" || isNaN(+v)) ? null : +v;
+export function compactToday(H, A){
+  const out = {built: new Date().toISOString(), d: null, gen: H && H.生成時刻 || "", arareGen: A && A.generated || "", races: {}};
+  const hd = H && String(H.開催日 || "");
+  if (/^\d{8}$/.test(hd)) out.d = `${hd.slice(0, 4)}-${hd.slice(4, 6)}-${hd.slice(6, 8)}`;
+  // 分類は「波乱」「堅め」だけが書かれていて、どちらでもないレースは書かれていない（サイトの検証では「混戦」）
+  // 前の晩の下書き（分類がまだ1つもない）のときは、混戦にしない
+  const hasC = H && Array.isArray(H.レース) && H.レース.some(r => r.分類);
+  for (const r of (H && Array.isArray(H.レース) ? H.レース : [])){
+    const s = parseInt(r.場コード, 10), no = parseInt(String(r.レース), 10);
+    if (!s || !no) continue;
+    const cl = r.collapse && r.collapse.top ? {b: r.collapse.top.boat, k: r.collapse.top.kimarite, p: r.collapse.top.pct, n: r.collapse.n || null, io: r.collapse.inOutRate ?? null} : null;
+    const B = {};
+    for (const b of Array.isArray(r.艇) ? r.艇 : []){
+      const run = Array.isArray(b.今節の走り) ? b.今節の走り.map(x => [num2(x.着), num2(x.コース)]) : [];
+      B[b.枠] = {m: num2(b.機力), me: b.機力評価 || "", sst: !!b.鋭ST, lv: !!b.当地優位, iw: num2(b.inWinRate), in: num2(b.inN),
+        sa: num2(b.さされ率), mk: num2(b.まくられ率), ms: num2(b.まくりさされ率),
+        ex: b.今節展示 ? num2(b.今節展示.偏差) : null, exn: b.今節展示 ? num2(b.今節展示.本数) : null, run};
+    }
+    out.races[`${s}-${no}`] = {c: r.分類 || (hasC ? "混戦" : ""), h: num2(r.波乱), hx: num2(r.波乱指数), ik: !!r.イン堅, i1: num2(r.イン1着率),
+      mi: r.見立て || "", te: Array.isArray(r.展開) ? r.展開 : [], dn: r.downFactors && Array.isArray(r.downFactors.items) ? r.downFactors.items : [],
+      ha: r.波及 || "", cl, B};
+  }
+  // 荒れスコア（0〜6点。理由つき）。日付が見どころと同じものだけ足す
+  for (const x of Object.values((A && A.races) || {})){
+    const k = `${parseInt(x.jcd, 10)}-${x.rno}`;
+    const d = /^\d{8}$/.test(String(x.hd)) ? `${x.hd.slice(0, 4)}-${x.hd.slice(4, 6)}-${x.hd.slice(6, 8)}` : null;
+    if (!out.d) out.d = d;
+    if (d !== out.d) continue;
+    (out.races[k] || (out.races[k] = {})).ar = [x.score, x.level || "", Array.isArray(x.factors) ? x.factors : []];
+  }
+  return out;
+}
+async function buildToday(){
+  const todayYmd = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10).replace(/-/g, "");
+  const parse = r => { try { return r && r.status === 200 ? JSON.parse(r.body) : null; } catch (e){ return null; } };
+  // さっき読んだものが今日の分ならそのまま。今日の分でなければ（サイトの朝の更新前に読んでいたら）読み直す
+  const read = async (p, isToday) => {
+    let j = parse(await get(p));
+    if (!j || !isToday(j)) j = parse(await get(p, 0)) || j;
+    return j;
+  };
+  const H = await read("/highlights/highlights.json", j => String(j.開催日) === todayYmd);
+  const A = await read("/data/arare.json", j => Object.values(j.races || {}).some(x => String(x.hd) === todayYmd));
+  if (A && Object.values(A.races || {}).some(x => String(x.hd) === todayYmd)){
+    fs.mkdirSync("funadata/arare", {recursive: true});
+    fs.writeFileSync(`funadata/arare/${todayYmd}.json`, JSON.stringify(A));
+  }
+  if (!H && !A){ console.warn("今日の見どころ・荒れスコアを読めませんでした"); return; }
+  const t = compactToday(H, A);
+  fs.writeFileSync("funadata/today.json", JSON.stringify(t));
+  // 分類を日ごとに残す（[分類, 波乱, 波乱指数, イン堅]）
+  if (t.d){
+    const keep = {};
+    for (const [k, x] of Object.entries(t.races)) if (x.c || x.hx != null) keep[k] = [x.c || "", x.h ?? null, x.hx ?? null, x.ik ? 1 : 0];
+    if (Object.keys(keep).length){
+      fs.mkdirSync("funadata/hantei", {recursive: true});
+      fs.writeFileSync(`funadata/hantei/${t.d.replace(/-/g, "")}.json`, JSON.stringify({d: t.d, gen: t.gen, races: keep}));
+    }
+  }
+  const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  console.log(`今日のデータ攻め：${t.d}（${t.d === today ? "今日" : "今日ではない"}）${Object.keys(t.races).length}レース・生成 ${t.gen}・荒れスコア ${t.arareGen}`);
+}
+
 // JSON の形の要約（どんな項目が何件あるか、先頭を少しだけ）
 function shape(v, depth = 0){
   if (Array.isArray(v)) return {array: v.length, item: v.length ? shape(v[0], depth + 1) : null};
@@ -257,7 +323,10 @@ export async function main(){
       }
     }
   } catch (err){ console.warn("前付けのデータを作れませんでした:", err.message); }
-  fs.writeFileSync("funadata/README.md", `# データ攻めのデータ\n\nhttps://funanote-k7q2xm.pages.dev/ （運営：あべけんさん）のデータを、運営の方の許可を得て置いています。\n各ファイルは gzip。最終取得：${new Date().toISOString()}\n\nmotor.json はモーターカルテから計算した「モーターの展示の速さ」（アプリの予想に使う・作り方は motorex.mjs）。\nmaezuke.json は決まり手データの「前づけ率」が5%以上の選手（アプリの「前付けしそう」の印に使う）。\n`);
+  // アプリ用：今日のデータ攻め（見どころの分類・見立て・展開と、荒れスコア）→ funadata/today.json
+  // あとで「当たっていたか」を確かめるため、分類だけ funadata/hantei/YYYYMMDD.json に日ごとに残す
+  try { await buildToday(); } catch (err){ console.warn("今日のデータ攻めを作れませんでした:", err.message); }
+  fs.writeFileSync("funadata/README.md", `# データ攻めのデータ\n\nhttps://funanote-k7q2xm.pages.dev/ （運営：あべけんさん）のデータを、運営の方の許可を得て置いています。\n各ファイルは gzip。最終取得：${new Date().toISOString()}\n\nmotor.json はモーターカルテから計算した「モーターの展示の速さ」（アプリの予想に使う・作り方は motorex.mjs）。\nmaezuke.json は決まり手データの「前づけ率」が5%以上の選手（アプリの「前付けしそう」の印に使う）。\ntoday.json は今日の見どころ（分類・見立て・展開・①の不安材料）と荒れスコア（アプリの「データ攻め」欄に出す）。\nhantei/ は日ごとの分類（波乱・堅め・混戦）、arare/ は日ごとの荒れスコア（アプリの検証タブで当たり具合を確かめる）。\n`);
   try { execSync("git add funadata", {stdio: "ignore"}); } catch (err){}
   console.log(`書き出し ${ex.length}ファイル（${EXPORT}）`);
   console.log(`読んだ ${fetched}件（全 ${manifest.length}件・まだ ${out.notYet}件）`, JSON.stringify(out.byKind));

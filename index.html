@@ -231,6 +231,37 @@ td .ogb{color:var(--og);font-weight:700}
 .vd-view .vd-t{grid-column:2;font-size:13px;line-height:1.7;color:var(--ink);min-width:0}
 .vd-view .vd-t .chipb{width:18px;height:18px;font-size:12px;border-radius:4px;vertical-align:-3px;margin:0 2px 0 1px}
 td.mkc{text-align:center}
+.verdict > .vd-ai{align-items:start;padding-bottom:6px;border-bottom:1px dashed var(--line)}
+.vd-ai .vd-k{padding-top:4px;color:var(--og)}
+.vd-ai .vd-t{grid-column:2;font-size:13px;line-height:1.7;color:var(--ink);min-width:0}
+.vd-ai .vd-t .chipb{width:18px;height:18px;font-size:12px;border-radius:4px;vertical-align:-3px;margin:0 2px 0 1px}
+.verdict > .vd-warn{align-items:start;padding-bottom:6px;border-bottom:1px dashed var(--line)}
+.vd-warn .vd-k{color:var(--ana);padding-top:2px}
+.vd-warn .vd-t{grid-column:2;display:grid;gap:3px;font-size:12.5px;line-height:1.6;color:var(--ink);min-width:0}
+.vd-warn .wi{display:block;padding-left:.9em;text-indent:-.9em}
+.vd-warn .wi::before{content:"・"}
+.vd-warn .chipb,.vd-sel .chipb,.vd-funa .chipb{width:18px;height:18px;font-size:12px;border-radius:4px;vertical-align:-3px;margin:0 1px;text-indent:0}
+.vd-sel .vd-k,.vd-funa .vd-k{white-space:normal;line-height:1.25}
+.vd-sel .vd-v{font-weight:600;font-size:12.5px;gap:4px 12px}
+.vd-sel .sli{display:inline-flex;align-items:center;gap:3px;flex-wrap:wrap;min-width:0}
+.sl{font-style:normal;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;font-size:11px;font-weight:700;background:var(--track);color:var(--muted)}
+.sl.ok{background:var(--val);color:var(--val-ink)}
+.fc{font-size:13px;padding:1px 8px;border-radius:6px;background:var(--track)}
+.fc.ar{background:var(--ana-soft);color:var(--ana)}
+.fc.kt{background:var(--solid);color:var(--solid-ink)}
+.fc.kz{background:var(--bar3);color:var(--ink)}
+ul.fl{margin:0;padding-left:1.2em;display:grid;gap:3px;font-size:13px;line-height:1.6}
+p.ft{margin:0;font-size:13px;line-height:1.7}
+.ftbl td small{display:block;font-size:10.5px;color:var(--muted);font-weight:500;white-space:nowrap}
+.ftbl td small.mx.up{color:var(--val);font-weight:700}
+.ftbl td.runs{min-width:120px}
+.ftbl td.runs .ks{margin:1px}
+.ftbl td.runs .ks small{display:inline;font-size:10px}
+.aibtn{padding:4px 12px;border:1px solid var(--og);border-radius:999px;background:var(--og-soft);color:var(--og);font-size:12.5px;font-weight:700;line-height:1.6;margin:2px 6px 0 0}
+.aibtn:active{background:var(--og);color:var(--og-ink)}
+.aiwait{font-size:12.5px;color:var(--og);font-weight:700;animation:aiw 1.2s ease-in-out infinite}
+@keyframes aiw{50%{opacity:.35}}
+select.tin{font-family:inherit;font-size:15px}
 .vd-tri .vd-v{font-weight:600;font-size:12.5px;gap:5px 7px}
 .vd-tri .cb,.tlist .cb{display:inline-flex;align-items:center;gap:2px;white-space:nowrap;font-weight:500;border-radius:4px}
 .vd-tri .vd-v b,.tlist .cb b{display:inline-grid;place-items:center;min-width:16px;height:17px;padding:0 2px;border-radius:3px;font-family:var(--f-num);font-size:12.5px;box-shadow:inset 0 0 0 1px var(--hull-stroke)}
@@ -466,6 +497,20 @@ table.tk-t2 td.tot small{display:inline;font-size:12px}
       <label for="s-topic">通知の合言葉<small>ntfyのトピック名</small></label>
       <input type="text" id="s-topic" class="tin" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="例：srad-xxxxxxxxxx">
       <p>入れておくと、見張りの仕組みが締切前に見に行った単勝オッズがアプリにも届きます（通知は止めています）。ホーム画面のアプリとSafariでは別々に入れてください。</p>
+    </div>
+    <div class="hr"></div>
+    <h2>AIの見解（Claude API）</h2>
+    <div class="srow">
+      <label for="s-aikey">APIキー<small>Claude Console で発行</small></label>
+      <input type="password" id="s-aikey" class="tin" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-…">
+      <p>カードの「AIに見解を聞く」を押したときだけ、そのレースのデータを Claude に送って見解を書いてもらいます（オッズは送りません）。キーはこのスマホの中だけに保存し、GitHubには置きません。ホーム画面のアプリとSafariでは別々に入れてください。使いすぎ防止に、Claude Console で使用額の上限を決めておくと安心です。消すときは空にしてください。</p>
+    </div>
+    <div class="srow">
+      <label for="s-aimodel">AIのモデル</label>
+      <select id="s-aimodel" class="tin">
+        <option value="claude-haiku-5-5">Haiku 5.5（速い・1回 約0.1〜0.2円）</option>
+        <option value="claude-sonnet-5-5">Sonnet 5.5（文章がうまい・1回 約3〜4円）</option>
+      </select>
     </div>
     <div class="hr"></div>
     <h2>アラートと候補のしきい値</h2>
@@ -704,6 +749,12 @@ function loadSettings(){
   return {...DEFAULTS, w: {...DEFAULTS.w}};
 }
 function saveSettings(){ try { localStorage.setItem("slitradar.v3", JSON.stringify(settings)); } catch (e) {} }
+// AIの見解（Claude API）：キーとモデルはこのスマホの中だけ（localStorage）
+const AI_KEY = "slitradar.aikey", AI_MODEL = "slitradar.aimodel";
+const AI_MODELS = {"claude-haiku-5-5": {name: "Haiku 5.5", in: 0.10, out: 0.50}, "claude-sonnet-5-5": {name: "Sonnet 5.5", in: 2, out: 10}};
+function loadAI(k, d = ""){ try { return (localStorage.getItem(k) || d).trim(); } catch (e) { return d; } }
+function saveAI(k, v){ try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {} }
+const aiModel = () => { const m = loadAI(AI_MODEL, "claude-haiku-5-5"); return AI_MODELS[m] ? m : "claude-haiku-5-5"; };
 function loadTopic(){ try { return (localStorage.getItem("slitradar.topic") || "").trim(); } catch (e) { return ""; } }
 function saveTopic(v){ try { localStorage.setItem("slitradar.topic", v); } catch (e) {} }
 
@@ -771,7 +822,7 @@ function parseV1(j, date){
           title: R.title || "", subtitle: R.subtitle || "",
           cond: hasPreview ? {wind: num(pv.wind_speed), wd: num(pv.wind_direction_number), wave: num(pv.wave_height), weather: pv.weather_number, temp: num(pv.air_temperature), water: num(pv.water_temperature)} : null,
           boats, hasPreview,
-          result: order.length ? {order, payouts: normPayouts(rs.payouts)} : null,
+          result: order.length ? {order, payouts: normPayouts(rs.payouts), st: Object.fromEntries(Object.values(rsr).filter(x => x && num(x.entry_number) > 0).map(x => [num(x.entry_number), num(x.start_timing)]))} : null,
           odds, oddsLabel: odds ? "確定オッズ" : ""
         });
       } catch (e) {}
@@ -819,7 +870,7 @@ async function loadV2(date){
       key, stadium: p.race_stadium_number, no: p.race_number, date: p.race_date || date,
       closedAt: parseJST(p.race_closed_at), grade: GRADES[p.race_grade_number] || "",
       title: p.race_title || "", subtitle: p.race_subtitle || "",
-      cond: (v && hasPreview) ? {wind: num(v.race_wind), wave: num(v.race_wave), weather: v.race_weather_number, temp: num(v.race_temperature), water: num(v.race_water_temperature)} : null,
+      cond: (v && hasPreview) ? {wind: num(v.race_wind), wd: num(v.race_wind_direction_number), wave: num(v.race_wave), weather: v.race_weather_number, temp: num(v.race_temperature), water: num(v.race_water_temperature)} : null,
       boats, hasPreview, result, odds: null, oddsLabel: ""
     };
   });
@@ -1185,6 +1236,95 @@ function serExFor(r, stats, sameDay){
   }
   return out;
 }
+// ---- YouTube（あべけんさん）の考え方を過去のレースで確かめて、効いたものだけ（2/1〜10/25・約4万レース） ----
+// 今節の本番ST（同じ場の前のレース：6日以内と今日の前のレース）。2回以上あるときだけ
+function serStFor(r, stats, sameDay){
+  const out = new Map();
+  const gap = stats && stats.to && r.date ? dayGap(r.date, stats.to) : null;
+  for (const b of r.boats){
+    if (b.reg == null) continue;
+    const v = [];
+    const R = racerOf(stats, b.reg);
+    if (R && R.r && gap != null) for (const e of R.r) if (+e[1] === +r.stadium && e[0] + gap >= 1 && e[0] + gap <= 6 && e[5] != null && e[5] >= 0 && e[5] < 100) v.push(e[5] / 100);
+    for (const x of sameDay || []){
+      if (x.stadium !== r.stadium || x.date !== r.date || x.no >= r.no || !x.result || !x.result.st) continue;
+      const bx = x.boats.find(y => y.reg === b.reg);
+      const s = bx ? x.result.st[bx.no] : null;
+      if (s != null && s >= 0 && s < 1) v.push(s);
+    }
+    if (v.length >= 2) out.set(b.no, {n: v.length, avg: v.reduce((a, x) => a + x, 0) / v.length});
+  }
+  return out;
+}
+// 2〜6コースで勝ったうち、まくり差しの割合（半年・5勝以上のときだけ）
+function msShare(stats, reg){
+  const R = racerOf(stats, reg);
+  if (!R || !R.c) return null;
+  let w = 0, ms = 0;
+  for (let c = 2; c <= 6; c++){ const a = R.c[c - 1]; if (Array.isArray(a)){ w += a[1] || 0; ms += a[9] || 0; } }
+  return w >= 5 ? {w, ms, share: ms / w} : null;
+}
+// 場の1コース1着率（半年）
+function stadiumIn1(stats, s){
+  const sd = stats && stats.stadiums && stats.stadiums[s];
+  const a = sd && sd.c && Array.isArray(sd.c[0]) ? sd.c[0] : null;
+  return a && a[0] >= 100 ? a[1] / a[0] : null;
+}
+// レース選び（6本目の動画）：①1コースが強い場 ②風・波が出ていない ③1号艇が堅い（当地・本節・展示）
+// 2〜10/25：3つクリア（1日8レースくらい）で1号艇の1着76%（全体55%）。ただ配当も安く、回収率は単勝90→93%・2連単1流し76→75%・3連単1頭70→67%とほぼ同じ。
+// 1号艇の単勝だけは、同じ確定オッズでも③を満たすと10ポイントほど高い（1.3〜3.0倍で102%）。確定オッズでの話なので、締切前のオッズで確かめ中（検証タブ）
+const RSEL = {place: 0.575, placeLow: 0.52, wind: 5, wave: 5, local: 6.0, form: 3.0, exGap: 0.10};
+function boat1Solid(r){
+  const b = r.boats.find(x => x.no === 1);
+  if (!b) return null;
+  const why = [];
+  const okL = b.local != null && b.local >= RSEL.local;
+  why.push({k: "当地", ok: okL, t: b.local > 0 ? `当地勝率${b.local.toFixed(2)}` : "当地の成績なし"});
+  const fm = r.form && r.form.get(1);
+  const okF = !!fm && fm.avg <= RSEL.form;
+  why.push({k: "本節", ok: okF, t: fm ? `本節${fm.n}走 平均${fm.avg.toFixed(1)}着` : "本節まだ走っていない"});
+  let okX = null;
+  if (r.hasPreview){
+    const ts = r.boats.map(x => x.exTime).filter(t => t > 0);
+    if (b.exTime > 0 && ts.length >= 5){
+      const gap = b.exTime - Math.min(...ts), worst = b.exTime >= Math.max(...ts);
+      okX = gap < RSEL.exGap - 1e-9 && !worst;
+      why.push({k: "展示", ok: okX, t: worst ? "展示タイムが一番遅い" : gap >= RSEL.exGap - 1e-9 ? `展示タイムが一番速い艇より${gap.toFixed(2)}秒遅い` : "展示タイムの見劣りなし"});
+    } else why.push({k: "展示", ok: null, t: "展示タイムなし"});
+  } else why.push({k: "展示", ok: null, t: "展示待ち"});
+  const in1 = b.course == null || b.course === 1;
+  return {ok: okL && okF && okX === true && in1, wait: okX === null, okL, okF, okX, in1, why};
+}
+function raceSel(r, stats){
+  const pr = stadiumIn1(stats, r.stadium);
+  const c = r.cond;
+  const water = c ? {ok: !((c.wind || 0) >= RSEL.wind || (c.wave || 0) >= RSEL.wave), wind: c.wind, wave: c.wave} : null;
+  const b1 = boat1Solid(r);
+  return {place: pr == null ? null : {ok: pr >= RSEL.place, low: pr < RSEL.placeLow, rate: pr}, water, b1,
+    all: !!(pr != null && pr >= RSEL.place && water && water.ok && b1 && b1.ok)};
+}
+// データ攻めの荒れスコア（0〜6点）を、出走表から同じ数え方で出す（サイトの数字がない日・レース用）。
+// 数え方は10/25〜28の612レースで、サイトの点と97%一致：1号艇がB級 +1／1号艇のモーター2連率が6艇平均以下で、一番いいモーターが4〜6号艇 +1／
+// 1号艇の当地勝率が6艇で下から2番目以下 +1／4号艇の平均STが6艇で一番早い（同じも含む）+1／場の荒れ度 中 +1・高 +2（戸田・住之江・徳山・下関はまだわからないので出さない）
+const ARARE_V = {1: 1, 3: 2, 4: 2, 5: 1, 6: 1, 7: 0, 8: 1, 9: 1, 10: 1, 11: 2, 13: 0, 14: 2, 15: 0, 16: 1, 17: 1, 20: 2, 21: 0, 22: 2, 23: 1, 24: 0};
+function arareCalc(r){
+  const vp = ARARE_V[r.stadium];
+  if (vp == null) return null;
+  const B = [1, 2, 3, 4, 5, 6].map(e => r.boats.find(b => b.no === e));
+  if (B.some(b => !b)) return null;
+  const f = [];
+  if (B[0].cls === "B1" || B[0].cls === "B2") f.push(`1号艇が${B[0].cls}`);
+  const m = B.map(b => b.motor2 || 0), ma = m.reduce((a, v) => a + v, 0) / 6;
+  if (m[0] <= ma && Math.max(...m.slice(3)) > Math.max(...m.slice(0, 3))) f.push("1号艇の機力が平均以下で外に上位機");
+  const L = B.map(b => b.local || 0);
+  if (L.slice(1).filter(v => v < L[0]).length <= 1) f.push("1号艇の当地勝率が節内でも下位");
+  const st = B.map(b => b.avgST);
+  if (st.every(v => v != null) && st[3] <= Math.min(...st)) f.push("4号艇のスタートが6艇中最速");
+  if (vp) f.push(`${STADIUMS[r.stadium] || ""}は荒れ度${vp === 2 ? "高" : "中"}の水面`);
+  const score = f.length + (vp === 2 ? 1 : 0);
+  return {score, level: score >= 4 ? "高" : score >= 2 ? "中" : "低", factors: f, calc: true};
+}
+
 // 3連単の提案（オッズは見ない）：アプリの確率の高い順に、自信（オッズを見ない）で点数を決める
 // 2〜10/25の4万レース：かたい 上位3点 的中34%・回収率84%／ふつう 上位6点 40%・78%／荒れそう 上位10点 41%・76%（見送りが目安）。
 // どの点数でも100%は超えない。オッズと割れているかで3連単の成績はほぼ変わらなかった（かたい3点 84.6%と84.1%）。
@@ -1540,8 +1680,11 @@ function analyze(r, s){
   const serEx = serExFor(r, STATS, state.races);
   const cand = isCand(r, pr);
   const topSe = serEx.get(pr.top.b.no) || null;
+  // 今節の本番ST・レース選び（動画の考え方。予想の確率には入れず、見解・注意・レース選びの表示だけに使う）
+  const serSt = serStFor(r, STATS, state.races);
+  const rsel = raceSel(r, STATS);
   return {
-    serEx, topSe, candFast: cand && !!topSe && topSe.lv === "fast",
+    serEx, topSe, candFast: cand && !!topSe && topSe.lv === "fast", serSt, rsel,
     ...pr, alerts, value,
     isAlert: alerts.some(a => a.type !== "exf"),
     isSlit: alerts.some(a => a.type === "nobi"),
@@ -1625,8 +1768,8 @@ function tune(data, s, stats){
 /* ---------- 状態 ---------- */
 const settings = loadSettings();
 // アプリの版（アップロードしたものに切り替わったかを見分ける用。直すたびに変える）
-const APP_VER = "10/29⑤版";
-const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "value", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}, pick: new Map(), triCut: new Map()};
+const APP_VER = "10/29⑥版";
+const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "value", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}, pick: new Map(), triCut: new Map(), ai: new Map()};
 const bt = {status: "idle", days: 0, data: [], res: null, tuned: null, prevW: null, msg: "", stats: null, long: null, longTried: false, paper: null, paperTried: false};
 function updateStatsInfo(){
   const el = $("stats-info");
@@ -1809,6 +1952,11 @@ function viewSentences(r, an){
       let t = `${who(f)}（1コース）はスタートが凹み気味（展示ST${st2(f.b.exST)}・2〜3コースより${st2(ina.diff)}遅い）で、逃げは盤石ではありません`;
       const ti = trait(f, "inStrong");
       if (ti) t += `。ただインは強い選手（${esc(ti.d)}）`;
+      // 1本目の動画：1コースが2・3コースより.05以上遅いと、1-2-3の3連単は回収率70%（全レース81%）
+      if (ina.diff >= 0.05 - 1e-9){
+        const cc = [1, 2, 3].map(k => F.find(g => g.course === k));
+        if (cc.every(Boolean)) t += `。過去の同じ形では、コースの並びで1-2-3（今回は${cc.map(g => chip(g.b.no)).join("-")}）の3連単は回収率70%（全レースだと81%）なので、避けるのが目安`;
+      }
       pts.push([9, t + "。"]); said.add(f.b.no);
     }
   }
@@ -1847,8 +1995,8 @@ function viewSentences(r, an){
     if (L && S && L === S && key(L)) pts.push([5, `オリテンは一周も直線も${who(L)}が一番。`]);
     else if ((L && key(L)) || (S && key(S))) pts.push([4, `オリテンは${L ? `一周が${who(L)}` : ""}${L && S ? "、" : ""}${S ? `直線が${who(S)}` : ""}で一番。`]);
   }
-  // ⑩ 風・展示でフライング
-  if (r.cond && r.cond.wind >= 5) pts.push([5, `風が${r.cond.wind}mと強めで、展開が荒れやすいです。`]);
+  // ⑩ 風（強い追い風・強風）と、動画の考え方で確かめたもの（4コースのまくり差し・5コースの差し場・外の艇のスタートの揃い方）
+  abekenNotes(r, an).view.forEach(x => pts.push(x));
   // F持ち（期の途中でFをもらっている）：本番のスタートが遅くなりやすい（2026/1〜10：本番ST平均.17・出遅れ.20以上が3割強。F持ちでない艇は.155・2割強）。
   // 展示でのフライングは関係なかった（展示でFした艇の本番STは、展示で早く行ってFしなかった艇とほぼ同じ .158と.155）ので、展示Fには触れない
   const fh = F.filter(f => (f.b.F || 0) >= 1 && key(f) && !said.has(f.b.no));
@@ -1869,14 +2017,284 @@ function viewSentences(r, an){
   else if (J && J.li0 === 0) end += `自信は「かたい」（${an.set3.c.map(chip).join("")}で3着まで${pct(an.set3.p)}%）。`;
   return [...body, end];
 }
+// ---- AIの見解（ボタンを押したときだけ Claude API に聞く。オッズは送らない） ----
+const AI_SYSTEM = `あなたはボートレースの予想アプリ「スリットレーダー」の解説役です。渡されたレースのデータだけを使って、展示のあとの見立てを日本語で書いてください。
+・3〜5文、全体で250字くらい。です・ます調で、話しかけるように。
+・艇は「①山田」のように丸数字（①〜⑥）と苗字で書く。丸数字は枠番（艇番）。
+・書く順番：スタート展示と展示タイムの気配 → 選手の得意な勝ち方（データにあるとき）と今回それが出そうか → 展開の本線と、崩れるならどの艇のどんな形か → 買い方の目安（アプリのおすすめに沿う。自信が「荒れそう」なら見送りも手）。
+・データにないこと（選手の近況・コメント・ニュース・オッズ・対戦成績など）は書かない。数字はデータのとおりに使う。
+・断定しすぎず「〜しそう」「〜の可能性があります」くらいで。賭けることを強くすすめない。
+・見出し・箇条書き・絵文字は使わず、ふつうの文章で。
+参考（このアプリの検証でわかっていること）：
+・展示でフライングしても、本番のスタートはふだんと変わらない。F持ちの選手は本番のスタートが遅めになりやすい（本番ST平均.17・出遅れ3割強）。
+・スリットアラートは、一つ内側の艇より展示タイムが0.10秒以上速い艇。「強」は内側の全艇より速い。
+・ST攻めは、内側の艇より展示STが早い艇。ST凹みは両隣より遅い艇。
+・今節の展示（この節の展示タイムの平均順位）が速い艇は、オッズの見込みより少しよく勝つ。
+・3連単は、自信「かたい」なら確率の高い順に上位3点、「ふつう」は上位6点、「荒れそう」は見送りが目安。`;
+function aiPrompt(r, an){
+  const F = [...an.F].sort((a, b) => (a.course || a.b.no) - (b.course || b.b.no));
+  const st2 = v => v == null ? "-" : "." + String(Math.round(Math.abs(v) * 100)).padStart(2, "0");
+  const MARU = ["", "①", "②", "③", "④", "⑤", "⑥"];
+  const c = r.cond || {};
+  const J = jishinLevel(r, an);
+  const T = an.tenkai.T, tot = T.reduce((a, b) => a + b, 0) || 1;
+  const L = [];
+  L.push(`レース：${STADIUMS[r.stadium] || ""} ${r.no}R（${r.date}）${[r.grade, r.title, r.subtitle].filter(Boolean).join("・")}${r.day ? `・${r.lastDay ? "最終日" : r.day + "日目"}` : ""}`);
+  L.push(`水面：${c.wind != null ? `風${c.wind}m` : "風-"}${c.wave != null ? `・波${c.wave}cm` : ""}`);
+  L.push(`アプリの見立て：自信「${J ? JISHIN[J.li0][1] : "-"}」（${an.set3 ? an.set3.c.map(n => MARU[n]).join("") + "で3着まで" + pct(an.set3.p) + "%" : "-"}）。展開の確率 ${TECHS.slice(0, 4).map((n, i) => `${n}${pct(T[i] / tot)}%`).join("・")}。${an.tenkai.threat ? `崩すなら${MARU[an.tenkai.threat.f.b.no]}の${TECHS[an.tenkai.threat.i]}（${pct(an.tenkai.threat.p)}%）。` : ""}`);
+  L.push("各艇（展示の進入順）：");
+  F.forEach(f => {
+    const b = f.b, cs = f.cs || [], og = r.orig && r.orig[b.no];
+    const se = an.serEx && an.serEx.get(b.no);
+    const tr = (f.traits || []).map(t => `${t.t}（${t.d}）`).join("、");
+    const parts = [
+      `${f.course || "-"}コース ${MARU[b.no]}${b.name}（${b.cls}）`,
+      `全国勝率${b.win != null ? b.win.toFixed(2) : "-"}・当地${b.local > 0 ? b.local.toFixed(2) : "-"}・平均ST${b.avgST != null ? b.avgST.toFixed(2) : "-"}${b.F ? `・F${b.F}（F持ち）` : ""}${b.L ? `・L${b.L}` : ""}`,
+      `モーター2連率${b.motor2 != null ? b.motor2.toFixed(1) + "%" : "-"}${f.mx >= MEX_MARK ? "（いつも展示が速いモーター）" : f.mx <= -MEX_MARK ? "（いつも展示が遅いモーター）" : ""}`,
+      `展示タイム${b.exTime != null ? b.exTime.toFixed(2) + `（${f.exRank}位）` : "-"}・展示ST${b.exST != null ? (b.exF ? "F" : "") + st2(b.exST) : "-"}${b.tilt != null ? `・チルト${b.tilt > 0 ? "+" : ""}${b.tilt.toFixed(1)}` : ""}${b.parts && b.parts.length ? `・部品交換 ${b.parts.join("・")}` : ""}${b.prop ? `・プロペラ${b.prop}` : ""}`,
+      se ? `今節の展示 平均${se.avg.toFixed(1)}位（${se.n}走・${({fast: "速い", mid: "ふつう", slow: "遅い"})[se.lv]}）` : "",
+      og ? `オリテン 一周${og[0] > 0 ? og[0].toFixed(2) : "-"}・まわり足${og[1] > 0 ? og[1].toFixed(2) : "-"}・直線${og[2] > 0 ? og[2].toFixed(2) : "-"}` : "",
+      cs[0] ? `このコースの直近半年 ${cs[0]}走・1着${cs[1] || 0}・2着${cs[2] || 0}・3着${cs[3] || 0}（勝ち方 逃げ${cs[6] || 0}・差し${cs[7] || 0}・まくり${cs[8] || 0}・まくり差し${cs[9] || 0}）` : "",
+      tr ? `特徴：${tr}` : "",
+      `アプリの予想 1着${pct(f.p1)}%・3着以内${pct(f.p3)}%${f.mark ? `・印${f.mark}` : ""}`
+    ].filter(Boolean);
+    L.push("・" + parts.join(" ｜ "));
+  });
+  const facts = [];
+  const byNo = new Map(an.F.map(f => [f.b.no, f]));
+  an.alerts.forEach(a => {
+    if (a.type === "nobi") facts.push(`${MARU[a.boat]}は展示タイムが一つ内側の艇より${a.diff.toFixed(2)}秒速い（スリットアラート${a.level === 2 ? "強" : ""}）`);
+    else if (a.type === "attack") facts.push(`${MARU[a.boat]}は展示STが内側の艇より${st2(a.diff)}早い（ST攻め・${a.tactic}${a.fHolder ? "・F持ち" : ""}）`);
+    else if (a.type === "in") facts.push(`${MARU[a.boat]}（1コース）の展示STが2〜3コースより${st2(a.diff)}遅い（ST凹み）`);
+    else if (a.type === "dent") facts.push(`${MARU[a.boat]}は展示STが両隣より${st2(a.diff)}遅い（外の${MARU[a.next]}に展開が向きやすい）`);
+    else if (a.type === "exf") facts.push(`${MARU[a.boat]}は展示でフライング（本番への影響はほぼない）`);
+  });
+  an.F.filter(f => f.course && f.course < f.b.no).forEach(f => facts.push(`${MARU[f.b.no]}が前付けで${f.course}コース`));
+  L.push(`アプリが気づいた点：${facts.length ? facts.join("。") : "特になし"}`);
+  L.push(`3連単（アプリの確率の高い順）：${an.triAll.slice(0, 10).map(t => `${t.c.join("-")} ${pct(t.p, 1)}%`).join("、")}`);
+  const P = triPlan(r, an);
+  L.push(`アプリのおすすめ：3連単は上位${P.rec}点（自信「${JISHIN[P.li0][1]}」）。${an.isCand ? `◎${MARU[an.top.b.no]}の単勝が候補（◎の今節展示が${an.candFast ? "速い→買いの目安" : "速くない→見送りの目安"}）。` : ""}`);
+  return L.join("\n");
+}
+// 丸数字（①〜⑥）を艇の色チップに
+const aiText = t => esc(t).replace(/[①②③④⑤⑥]/g, m => chip("①②③④⑤⑥".indexOf(m) + 1)).replace(/\n+/g, "<br>");
+async function askAI(r, an){
+  const key = loadAI(AI_KEY), model = aiModel();
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 90000);
+  let res, j = null;
+  try {
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST", signal: ctl.signal,
+      headers: {"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json", "anthropic-dangerous-direct-browser-access": "true"},
+      body: JSON.stringify({model, max_tokens: 2000, system: AI_SYSTEM, messages: [{role: "user", content: aiPrompt(r, an)}]})
+    });
+    j = await res.json().catch(() => null);
+  } catch (e) {
+    throw new Error(e && e.name === "AbortError" ? "時間がかかりすぎたので止めました。もう一度押してください。" : "Claude につながりませんでした。電波を確かめて、もう一度押してください。");
+  } finally { clearTimeout(timer); }
+  if (!res.ok){
+    const msg = (j && j.error && j.error.message) || "";
+    if (res.status === 401 || res.status === 403) throw new Error("APIキーが正しくないようです。設定のキーを確かめてください。");
+    if (/credit|balance/i.test(msg)) throw new Error("Claude Console のクレジット残高が足りないようです。");
+    if (res.status === 429) throw new Error("短い間に聞きすぎたようです。少し待ってからもう一度押してください。");
+    if (res.status >= 500) throw new Error("Claude が混み合っています。少し待ってからもう一度押してください。");
+    throw new Error(`エラー（${res.status}）：${msg || "うまくいきませんでした"}`);
+  }
+  const text = ((j && j.content) || []).filter(c => c.type === "text").map(c => c.text).join("\n").trim();
+  if (!text) throw new Error("AIから文章が返ってきませんでした。もう一度押してください。");
+  const u = j.usage || {}, M = AI_MODELS[model];
+  const yen = ((u.input_tokens || 0) * M.in + (u.output_tokens || 0) * M.out) / 1e6 * 150;
+  return {text, model: M.name, yen};
+}
+const aiKeyOf = r => `${r.date}:${r.key}`;
+function aiRowHTML(r, an){
+  // APIキーを入れていないときは、カードに「AI」の行を出さない（設定の説明だけ）
+  if (!r.hasPreview || !loadAI(AI_KEY)) return "";
+  const A = state.ai.get(aiKeyOf(r)), M = AI_MODELS[aiModel()];
+  const btn = label => `<button type="button" class="aibtn" data-key="${esc(r.key)}">${label}</button>`;
+  let body;
+  if (!A) body = `<span class="vd-v">${btn("AIに見解を聞く")}</span><span class="vd-n">${loadAI(AI_KEY) ? `Claude ${M.name} にこのレースのデータ（オッズ以外）を送って、見解を書いてもらいます。` : "設定に Claude の APIキーを入れると使えます。"}</span>`;
+  else if (A.status === "loading") body = `<span class="vd-v"><span class="aiwait">AIが考え中…</span></span>`;
+  else if (A.status === "error") body = `<span class="vd-v">${btn("もう一度聞く")}</span><span class="vd-n">${esc(A.text)}</span>`;
+  else body = `<span class="vd-t">${aiText(A.text)}</span><span class="vd-n">Claude ${esc(A.model)}・${esc(A.at)}・約${A.yen < 1 ? A.yen.toFixed(2) : A.yen.toFixed(1)}円。AIの文章はまちがえることがあります（確率は下の数字のとおり）。${btn("もう一度聞く")}</span>`;
+  return `<div class="vd-ai" data-airow="${esc(r.key)}"><span class="vd-k">AI</span>${body}</div>`;
+}
+function refreshAI(r){
+  const k = CSS.escape(r.key), an = analyze(r, settings);
+  document.querySelectorAll(`[data-airow="${k}"]`).forEach(el => { el.outerHTML = aiRowHTML(r, an); });
+}
+
 function viewHTML(r, an){
   const ss = viewSentences(r, an);
   if (!ss.length) return "";
   return `<div class="vd-view"><span class="vd-k">見解</span><span class="vd-t">${ss.join("")}</span><span class="vd-n">展示とデータから自動で作った見立てです（予想の確率は下の数字のとおり）。</span></div>`;
 }
 
+// ---- 動画（あべけんさん）の考え方を過去のレースで確かめたものから：見解に足す文と、買い方の注意 ----
+// どれも2/1〜10/25の約4万レースで、前半（2〜6月）と後半（7〜10月）で同じ向きだったものだけ。回収率はどれも100%未満で、「ほかより良い・悪い」の目安
+const WD_NAME = ["", "北", "北北東", "北東", "東北東", "東", "東南東", "南東", "南南東", "南", "南南西", "南西", "西南西", "西", "西北西", "北西", "北北西", "無風"];
+function abekenNotes(r, an){
+  if (an._ab) return an._ab;
+  const view = [], warn = [];
+  an._ab = {view, warn};
+  if (!r.hasPreview || !an.F) return an._ab;
+  const F = an.F, byC = new Map(F.filter(f => f.course).map(f => [f.course, f]));
+  const sur = f => esc(String(f.b.name || "").split(/[\s　]+/)[0] || `${f.b.no}号艇`);
+  const who = f => `${chip(f.b.no)}${sur(f)}`;
+  const st2 = v => "." + String(Math.round(Math.abs(v) * 100)).padStart(2, "0");
+  const okST = f => !!f && f.b.exST != null && !f.b.exF;
+  const th = an.tenkai && an.tenkai.threat;
+  const key = f => f.markIdx <= 2 || (th && th.f === f);
+  const [c1, c2, c3, c4, c5] = [1, 2, 3, 4, 5].map(k => byC.get(k));
+  const c = r.cond || {};
+  // 風（5本目・1本目）：5m以上は荒れやすい。表示の風向きが北東〜東南東の強い風は2コースの差しが増える向き（過去のデータから）
+  if ((c.wind || 0) >= 5){
+    if ([3, 4, 5, 6].includes(c.wd) && c1 && c2) view.push([8, `風が${WD_NAME[c.wd]}${c.wind}mと強く、1コースが流れて2コースの差しが決まりやすい向きです（過去の同じ風では${chip(c2.b.no)}→${chip(c1.b.no)}の形の2連単が回収率83%${c.wind >= 6 ? "・6m以上なら92%" : ""}、全レースだと71%）。`]);
+    else view.push([5, `風が${c.wind}mと強めで、展開が荒れやすいです（風5m以上だと1コースの1着は56%→51%）。`]);
+  }
+  // ◎の単勝を控えめにする理由（風5m以上：2本目・5本目、◎の展示タイム5〜6位：2本目）。どちらも過去の◎の単勝は回収率87%（ふだん92%）
+  const topWhy = [];
+  if ((c.wind || 0) >= 5) topWhy.push(`風${c.wind}m`);
+  // 4コースのまくり差し（1本目）
+  const m4 = c4 ? msShare(STATS, c4.b.reg) : null, m3 = c3 ? msShare(STATS, c3.b.reg) : null;
+  if (c1 && c4 && m4 && m4.share >= 0.35) view.push([6, `${who(c4)}（4コース）はまくり差しの多い選手です（2〜6コースの勝ち${m4.w}回中${m4.ms}回）。過去の同じ条件では${chip(c4.b.no)}→${chip(c1.b.no)}の形の2連単が回収率72%（全レースだと63%）。`]);
+  // 4コースが攻めるときの5コース（1本目）
+  if (c1 && c3 && c4 && c5 && okST(c3) && okST(c4) && c3.b.exST - c4.b.exST >= 0.05 - 1e-9 && m3){
+    if (m3.share <= 0.15) view.push([7, `${who(c4)}が攻める形（展示STが3コースより${st2(c3.b.exST - c4.b.exST)}早い）で、${who(c3)}はまくり差しの少ない選手なので、5コースに差し場が空きそうです（過去の同じ形では${chip(c5.b.no)}→${chip(c1.b.no)}の形の2連単が回収率87%、全レースだと71%）。`]);
+    else if (m3.share >= 0.35) warn.push([6, `${chip(c5.b.no)}の1着は切る目安：4コースが攻めて、3コースの${chip(c3.b.no)}がまくり差しの多い選手のとき、${chip(c5.b.no)}→${chip(c1.b.no)}の形の2連単は回収率46%（全レースだと71%）`]);
+  }
+  // 外の艇のスタートの揃い方（5本目）：平均ST・今節の本番ST・展示ST（◎○▲と「崩すなら」の艇だけ）
+  for (const f of F){
+    if (!f.course || f.course < 4 || !key(f) || !okST(f) || f.b.avgST == null) continue;
+    const s = an.serSt && an.serSt.get(f.b.no);
+    if (!s) continue;
+    const v = [f.b.avgST, s.avg, f.b.exST], d = Math.max(...v) - Math.min(...v);
+    const txt = `平均${st2(f.b.avgST)}・今節${st2(s.avg)}・展示${st2(f.b.exST)}`;
+    // バラバラ（差.07以上）は外の艇の7割近くに当てはまり、ふつうの外の艇とあまり変わらないので、揃っているときだけ書く
+    if (d <= 0.03 + 1e-9) view.push([4, `${f.mark}${who(f)}はスタートが揃っていて（${txt}）、外からでも人気どおり1着に来やすいタイプです（過去：揃っている外の艇はオッズの見込みどおり、バラバラな艇は見込みの9割）。`]);
+  }
+  // ◎の展示タイムが5〜6位（2本目）
+  const top = an.top, ts = F.map(f => f.b.exTime).filter(t => t > 0);
+  const exR = b => b.exTime > 0 && ts.length >= 5 ? 1 + ts.filter(t => t < b.exTime).length : null;
+  const tr = top ? exR(top.b) : null;
+  if (tr && tr >= 5) topWhy.unshift(`◎${chip(top.b.no)}の展示タイムが${tr}位`);
+  if (topWhy.length) warn.push([8, `${topWhy.join("・")}：◎の単勝は控えめに（${topWhy.length > 1 ? "どちらも" : ""}過去の◎の単勝は回収率87%、ふだんは92%）`]);
+  // 外の展示ST1位（5本目）：◎のときだけ（1着に置くかどうかの話なので）
+  const sts = F.filter(okST).map(f => f.b.exST);
+  if (sts.length >= 4){
+    const best = Math.min(...sts);
+    const lead = F.filter(f => okST(f) && f.b.exST === best && f.course >= 2 && f.markIdx === 0);
+    if (lead.length) warn.push([5, `${lead.map(f => f.mark + chip(f.b.no)).join("")}は展示STが一番ですが、2〜6コースの展示ST1位は、1着では人気ほど来ません（オッズの見込みの9割前後）。1着より2・3着向き`]);
+  }
+  // 人気薄のA1（5本目）：オッズがあるときだけ。アプリが◎にしているときだけ（アプリもこういう艇を少し高く見がち）
+  const mq = marketWinProb(r);
+  if (mq){
+    const a1 = F.filter(f => f.course >= 2 && f.markIdx === 0 && f.b.cls === "A1" && +mq[f.b.no] > 0 && +mq[f.b.no] < 0.15);
+    if (a1.length) warn.push([4, `${a1.map(f => chip(f.b.no)).join("")}（A1）は人気薄でも、1着では買われすぎになりやすい（2〜6コースの人気薄のA1は、オッズの見込みの8〜9割しか1着に来ない）。2・3着に置くのが目安`]);
+  }
+  // 自信「ふつう」×データ攻めの荒れスコア「高」
+  const J = jishinLevel(r, an), ar = arareOf(r);
+  if (J && J.li0 === 1 && ar && ar.score >= 4) warn.push([6, `データ攻めの荒れスコアが${ar.score}点（高）の「ふつう」のレース：3連単のおすすめは回収率72%（ほかの「ふつう」は79%）。点数は控えめに`]);
+  warn.sort((a, b) => b[0] - a[0]);
+  return an._ab;
+}
+function warnHTML(r, an){
+  const W = abekenNotes(r, an).warn.slice(0, 3);
+  if (!W.length) return "";
+  return `<div class="vd-warn"><span class="vd-k">注意</span><span class="vd-t">${W.map(x => `<span class="wi">${x[1]}。</span>`).join("")}</span></div>`;
+}
+// レース選び（6本目）：①1コースが強い場 ②風・波 ③1号艇が堅い（当地・本節・展示）。当たりやすさの目安
+function selHTML(r, an){
+  const S = an.rsel;
+  if (!S) return "";
+  const mk = ok => ok == null ? `<i class="sl wait">－</i>` : ok ? `<i class="sl ok">◯</i>` : `<i class="sl ng">✕</i>`;
+  const p = S.place, w = S.water, b = S.b1;
+  const b1ok = !b ? null : (b.okL === false || b.okF === false || b.okX === false || !b.in1) ? false : b.wait ? null : true;
+  const sub = b ? b.why.filter(x => x.ok !== true || b1ok).map(x => (x.ok === false ? "✕" : "") + esc(x.t)).join("・") + (b.in1 ? "" : "・1号艇が1コースではない") : "";
+  let note = "①は1コース1着57.5%以上の場、②は風5m・波5cm未満、③は当地勝率6.0以上・本節の平均3着以内・展示タイムの見劣りなし。3つとも◯のレースは1号艇の1着76%（全体55%）。ただ配当も安く、2連単・3連単の回収率は変わりません（当たりやすさの目安）。";
+  if (b1ok) note += "1号艇の単勝だけは、③を満たすと同じオッズでも回収率が10ポイントほど高め（確定オッズ1.3〜3.0倍で102%）。確定オッズで分けた数字なので、締切前のオッズで確かめ中（検証タブ）。";
+  if (p && p.low) note += `${esc(STADIUMS[r.stadium] || "")}は1コースが弱い場です。`;
+  return `<div class="vd-sel"><span class="vd-k">レース<br>選び</span>
+    <span class="vd-v"><span class="sli">①場${mk(p ? p.ok : null)}<small>${p ? `1コース1着${pct(p.rate, 1)}%` : "集計なし"}</small></span><span class="sli">②水面${mk(w ? w.ok : null)}<small>${w ? `風${w.wind ?? "-"}m・波${w.wave ?? "-"}cm` : "展示待ち"}</small></span><span class="sli">③1号艇${mk(b1ok)}<small>${sub}</small></span></span>
+    <span class="vd-n">${note}</span></div>`;
+}
+
+// ---- データ攻め（あべけんさんのサイト）：毎朝 funadata/today.json に取り込んだ、今日の分類・見立て・展開・荒れスコア ----
+let FUNA = null;   // {d, races: {"場-R": {c, h, hx, ik, i1, mi, te, dn, ha, cl, B, ar}}, full}
+function funaOf(r){ return FUNA && FUNA.d === r.date ? FUNA.races[`${r.stadium}-${r.no}`] || null : null; }
+function ensureFuna(){
+  const d = state.date;
+  if (FUNA && FUNA.d === d && FUNA.full) return;
+  const t = state.funaTried;
+  if (t && t.d === d && Date.now() - t.at < (d === jstNowDate() ? 20 * 60e3 : 6 * 3600e3)) return;
+  state.funaTried = {d, at: Date.now()};
+  const ymd = d.replace(/-/g, "");
+  // 前の日：分類（funadata/hantei）と荒れスコア（funadata/arare）だけ
+  const past = () => Promise.all([loadJSONFile(`funadata/hantei/${ymd}.json`), loadJSONFile(`funadata/arare/${ymd}.json`)]).then(([h, a]) => {
+    if (state.date !== d) return;
+    const races = {};
+    if (h && h.races) for (const [k, v] of Object.entries(h.races)) races[k] = {c: v[0], h: v[1], hx: v[2], ik: !!v[3]};
+    if (a && a.races) for (const x of Object.values(a.races)) if (String(x.hd) === ymd){ const k = `${parseInt(x.jcd, 10)}-${x.rno}`; (races[k] || (races[k] = {})).ar = [x.score, x.level, x.factors || []]; }
+    if (Object.keys(races).length){ FUNA = {d, races, full: false}; safeRender(); }
+  });
+  if (d === jstNowDate()) loadJSONFile("funadata/today.json").then(j => {
+    if (state.date !== d) return;
+    if (j && j.d === d && j.races){ FUNA = {d, races: j.races, gen: j.gen || "", full: true}; safeRender(); } else past();
+  });
+  else past();
+}
+// 荒れスコア：サイトの数字があればそれ、なければアプリで同じ数え方をしたもの
+function arareOf(r){
+  const x = funaOf(r);
+  if (x && x.ar) return {score: x.ar[0], level: x.ar[1] || (x.ar[0] >= 4 ? "高" : x.ar[0] >= 2 ? "中" : "低"), factors: x.ar[2] || [], calc: false};
+  return arareCalc(r);
+}
+const FUNA_CC = {"波乱": "ar", "堅め": "kt", "混戦": "kz"};
+const ARARE_NOTE = "荒れる条件が揃った数の目安です（サイトの説明では、買い目・予想ではありません）。2〜10月の過去のレースで同じように数えると、荒れ率（3連単5千円以上）は0点24%・2点30%・4点37%・6点49%と、よく当たっていました。ただオッズもそれを知っていて、1号艇の単勝の回収率は低92%・中90%・高88%、アプリの3連単おすすめは低79%・中78%・高76%と、配当まで入れるとほとんど変わりません。自信「ふつう」で荒れスコアが高い（4点以上）レースだけは、3連単のおすすめが72%と低めでした。";
+function funaRowHTML(r, an){
+  const x = funaOf(r), A = arareOf(r);
+  if (!(x && x.c) && !A) return "";
+  const cls = x && x.c ? `<b class="fc ${FUNA_CC[x.c] || ""}">${esc(x.c)}</b>` : "";
+  const sc = A ? `荒れスコア${A.score}点（${A.level}${A.calc ? "・アプリで同じ数え方" : ""}）` : "";
+  const dn = x && x.dn && x.dn.length ? `①の不安材料：${x.dn.map(esc).join("・")}。` : "";
+  const more = x && (x.mi || (x.te && x.te.length)) ? "見立て・展開は下の「データ攻めの見立て」に。" : "";
+  return `<div class="vd-funa"><span class="vd-k">データ<br>攻め</span><span class="vd-v">${cls}${sc ? `<small>${sc}</small>` : ""}</span><span class="vd-n">${dn}${more}${x && x.c ? "分類は朝の見立てで、当たっているかは検証タブで確かめ中。" : ""}</span></div>`;
+}
+function funaHTML(r, an){
+  const x = funaOf(r), A = arareOf(r);
+  if (!x && !A) return "";
+  const k = r.key + "#f";
+  const li = a => `<ul class="fl">${a.map(t => `<li>${esc(t)}</li>`).join("")}</ul>`;
+  const B = x && x.B ? x.B : null;
+  const evl = {hi: "上位", lo: "下位", mid: "", na: ""};
+  const rows = B ? [1, 2, 3, 4, 5, 6].filter(no => B[no]).map(no => {
+    const q = B[no];
+    const ex = q.ex == null ? "-" : `${q.ex > 0 ? "+" : "−"}${Math.abs(q.ex).toFixed(2)}<small>${q.ex > 0 ? "遅い" : "速い"}${q.exn ? `・${q.exn}本` : ""}</small>`;
+    const run = q.run && q.run.length ? q.run.map(([p, cc]) => `<span class="ks${p === 1 ? " w" : ""}"><b>${p || "×"}</b><small>${cc ?? ""}</small></span>`).join("") : "-";
+    return `<tr><td>${chip(no)}</td><td>${q.m != null ? q.m.toFixed(1) : "-"}${evl[q.me] ? `<small class="mx ${q.me === "hi" ? "up" : "dn"}">${evl[q.me]}</small>` : ""}</td><td>${q.sst ? "◯" : ""}</td><td>${q.lv ? "◯" : ""}</td><td>${q.iw != null ? q.iw.toFixed(0) + "%" : "-"}<small>${q.in ? q.in + "走" : ""}</small></td><td>${ex}</td><td class="runs">${run}</td></tr>`;
+  }).join("") : "";
+  return `<details data-key="${esc(k)}"${state.open.has(k) ? " open" : ""}>
+    <summary>データ攻め（あべけんさん）の見立て${x && x.c ? `：${esc(x.c)}` : ""}${A ? `・荒れスコア${A.score}点` : ""}</summary>
+    <div class="dbody">
+      ${x && x.mi ? `<div><h3>見立て</h3><p class="ft">${esc(x.mi)}</p></div>` : ""}
+      ${x && x.te && x.te.length ? `<div><h3>展開</h3>${li(x.te)}</div>` : ""}
+      ${x && x.dn && x.dn.length ? `<div><h3>①の不安材料</h3>${li(x.dn)}</div>` : ""}
+      ${x && x.ha ? `<div><h3>①が負けるとき</h3><p class="ft">${esc(x.ha)}</p></div>` : ""}
+      ${A ? `<div><h3>荒れスコア ${A.score}点（${A.level}）</h3>${A.factors.length ? li(A.factors) : `<p class="note">荒れる条件はありません。</p>`}<p class="note">${ARARE_NOTE}${A.calc ? "このレースはサイトの数字がまだないので、アプリで同じ数え方をしています（サイトの点と97%一致）。" : ""}</p></div>` : ""}
+      ${rows ? `<div><h3>選手（データ攻めの数字）</h3><div class="tbl"><table class="lft ftbl">
+        <thead><tr><th>艇</th><th>機力</th><th>鋭ST</th><th>当地優位</th><th>1コース1着</th><th>今節の展示</th><th>今節の走り</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <p class="note">機力：モーター2連率（上位・下位は6艇平均より5ポイント以上）。今節の展示：6艇平均との差（−は速い）。今節の走り：大きい数字が着順、小さい数字がコース。</p></div>` : ""}
+      <p class="note">データ攻め（あべけんさんのサイト）の朝5時ごろのデータです。展示のあとの情報は入っていません。運営の方の許可を得て、毎朝取り込んでいます。${x && x.c ? "分類（波乱・堅め・混戦）が当たっているかは、10/30から毎日ためて検証タブで確かめます。" : ""}</p>
+    </div>
+  </details>`;
+}
+
 function verdictHTML(r, an){
-  if (!r.hasPreview && !r.odds) return "";
+  // 展示の前：データ攻めの分類・荒れスコアと、レース選び（場・1号艇の当地と本節）だけ
+  if (!r.hasPreview && !r.odds){
+    const pre = funaRowHTML(r, an) + selHTML(r, an);
+    return pre ? `<div class="verdict">${pre}</div>` : "";
+  }
   const top = an.top, cf = CONF.find(([t]) => top.p1 >= t);
   const won = r.result ? r.result.order : null;
   // 期待値（単勝）。締切前の単勝オッズは投票が少なく当てにならず、長期で勝てる根拠もないので参考だけ
@@ -1910,9 +2328,10 @@ function verdictHTML(r, an){
     <span class="vd-v">${cuts.length ? `消し ${cuts.map(f => chip(f.b.no) + `<small>${pct(f.p3)}%</small>` + mark(f, false)).join(" ")}` : `消しなし<small>${Math.round(CUT_P * 100)}%未満の艇がいない</small>`}</span>
     <span class="vd-n">${AXIS_NOTE}</span></div>`;
   return `<div class="verdict">
-    ${viewHTML(r, an)}
+    ${viewHTML(r, an)}${warnHTML(r, an)}${aiRowHTML(r, an)}
     <div class="vd-conf ${cf[2]}"><span class="vd-k">信頼度</span><span class="vd-c">${cf[1]}</span><span class="vd-v">◎${chip(top.b.no)} 1着率${pct(top.p1)}%<small>${cf[3]}</small></span></div>
     ${jishinHTML(r, an)}
+    ${funaRowHTML(r, an)}${selHTML(r, an)}
     ${an.isCand ? (() => {
       const se = an.topSe;
       const seV = se ? `今節の展示 平均${se.avg.toFixed(1)}位（${se.n}走）→ <b>${({fast: "速い", mid: "ふつう", slow: "遅い"})[se.lv]}</b>` : "今節の展示 データなし（ふつう扱い）";
@@ -2411,6 +2830,7 @@ function cardHTML(r, an, now){
     </div>
     ${verdictHTML(r, an)}
     ${triListHTML(r, an)}
+    ${funaHTML(r, an)}
     ${badgeHTML(r, an)}
     ${showSlitTop ? `<div class="slitbox">${slitSVG(an)}</div>` : ""}
     ${valueHTML(r, an)}
@@ -2581,6 +3001,17 @@ function paperHTML(P){
       <thead><tr><th>いつ見て</th>${LT.K.map(k => `<th>${k}倍以上</th>`).join("")}<th>確定まで</th></tr></thead>
       <tbody>${LK.map(([k, lb]) => { const v = LT.sum[k] || [], i15 = v.findIndex(x => x.k === 1.5); return `<tr><td>${lb}<small>${(LT.races || {})[k] || 0}R</small></td>${v.map(x => `<td class="zr ${x.roi >= 1 && x.n ? "plus" : ""}">${x.n ? Pc(x.roi) : "-"}<small>${x.n}点</small></td>`).join("")}<td>${i15 >= 0 && v[i15].drop != null ? "×" + v[i15].drop.toFixed(2) : "-"}</td></tr>`; }).join("")}</tbody></table></div>
       <p class="note">「お得さ」＝単勝のオッズが、投票の多い3連単のオッズから計算した単勝のオッズの何倍か。それ以上の艇を各100円で買ったとして、実際の払戻で計算しています（予想は使っていない・3連単から見て${LT.maxImp}倍以上の大穴は除く）。締切時は締切後にわかるオッズで選んでいるので実際には買えない参考です。2分前→30秒前と締切に近づくほど締切時の数字に近づくなら、ギリギリで買えば勝てる見込みがあります。「確定まで」は1.5倍以上の艇の単勝オッズが確定までに何倍になったか（真ん中の値）。2週間ほどで判断できます。</p>${diagHTML}</div>` : diagHTML;
+  // 1号艇の単勝（締切前に見えたオッズの帯ごと・③1号艇が堅いか別）。動画6本目の確かめ
+  const B1 = P.b1;
+  const b1HTML = B1 && B1.sum && B1.sum.t1 ? (() => {
+    const cellA = a => `<td class="zr ${a && a.roi >= 1 && a.n ? "plus" : ""}">${a && a.n ? Pc(a.roi) : "-"}<small>${a ? a.n : 0}点</small></td>`;
+    const rowsOf = (k, full) => (full ? B1.sum[k].bands.map(x => `<tr><td>${x.hi ? `${x.lo}〜${x.hi}倍` : `${x.lo}倍以上`}</td>${cellA(x.solid)}${cellA(x.other)}${cellA(x.all)}</tr>`).join("") : "")
+      + B1.sum[k].over.map(x => `<tr><td><b>${x.lo}倍以上</b></td>${cellA(x.solid)}${cellA(x.other)}${cellA(x.all)}</tr>`).join("");
+    // 1分前は帯ごとに全部、30秒前と確定（参考）はまとめだけ
+    const tbl = (k, lb, full) => B1.sum[k] ? `<p class="note"><b>${lb}</b>（${(B1.races || {})[k] || 0}R・うち③${(B1.solidRaces || {})[k] || 0}R${B1.sum[k].drop != null && k !== "fin" ? `・確定までにオッズ×${B1.sum[k].drop.toFixed(2)}` : ""}）</p><div class="tbl"><table class="lft2"><thead><tr><th>1号艇の単勝オッズ</th><th>③1号艇が堅い</th><th>それ以外</th><th>全部</th></tr></thead><tbody>${rowsOf(k, full)}</tbody></table></div>` : "";
+    return `<div><h3>1号艇の単勝（締切前に見えたオッズの帯ごと・記録中）</h3>${tbl("t1", "締切1分前のオッズで分けた場合", true)}${tbl("t05", "30秒前のオッズで分けた場合（まとめ）", false)}${tbl("fin", "参考：確定オッズで分けた場合（まとめ・買う時点ではわからない）", false)}
+      <p class="note">2〜10月のデータでは、同じ確定オッズでも③（当地勝率6.0以上・本節の平均3着以内・展示タイムの見劣りなし）を満たす1号艇の単勝は回収率が10ポイントほど高く、1.3〜3.0倍で102%でした。ただ確定オッズで分けた数字なので、買う前に見える締切前のオッズでも同じになるかを、ここで確かめています（${B1.from ? md(B1.from) : "10/19"}からの記録・各100円・実際の払戻）。数百点たまるまでは大きくぶれます。</p></div>`;
+  })() : "";
   return `${head}
     <p class="lead">${esc(P.from)}〜${esc(P.to)}に見張りが見た締切前のオッズで、条件（単勝・1着率${Math.round(P.rule.minP * 100)}%以上・期待値${P.rule.ev.toFixed(1)}以上）を満たした艇を各100円で買ったつもりにして、結果と照らし合わせています。<b>回収率は実際の払戻金（確定オッズ）で計算</b>しているので、本当に買った場合と同じ成績です。「確定オッズでの期待値」は、確定オッズで見直すと期待値がいくつだったかで、回収率よりぶれが小さい目安です（確定オッズは翌日に入ります）。</p>
     <div class="stats">
@@ -2589,6 +3020,7 @@ function paperHTML(P){
       ${box("7分前のオッズで決めると", e7)}
     </div>
     <p class="note">数百点たまるまでは、数字は大きくぶれます。2週間ほど見てから判断してください。</p>
+    ${b1HTML}
     ${lateHTML}
     ${P.byConf && P.byConf[P.betsRule || "t1"] ? `<div><h3>信頼度ごと（${P.betsRule === "t3" ? "3分前" : "1分前"}のオッズ・実際の払戻）</h3><div class="tbl"><table class="lft2">
       <thead><tr><th>信頼度</th><th>レース</th><th>◎の単勝</th><th>期待値で選ぶ</th></tr></thead>
@@ -2668,6 +3100,20 @@ function longHTML(L){
         <p class="note">${L.byJishin.plan
           ? `カードの「自信」（一番ありそうな3艇で1〜3着が決まる確率が30%以上で「かたい」、20%以上で「ふつう」、それ未満は「荒れそう」。オッズは見ない）ごとの成績です。3連単はカードの「3連単」の行のおすすめ点数（アプリの確率の高い順に、かたい${L.byJishin.plan[0]}点・ふつう${L.byJishin.plan[1]}点・荒れそう${L.byJishin.plan[2]}点）、3連複は自信の3艇を1点。`
           : "カードの「自信」（一番ありそうな3艇で1〜3着が決まる確率が30%以上で「かたい」、20%以上で「ふつう」、それ未満と、オッズと意見が大きく割れるときは一段下げる）ごとの成績です。3連複は自信の3艇を1点。"}かたいレースほど回収率は高いですが、長い目で見るとどれも100%未満です。新しいレースは数百レースたまるまで大きくぶれます。</p></div>`;
+    })() : ""}
+    ${L.funa ? (() => {
+      const F = L.funa, md = x => `${+x.slice(5, 7)}/${+x.slice(8)}`;
+      const pc = (a, R) => R ? Math.round(a / R * 100) + "%" : "-";
+      const cellA = a => `<td class="zr${a.n && a.roi >= 1 ? " plus" : ""}">${a.n ? P(a.roi) : "-"}</td>`;
+      const roiS = a => a.n ? P(a.roi) : "-";
+      const rowsOf = list => list.map(c => `<tr><td>${esc(c.label)}</td><td>${c.races}</td><td class="zr">${pc(c.b1, c.races)}<small>単勝${roiS(c.b1win)}</small></td><td class="zr">${pc(c.are, c.races)}<small>万舟${pc(c.man, c.races)}</small></td>${cellA(c.top)}${cellA(c.tri)}</tr>`).join("");
+      const head = `<thead><tr><th></th><th>レース</th><th>1号艇の1着</th><th>荒れ率</th><th>◎の単勝</th><th>3連単</th></tr></thead>`;
+      const has = list => list.some(c => c.races);
+      return `<div><h3>データ攻めの見立ての成績</h3>
+        ${has(F.cls) ? `<p class="note"><b>分類（朝の見立て）</b></p><div class="tbl"><table class="lft2">${head}<tbody>${rowsOf(F.cls)}</tbody></table></div>` : `<p class="note">分類（波乱・堅め・混戦）は10/30から毎朝ためています。結果が出た日から、ここに出ます。</p>`}
+        ${has(F.site) ? `<p class="note"><b>荒れスコア（サイトの数字・${F.siteFrom ? md(F.siteFrom) : ""}〜）</b></p><div class="tbl"><table class="lft2">${head}<tbody>${rowsOf(F.site)}</tbody></table></div>` : ""}
+        <p class="note"><b>荒れスコア（アプリで同じ数え方・${md(F.calcFrom)}〜）</b></p><div class="tbl"><table class="lft2">${head}<tbody>${rowsOf(F.calc)}</tbody></table></div>
+        <p class="note">荒れスコアは低（0〜1点）・中（2〜3点）・高（4〜6点）。荒れ率は3連単5千円以上、万舟は1万円以上の割合。「1号艇の1着」の下の小さい数字は1号艇の単勝の回収率。単勝・3連単は各100円で、実際の払戻で数えています（3連単はカードのおすすめ点数の回収率）。荒れやすさはよく当たっても、オッズも同じことを知っているので、回収率はほとんど変わらないかを見ています。</p></div>`;
     })() : ""}
     ${L.byDay ? (() => {
       const md = x => `${+x.slice(5, 7)}/${+x.slice(8)}`;
@@ -2762,7 +3208,7 @@ async function load(){
     const races = await loadDay(state.date);
     state.races = races; state.mode = "live"; state.updatedAt = new Date(); state.note = races.length ? "" : "この日の出走表はありません。";
     $("notice").hidden = true;
-    ensureLong(); ensureMotor();
+    ensureLong(); ensureMotor(); ensureFuna();
     if (!state.statsTried || (STATS && STATS.built < jstNowDate() && Date.now() - state.statsTried > 3600e3)){
       state.statsTried = Date.now();
       loadStatsFile("stats.json").then(st => { if (st){ STATS = st; } updateStatsInfo(); safeRender(); });
@@ -2871,6 +3317,24 @@ $("btn-settings").addEventListener("click", e => togglePanel(e.currentTarget, "s
 $("btn-bt").addEventListener("click", e => { renderBT(); togglePanel(e.currentTarget, "bt"); });
 $("d-prev").addEventListener("click", () => { state.date = shiftDate(state.date, -1); state.open.clear(); state.triCut.clear(); load(); });
 $("d-next").addEventListener("click", () => { if (state.date < jstNowDate()){ state.date = shiftDate(state.date, 1); state.open.clear(); state.triCut.clear(); load(); } });
+// AIに見解を聞く（押したときだけ）。答えはこのページを開いている間だけ覚えておく
+$("feed").addEventListener("click", async e => {
+  const t = e.target.closest && e.target.closest(".aibtn");
+  if (!t) return;
+  const r = state.races.find(x => x.key === t.dataset.key);
+  if (!r) return;
+  const k = aiKeyOf(r);
+  if (!loadAI(AI_KEY)){ state.ai.set(k, {status: "error", text: "設定（右上）の「AIの見解」に Claude の APIキーを入れてから押してください。"}); refreshAI(r); return; }
+  if (state.ai.get(k) && state.ai.get(k).status === "loading") return;
+  state.ai.set(k, {status: "loading"}); refreshAI(r);
+  try {
+    const x = await askAI(r, analyze(r, settings));
+    state.ai.set(k, {status: "done", text: x.text, model: x.model, yen: x.yen, at: hhmm(new Date())});
+  } catch (err) {
+    state.ai.set(k, {status: "error", text: err.message || String(err)});
+  }
+  refreshAI(r);
+});
 // 3連単の一覧：タップでその順位までを買い目に／おすすめに戻す／買い目をコピー
 $("feed").addEventListener("click", async e => {
   const t = e.target.closest && e.target.closest(".trow, .treset, .tcopy");
@@ -2923,6 +3387,10 @@ document.addEventListener("visibilitychange", () => {
 });
 
 syncSettings();
+$("s-aikey").value = loadAI(AI_KEY);
+$("s-aikey").addEventListener("change", e => { saveAI(AI_KEY, String(e.target.value).trim()); safeRender(); });
+$("s-aimodel").value = aiModel();
+$("s-aimodel").addEventListener("change", e => { saveAI(AI_MODEL, e.target.value); safeRender(); });
 $("s-topic").value = loadTopic();
 $("s-topic").addEventListener("change", e => { saveTopic(String(e.target.value).trim()); if (state.mode === "live") load(); });
 updateStatsInfo();

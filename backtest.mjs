@@ -37,7 +37,30 @@ const DAYB = [["初日", r => r.day === 1 && !r.lastDay], ["2日目", r => r.day
 const html = fs.readFileSync("index.html", "utf8");
 const ia = html.indexOf("/* ---------- 定数 ---------- */"), ib = html.indexOf("/* ---------- 状態 ---------- */");
 if (ia < 0 || ib < 0) throw new Error("index.html から判定コードを見つけられませんでした");
-const M = new Function(html.slice(ia, ib) + "\nreturn {parseV1, predict, slitAlerts, prepStats, oddsOf, DEFAULTS, PAYKEY, impliedWin: typeof impliedWin === 'function' ? impliedWin : null, formFromList: typeof formFromList === 'function' ? formFromList : null, serExFromList: typeof serExFromList === 'function' ? serExFromList : null, TRI_PLAN: typeof TRI_PLAN !== 'undefined' ? TRI_PLAN : null};")();
+const M = new Function(html.slice(ia, ib) + "\nreturn {parseV1, predict, slitAlerts, prepStats, oddsOf, DEFAULTS, PAYKEY, impliedWin: typeof impliedWin === 'function' ? impliedWin : null, formFromList: typeof formFromList === 'function' ? formFromList : null, serExFromList: typeof serExFromList === 'function' ? serExFromList : null, TRI_PLAN: typeof TRI_PLAN !== 'undefined' ? TRI_PLAN : null, arareCalc: typeof arareCalc === 'function' ? arareCalc : null};")();
+
+// データ攻めの分類（波乱・堅め・混戦）と荒れスコア：funanote.mjs が毎朝 funadata/hantei/ と funadata/arare/ にためたもの
+const FUNA_CLS = ["波乱", "堅め", "混戦"];
+function loadFunaDaily(){
+  const H = new Map(), A = new Map();
+  try {
+    for (const f of fs.readdirSync("funadata/hantei")){
+      const j = JSON.parse(fs.readFileSync(`funadata/hantei/${f}`, "utf8"));
+      for (const [k, v] of Object.entries(j.races || {})) if (v && FUNA_CLS.includes(v[0])) H.set(`${j.d}|${k}`, v[0]);
+    }
+  } catch (e){}
+  try {
+    for (const f of fs.readdirSync("funadata/arare")){
+      const j = JSON.parse(fs.readFileSync(`funadata/arare/${f}`, "utf8"));
+      for (const x of Object.values(j.races || {})){
+        const hd = String(x.hd || "");
+        if (!/^\d{8}$/.test(hd) || x.score == null) continue;
+        A.set(`${hd.slice(0, 4)}-${hd.slice(4, 6)}-${hd.slice(6, 8)}|${parseInt(x.jcd, 10)}-${x.rno}`, +x.score);
+      }
+    }
+  } catch (e){}
+  return {H, A};
+}
 
 const addDays = (d, n) => { const t = new Date(d + "T00:00:00Z"); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
 const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
@@ -148,6 +171,11 @@ export async function main(fetcher = fetch){
   const cOne = () => ({races: 0, top: z(), place: z()});
   const cBlank = () => ({...cOne(), fast: cOne(), other: cOne()});
   const kouho = {known: cBlank(), fresh: cBlank(), recent: []};
+  // データ攻め：荒れスコア（アプリで同じ数え方・2月〜）と、サイトの荒れスコア・分類（毎朝ためた日から）ごとの成績
+  const FD = loadFunaDaily();
+  const fz = label => ({label, races: 0, b1: 0, are: 0, man: 0, b1win: z(), top: z(), tri: z()});
+  const LV = ["低", "中", "高"], lvIdx = sc => sc >= 4 ? 2 : sc >= 2 ? 1 : 0;
+  const funa = {calc: LV.map(fz), site: LV.map(fz), cls: FUNA_CLS.map(fz), siteFrom: null};
   const months = [...new Set(days.map(d => d.slice(0, 7)))];
   const perMonth = {};
   let N = 0, oddsRaces = 0, hit1 = 0, c1Win = 0, ll = 0, llBase = 0;
@@ -182,6 +210,26 @@ export async function main(fetcher = fetch){
         if (pr.top.b.no === win) hit1++;
         if (pr.c1.b.no === win) c1Win++;
         pr.F.forEach(f => { const bi = Math.min(4, Math.floor(f.p1 * 5)); bins[bi].n++; bins[bi].p += f.p1; if (f.b.no === win) bins[bi].w++; });
+        // データ攻めの荒れスコア・分類ごと：1号艇の1着率・荒れ率（3連単5千円以上）・万舟率、1号艇の単勝・◎の単勝・アプリの3連単おすすめの回収率
+        if (stats && pr.set3 && r.result.order.length >= 3){
+          const order = r.result.order;
+          const pw = (k, comb) => { const p = (r.result.payouts[k] || []).find(x => String(x.combination) === comb); return p ? (+p.amount || 0) : 0; };
+          const triPay = pw("trifecta", order.slice(0, 3).join("-")), winPay = pw("win", String(order[0]));
+          const li0 = JISHIN.findIndex(([t]) => pr.set3.p >= t);
+          const tp = pr.triAll.slice(0, M.TRI_PLAN ? M.TRI_PLAN[li0] : 5);
+          const tHit = tp.some(t => t.c[0] === order[0] && t.c[1] === order[1] && t.c[2] === order[2]);
+          const putF = G => {
+            G.races++; if (order[0] === 1) G.b1++; if (triPay >= 5000) G.are++; if (triPay >= 10000) G.man++;
+            G.b1win.n++; if (order[0] === 1 && winPay){ G.b1win.hit++; G.b1win.ret += winPay; }
+            G.top.n++; if (pr.top.b.no === order[0] && winPay){ G.top.hit++; G.top.ret += winPay; }
+            G.tri.n += tp.length; if (tHit){ G.tri.hit++; G.tri.ret += triPay; }
+          };
+          const ac = M.arareCalc ? M.arareCalc(r) : null;
+          if (ac) putF(funa.calc[lvIdx(ac.score)]);
+          const key = `${d}|${r.stadium}-${r.no}`;
+          if (FD.A.has(key)){ putF(funa.site[lvIdx(FD.A.get(key))]); if (!funa.siteFrom || d < funa.siteFrom) funa.siteFrom = d; }
+          if (FD.H.has(key)) putF(funa.cls[FUNA_CLS.indexOf(FD.H.get(key))]);
+        }
         if (!r.odds) continue;
         oddsRaces++; perMonth[mon].odds++;
         const payOf = (t, c) => {
@@ -315,7 +363,11 @@ export async function main(fetcher = fetch){
       const one = c => ({races: c.races, ...Object.fromEntries(["top", "place"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))});
       return {...CAND, ...Object.fromEntries(["known", "fresh"].map(g => [g, {...one(kouho[g]), fast: one(kouho[g].fast), other: one(kouho[g].other)}])), recent: kouho.recent.slice(-60)};
     })(),
-    byJishin: {from: JFRESH, plan: M.TRI_PLAN, ...Object.fromEntries(["known", "fresh"].map(g => [g, byJishin[g].map(c => ({...c, ...Object.fromEntries(["top", "ex1", "tri", "trio"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))}))]))}
+    byJishin: {from: JFRESH, plan: M.TRI_PLAN, ...Object.fromEntries(["known", "fresh"].map(g => [g, byJishin[g].map(c => ({...c, ...Object.fromEntries(["top", "ex1", "tri", "trio"].map(k => [k, {...c[k], roi: c[k].n ? +(c[k].ret / (100 * c[k].n)).toFixed(4) : 0}]))}))]))},
+    funa: (() => {
+      const one = G => ({...G, ...Object.fromEntries(["b1win", "top", "tri"].map(k => [k, {...G[k], roi: G[k].n ? +(G[k].ret / (100 * G[k].n)).toFixed(4) : 0}]))});
+      return {calcFrom: "2026-02-01", siteFrom: funa.siteFrom, calc: funa.calc.map(one), site: funa.site.map(one), cls: funa.cls.map(one)};
+    })()
   };
   fs.writeFileSync("backtest.json", JSON.stringify(out));
   const w = out.main.win;

@@ -26,7 +26,7 @@ const html = fs.readFileSync("index.html", "utf8");
 const a = html.indexOf("/* ---------- 定数 ---------- */");
 const b = html.indexOf("/* ---------- 状態 ---------- */");
 if (a < 0 || b < 0) throw new Error("index.html から判定コードを見つけられませんでした");
-const M = new Function(html.slice(a, b) + "\nreturn {parseV1, slitAlerts, predict, prepStats, DEFAULTS, STADIUMS, hhmm, jstNowDate, formFor: typeof formFor === 'function' ? formFor : null, setMotorEx: typeof setMotorEx === 'function' ? setMotorEx : null};")();
+const M = new Function(html.slice(a, b) + "\nreturn {parseV1, slitAlerts, predict, prepStats, DEFAULTS, STADIUMS, hhmm, jstNowDate, formFor: typeof formFor === 'function' ? formFor : null, setMotorEx: typeof setMotorEx === 'function' ? setMotorEx : null, formFromList: typeof formFromList === 'function' ? formFromList : null, boat1Solid: typeof boat1Solid === 'function' ? boat1Solid : null};")();
 
 // モーターの展示の速さ（毎朝 funadata/motor.json に書かれる）も、アプリと同じように予想に入れる
 try { if (M.setMotorEx && fs.existsSync("funadata/motor.json")) M.setMotorEx(JSON.parse(fs.readFileSync("funadata/motor.json", "utf8"))); } catch (e){}
@@ -145,6 +145,35 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
     }
   }
 
+  // 1号艇が堅いか（動画6本目の③：当地勝率6.0以上・本節の平均3着以内・展示タイムの見劣りなし）を、結果の出たレースごとに1回だけ決めて残す。
+  // 本節の成績は、その日と前の6日の出走表・結果から数える（10/19からの記録にもさかのぼってつける）
+  if (M.boat1Solid && M.formFromList){
+    const cacheDay = new Map();
+    const dayRaces = async d => {
+      if (!cacheDay.has(d)){
+        const [y, md] = ymd(d);
+        const j = await getJSON(`https://boatraceopenapi.github.io/api/v1/${y}/${md}.json?t=${d >= addDays(today, -1) ? Date.now() : 0}`, fetcher);
+        cacheDay.set(d, j ? M.parseV1(j, d) : []);
+      }
+      return cacheDay.get(d);
+    };
+    const needS1 = [...new Set(Object.values(log.races).filter(R => R.s1 === undefined && R.pay != null && !R.void).map(R => R.d))].sort();
+    for (const d of needS1){
+      const list = [];
+      for (let i = 6; i >= 0; i--) list.push(...await dayRaces(addDays(d, -i)));
+      const todays = list.filter(r => r.date === d);
+      M.formFromList(list, todays);
+      const byKey = new Map(todays.map(r => [r.key, r]));
+      for (const R of Object.values(log.races)){
+        if (R.d !== d || R.s1 !== undefined || R.pay == null || R.void) continue;
+        const r = byKey.get(R.k);
+        // 結果は出ているのに出走表・展示がないレースは、決められないので null（次からは読み直さない）
+        const s = r && r.hasPreview ? M.boat1Solid(r) : null;
+        R.s1 = s ? (s.ok ? 1 : 0) : null;
+      }
+    }
+  }
+
   // 古い記録を消す
   const cut = addDays(today, -KEEP_DAYS);
   for (const id of Object.keys(log.snaps)) if (log.snaps[id].d < cut) delete log.snaps[id];
@@ -162,6 +191,7 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
   const byConf = Object.fromEntries(["t1", "t3"].map(k => [k, CONF.map(([from, label]) => ({from, label, races: 0, top: [], rec: []}))]));
   const rules = {t1: [], t3: [], t7: []}, points = [], drift = Object.fromEntries(PHASES.map(([k]) => [k, BANDS.map(() => [])]));
   const late = {t2: [], t1: [], t05: [], fin: []}, lateRaces = {t2: 0, t1: 0, t05: 0, fin: 0};
+  const b1 = {t2: [], t1: [], t05: [], fin: []};
   for (const [id, list] of byRace){
     const R = log.races[id];
     if (!R || R.pay == null || R.void) continue;   // 結果がまだ（または中止）
@@ -210,6 +240,21 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
       for (const [key, T] of LATE) put(key, pick(T));
       put("fin", fin);
     }
+    // 1号艇の単勝：締切前に見えた1号艇の単勝オッズの帯で分ける（動画6本目の③「1号艇が堅い」かどうか別）。
+    // 確定オッズで分けると「1号艇が堅い」ときは1.3〜3.0倍で102%（2〜10月）だったので、買う前に見えるオッズでも同じかを確かめる
+    {
+      const pickW = T => {
+        let best = null;
+        for (const x of list) if (x.w && +x.w["1"] > 0 && x.m > 0 && Math.abs(x.m - T) <= 0.35 && (!best || Math.abs(x.m - T) < Math.abs(best.m - T))) best = x;
+        return best;
+      };
+      const fo = R.fin && +R.fin["1"] > 0 ? +R.fin["1"] : null;
+      for (const [key, T] of LATE){
+        const x = pickW(T);
+        if (x) b1[key].push({d: R.d, od: +x.w["1"], pay: payOf(1), s1: R.s1, fin: fo});
+      }
+      if (fo) b1.fin.push({d: R.d, od: fo, pay: payOf(1), s1: R.s1, fin: fo});
+    }
     const meets = (x, no) => x.pp && x.pp[no] >= BUY_P && x.w[no] > 0 && x.pp[no] * x.w[no] >= BUY_EV;
     const boatsOf = x => x ? Object.keys(x.w).filter(no => meets(x, no)).map(Number) : [];
     const mk = (x, no, extra = {}) => ({d: R.d, k: R.k, name: R.name || R.k, close: R.close || "", t: x.t, m: x.m, no, p: x.pp[no], od: x.w[no],
@@ -243,6 +288,14 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
     return {k, ...agg(sel), drop: f.length ? +median(f.map(b => b.fin / b.od)).toFixed(3) : null, finGap: g.length ? +median(g).toFixed(3) : null};
   });
   const lateDays = [...new Set(late.t05.map(b => b.d))].sort().slice(-30).map(d => ({d, t1: agg(late.t1.filter(b => b.d === d && b.gap >= 1.5)), t05: agg(late.t05.filter(b => b.d === d && b.gap >= 1.5))}));
+  const B1BANDS = [[1, 1.3], [1.3, 1.6], [1.6, 2], [2, 3], [3, 5], [5, 1e9]];
+  const b1Split = sel => ({all: agg(sel), solid: agg(sel.filter(x => x.s1 === 1)), other: agg(sel.filter(x => x.s1 === 0))});
+  const b1Sum = list => ({
+    bands: B1BANDS.map(([lo, hi]) => ({lo, hi: hi > 1e8 ? null : hi, ...b1Split(list.filter(x => x.od >= lo && x.od < hi))})),
+    over: [1.3, 1.6, 2].map(lo => ({lo, ...b1Split(list.filter(x => x.od >= lo))})),
+    drop: (() => { const f = list.filter(x => x.fin > 0 && x.od > 0); return f.length ? +median(f.map(x => x.fin / x.od)).toFixed(3) : null; })()
+  });
+  const b1From = [...b1.t1, ...b1.fin].map(x => x.d).sort()[0] || null;
   const out = {
     v: 1, built: new Date().toISOString(), today,
     from: days[0] || null, to: days[days.length - 1] || null,
@@ -255,6 +308,8 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
       return [d, {snaps: v.length, tri: v.filter(x => x.q).length, fin: v.filter(x => x.u === "締切").length}];
     }))},
     late: {K: KS, maxImp: LATE_MAX_IMP, races: lateRaces, sum: Object.fromEntries(Object.entries(late).map(([k, list]) => [k, lateSum(list)])), days: lateDays},
+    b1: {from: b1From, races: Object.fromEntries(Object.entries(b1).map(([k, v]) => [k, v.length])), solidRaces: Object.fromEntries(Object.entries(b1).map(([k, v]) => [k, v.filter(x => x.s1 === 1).length])),
+      sum: Object.fromEntries(Object.entries(b1).map(([k, v]) => [k, b1Sum(v)]))},
     days: dayList.slice(-30),
     bets: bets.slice(-150),
     calib: Object.fromEntries(PHASES.map(([k]) => [k, calib(k)])),
@@ -266,6 +321,8 @@ export async function main({fetcher = fetch, today = M.jstNowDate()} = {}){
   console.log(`買ったつもり：1分前で決める ${P(out.paper.follow)}｜3分前 ${P(out.paper.t3)}｜7分前 ${P(out.paper.early)}`);
   const L = out.late.sum;
   console.log(`締切直前のズレ1.5倍以上：2分前 ${P(L.t2[1])}｜1分前 ${P(L.t1[1])}｜30秒前 ${P(L.t05[1])}｜締切時（参考） ${P(L.fin[1])}`);
+  const B = out.b1.sum;
+  console.log(`1号艇の単勝（1.6倍以上・1号艇が堅い）：1分前 ${P(B.t1.over[1].solid)}｜30秒前 ${P(B.t05.over[1].solid)}｜確定（参考） ${P(B.fin.over[1].solid)}`);
   return out;
 }
 
