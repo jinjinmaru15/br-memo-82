@@ -1688,13 +1688,14 @@ function valueBets(r, pr, s){
   return out.sort((a, b) => b.ev - a.ev);
 }
 
-// イン逃げ鉄板で、外（5・6号艇）にプラス要素が1つもないレース（ピックアップ用。予想の確率には入れない）
+// イン逃げ鉄板で、外（4・5・6号艇）にプラス要素が1つもないレース（ピックアップ用。予想の確率には入れない）
 // プラス要素＝印（◎○▲△）・緑のチップ（実力・気配◎／気配で浮上・外から絡む・本番で踏み込む・ST速い・ST安定・当地巧者・今節好調）・スリットアラート
-// ST攻め・展開のアラートは見ない（2〜10月、あってもなくても5・6号艇の3着以内は同じくらい。スリットアラートは45%対39%で少し来る）
-// 2〜10月（鉄板60%）：1日6レースほど。1号艇の1着74%（鉄板全体72%）・5・6号艇の3着以内36%（53%）・1-23-234の的中36%（30%）・回収率79%（アプリの上位4点78%）
-function outerBuffs(f, alerts){
+// 印は6艇のうち4艇に付くので、4号艇は△（4番手）までは印なしとみなす（＝◎○▲が1・2・3号艇）
+// ST攻め・展開のアラートは見ない（2〜10月、5・6号艇はあってもなくても3着以内が同じくらい）
+// 2〜10月（鉄板60%）：297レース（1日1レースほど）。1号艇の1着79%（鉄板全体72%）・1・2・3号艇で3着まで34%（21%）・1-23-234の的中48%（30%）・回収率88%（アプリの上位4点95%）。少ないので回収率は75〜103%くらいの幅
+function outerBuffs(f, alerts, okMark){
   const out = [];
-  if (f.markIdx <= 3 && f.mark) out.push(f.mark);
+  if (f.markIdx <= 3 && f.mark && f.mark !== okMark) out.push(f.mark);
   if (f.tag && f.tag.c === "up") out.push(f.tag.t);
   (f.traits || []).filter(t => t.c === "up" && t.k !== "inStrong").forEach(t => out.push(t.t));
   if (f.form && f.form.n >= 3 && f.form.avg <= 2.5) out.push("今節好調");
@@ -1704,7 +1705,16 @@ function outerBuffs(f, alerts){
 function calmOf(pr, s, alerts){
   const t = pr.top;
   if (!t || t.b.no !== 1 || t.course !== 1 || t.p1 * 100 < s.honmei) return false;
-  return [5, 6].every(no => { const f = pr.F.find(g => g.b.no === no); return f && !outerBuffs(f, alerts).length; });
+  return [4, 5, 6].every(no => { const f = pr.F.find(g => g.b.no === no); return f && !outerBuffs(f, alerts, no === 4 ? "△" : null).length; });
+}
+// イン逃げ鉄板で、4・5・6号艇の3連対率（アプリの予想）がどれも30%以下、4号艇の攻めがほぼない（伸び・ST攻め・展開のアラートなし・1着率5%以下）
+// 2〜10月（鉄板60%）：614レース（1日2〜3レース）。1号艇の1着76%・1-23-234の的中49%・回収率81%（前半85%・後半77%）・収支−45,850円（100円×4点）。同じレースのアプリの上位4点85%
+function weakOuterOf(pr, s, alerts){
+  const t = pr.top;
+  if (!t || t.b.no !== 1 || t.course !== 1 || t.p1 * 100 < s.honmei) return false;
+  const O = [4, 5, 6].map(no => pr.F.find(g => g.b.no === no));
+  if (O.some(f => !f || f.p3 > 0.30) || O[0].p1 > 0.05) return false;
+  return !(alerts || []).some(a => ((a.type === "nobi" || a.type === "attack") && a.boat === 4) || (a.type === "dent" && a.next === 4));
 }
 
 function analyze(r, s){
@@ -1727,6 +1737,7 @@ function analyze(r, s){
     slitLevel: alerts.filter(a => a.type === "nobi").reduce((m, a) => Math.max(m, a.level), 0),
     isHonmei: pr.top.p1 * 100 >= s.honmei,
     isCalm: calmOf(pr, s, alerts),
+    isWeakOut: weakOuterOf(pr, s, alerts),
     isAna: pr.c1.p1 * 100 <= s.ana,
     isValue: value.length > 0,
     isCand: cand
@@ -1805,7 +1816,7 @@ function tune(data, s, stats){
 /* ---------- 状態 ---------- */
 const settings = loadSettings();
 // アプリの版（アップロードしたものに切り替わったかを見分ける用。直すたびに変える）
-const APP_VER = "11/3①版";
+const APP_VER = "11/3③版";
 const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "value", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}, pick: new Map(), triCut: new Map(), ai: new Map()};
 const bt = {status: "idle", days: 0, data: [], res: null, tuned: null, prevW: null, msg: "", stats: null, long: null, longTried: false, paper: null, paperTried: false};
 function updateStatsInfo(){
@@ -1816,7 +1827,8 @@ function updateStatsInfo(){
     : "コース別成績の集計データがまだありません。GitHubの自動集計を一度動かすと使えるようになります。";
 }
 try { const t = localStorage.getItem("slitradar.tab2"); if (t) state.tab = t; } catch (e) {}
-try { state.calm = localStorage.getItem("slitradar.calm") === "1"; } catch (e) { state.calm = false; }
+// 鉄板タブの絞り込み：""＝なし、"buff"＝外バフなし、"p3"＝外3連対30%以下
+try { const c = localStorage.getItem("slitradar.calm"); state.calm = c === "1" ? "buff" : (c === "buff" || c === "p3") ? c : ""; } catch (e) { state.calm = ""; }
 
 /* ---------- 描画 ---------- */
 function slitSVG(an){
@@ -1877,7 +1889,8 @@ function badgeHTML(r, an){
   if (!r.hasPreview) r.boats.forEach(b => { const z = maezukeOf(b); if (z && z.label) out.push(`<span class="bdg mz">${bn(b.no)}${z.label}<span class="num">${Math.round(z.p * 100)}%</span></span>`); });
   if (an.isValue) out.push(`<span class="bdg val">期待値 ${an.value.map(x => bn(x.c[0])).join("")}単勝</span>`);
   if (an.isHonmei) out.push(`<span class="bdg solid">鉄板 ${bn(an.top.b.no)}<span class="num">${pct(an.top.p1)}%</span></span>`);
-  if (an.isCalm) out.push(`<span class="bdg calm">外バフなし ${bn(5)}${bn(6)}${r.hasPreview ? "" : "<small>展示前・仮</small>"}</span>`);
+  if (an.isCalm) out.push(`<span class="bdg calm">外バフなし ${bn(4)}${bn(5)}${bn(6)}${r.hasPreview ? "" : "<small>展示前・仮</small>"}</span>`);
+  if (an.isWeakOut) out.push(`<span class="bdg calm">外3連対30%以下 ${bn(4)}${bn(5)}${bn(6)}${r.hasPreview ? "" : "<small>展示前・仮</small>"}</span>`);
   if (an.isAna) out.push(`<span class="bdg ana">穴 1コース<span class="num">${pct(an.c1.p1)}%</span></span>`);
   if (r.result){
     const hit = r.result.order[0] === an.top.b.no;
@@ -2960,16 +2973,16 @@ function render(){
 
   const stds = [...new Set(state.races.map(r => r.stadium))].sort((a, b) => a - b);
   if (state.stadium && !stds.includes(state.stadium)) state.stadium = 0;
-  // 鉄板タブだけ：「外バフなし」で、イン逃げ鉄板かつ5・6号艇にプラス要素がないレースに絞る
-  const calmOn = state.tab === "honmei" && state.calm;
-  const calmN = pool.filter(x => x.an.isHonmei && x.an.isCalm).length;
+  // 鉄板タブだけ：「外バフなし」（4・5・6号艇にプラス要素がない）か「外3連対30%以下」（4・5・6号艇の3連対率30%以下・4号艇の攻めなし）に絞る
+  const CALM = {buff: {k: "isCalm", t: "外バフなし"}, p3: {k: "isWeakOut", t: "外3連対30%以下"}};
+  const calmOn = state.tab === "honmei" && CALM[state.calm] ? state.calm : "";
   $("filters").innerHTML =
-    (state.tab === "honmei" ? `<button class="chip" type="button" data-calm aria-pressed="${calmOn}">外バフなし ${calmN}</button><span class="sep"></span>` : "") +
+    (state.tab === "honmei" ? Object.entries(CALM).map(([m, c]) => `<button class="chip" type="button" data-calm="${m}" aria-pressed="${calmOn === m}">${c.t} ${pool.filter(x => x.an.isHonmei && x.an[c.k]).length}</button>`).join("") + `<span class="sep"></span>` : "") +
     `<button class="chip" type="button" data-upcoming aria-pressed="${useUpcoming}"${isToday ? "" : " disabled"}>締切前のみ</button><span class="sep"></span>` +
     `<button class="chip" type="button" data-std="0" aria-pressed="${!state.stadium}">全場</button>` +
     stds.map(s => `<button class="chip${ORIG_VENUES[s] ? " og" : ""}" type="button" data-std="${s}" aria-pressed="${state.stadium === s}">${esc(STADIUMS[s] || s)}${ORIG_VENUES[s] ? `<i class="ogm">オ</i>` : ""}</button>`).join("");
 
-  const list = pool.filter(pass[state.tab]).filter(x => !calmOn || x.an.isCalm).sort((a, b) => a.r.closedAt - b.r.closedAt || a.r.stadium - b.r.stadium);
+  const list = pool.filter(pass[state.tab]).filter(x => !calmOn || x.an[CALM[calmOn].k]).sort((a, b) => a.r.closedAt - b.r.closedAt || a.r.stadium - b.r.stadium);
   const anyOdds = state.races.some(r => r.odds);
 
   let html;
@@ -2979,7 +2992,9 @@ function render(){
     const msg = {
       cand: "◎単勝候補のレースはありません。信頼度「低」（◎の1着率35〜50%）で自信が「かたい」レースに、展示のあとで出ます（1日6レースほど）。そのうち◎の今節の展示が速いもの（買いの目安）は塗りつぶしで出ます。",
       alert: "スリットアラート（一つ内側の艇より展示タイムが速い艇）が出ているレースはありません。展示航走が終わったレースから順に判定します。",
-      honmei: calmOn ? "今は「外バフなし」の鉄板レースはありません。もう一度「外バフなし」を押すと、鉄板のレースが全部出ます。" : "鉄板のレースはありません。設定で「鉄板」のしきい値を下げると増えます。",
+      honmei: calmOn === "buff" ? "今は「外バフなし」の鉄板レースはありません（2〜10月で1日1レースほど。1つも出ない日も3日に1日ありました）。もう一度「外バフなし」を押すと、鉄板のレースが全部出ます。"
+        : calmOn === "p3" ? "今は「外3連対30%以下」の鉄板レースはありません（2〜10月で1日2〜3レースほど）。もう一度「外3連対30%以下」を押すと、鉄板のレースが全部出ます。"
+        : "鉄板のレースはありません。設定で「鉄板」のしきい値を下げると増えます。",
       ana: "穴のレースはありません。設定で「穴」のしきい値を上げると増えます。",
       value: anyOdds
         ? "今のオッズでは、期待値が条件を超える艇はありません。（締切前の単勝オッズは当てにならないので参考です）"
@@ -2991,7 +3006,7 @@ function render(){
     html = `<div class="empty">${msg}${useUpcoming && state.tab !== "value" ? "<br>「締切前のみ」を外すと締切済みのレースも見られます。" : ""}</div>`;
   } else html = list.map(x => cardHTML(x.r, x.an, now)).join("");
   if (state.tab === "value" && state.mode !== "loading") html = condHTML() + oddsStatusHTML() + html;
-  if (calmOn && state.mode !== "loading") html = calmNoteHTML() + html;
+  if (calmOn && state.mode !== "loading") html = calmNoteHTML(calmOn) + html;
   $("feed").innerHTML = html;
 
   $("d-label").textContent = mdw(state.date);
@@ -3004,9 +3019,10 @@ function render(){
 }
 const safeRender = () => { if (!typing()) render(); };
 
-// 「外バフなし」の説明（数字は2〜10月・鉄板60%のとき）
-function calmNoteHTML(){
-  return `<p class="calmnote"><b>外バフなし</b>：1号艇が1コースで◎（1着率${settings.honmei}%以上）、5・6号艇に印（◎○▲△）も緑のチップ（実力・気配◎・気配で浮上・外から絡む・本番で踏み込む・ST速い・ST安定・当地巧者・今節好調）もスリットアラートも1つもないレース。2〜10月（鉄板60%のとき）は1日6レースほど。1号艇の1着は74%（鉄板全体72%）とあまり変わりませんが、5・6号艇が3着以内に来るのは36%（鉄板全体53%）に減り、1-23-234の的中は36%（30%）でした。回収率は79%で、アプリの上位4点（78%）と同じくらい。当たりやすさの目安で、もうけが増えるわけではありません。ST攻め・展開のアラートは、あってもなくても5・6号艇の来やすさが変わらなかったので見ていません。展示の前は仮です。</p>`;
+// 「外バフなし」「外3連対30%以下」の説明（数字は2〜10月・鉄板60%のとき）
+function calmNoteHTML(mode){
+  if (mode === "p3") return `<p class="calmnote"><b>外3連対30%以下</b>：1号艇が1コースで◎（1着率${settings.honmei}%以上）、4・5・6号艇の「3連対」（アプリの予想）がどれも30%以下で、4号艇の攻めがほぼない（4号艇にスリットアラート・ST攻め・展開のアラートがなく、1着率5%以下）レース。2〜10月（鉄板60%のとき）は614レース（1日2〜3レース）。1号艇の1着76%（鉄板全体72%）、1-23-234の的中49%（30%）・回収率81%（77%）で、100円ずつ4点買うと収支は−45,850円（1レース平均−75円）でした。同じレースでアプリの上位4点は85%。たまたまの幅を入れても72〜92%で、プラスは見込めません。展示の前は仮です（アラートは展示のあとで出ます）。</p>`;
+  return `<p class="calmnote"><b>外バフなし</b>：1号艇が1コースで◎（1着率${settings.honmei}%以上）、4・5・6号艇に印も緑のチップ（実力・気配◎・気配で浮上・外から絡む・本番で踏み込む・ST速い・ST安定・当地巧者・今節好調）もスリットアラートも1つもないレース。印は6艇のうち4艇に付くので、4号艇は△（4番手）までは印なしとして見ています（◎○▲が1・2・3号艇）。2〜10月（鉄板60%のとき）は1日1レースほど（270日で297レース）。1号艇の1着79%（鉄板全体72%）、1・2・3号艇で3着まで決まる34%（21%）、1-23-234の的中48%（30%）・回収率88%（アプリの上位4点95%）。ただレースが少なく、回収率はたまたまの幅が大きい（75〜103%くらい）ので、まだ当てにはなりません。ST攻め・展開のアラートは見ていません。展示の前は仮です。</p>`;
 }
 
 // 信頼度ごとの成績の表（回収率と、小さく点数・的中率）
@@ -3326,7 +3342,8 @@ document.addEventListener("click", e => {
   const std = e.target.closest("[data-std]");
   if (std){ state.stadium = +std.dataset.std; render(); return; }
   if (e.target.closest("[data-upcoming]")){ state.upcoming = !state.upcoming; render(); return; }
-  if (e.target.closest("[data-calm]")){ state.calm = !state.calm; try { localStorage.setItem("slitradar.calm", state.calm ? "1" : "0"); } catch (_) {} render(); return; }
+  const cm = e.target.closest("[data-calm]");
+  if (cm){ state.calm = state.calm === cm.dataset.calm ? "" : cm.dataset.calm; try { localStorage.setItem("slitradar.calm", state.calm); } catch (_) {} render(); return; }
   const b = e.target.closest("[data-bt]");
   if (b && bt.status !== "loading"){ runBacktest(+b.dataset.bt); return; }
   if (e.target.closest("#bt-tune") && bt.status !== "loading"){ runTune(); return; }
