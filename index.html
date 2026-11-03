@@ -163,6 +163,10 @@ button:disabled{cursor:default}
 .bdg.val{background:var(--val-soft);color:var(--val);border-color:var(--val)}
 .bdg.cand{background:var(--solid);color:var(--solid-ink)}
 .bdg.cand.weak{background:transparent;color:var(--solid);border-color:var(--solid);font-weight:600}
+.bdg.calm{background:transparent;color:var(--solid);border-color:var(--solid);font-weight:600;gap:4px}
+.bdg.calm small{font-size:11px;font-weight:500;margin-left:2px}
+.calmnote{margin:0 0 10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:13px;line-height:1.6;color:var(--muted)}
+.calmnote b{color:var(--ink)}
 .bdg.mz{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 .bdg.og{background:var(--og-soft);color:var(--og);border-color:var(--og)}
 .chip.og{border-color:var(--og);color:var(--og)}
@@ -1684,6 +1688,25 @@ function valueBets(r, pr, s){
   return out.sort((a, b) => b.ev - a.ev);
 }
 
+// イン逃げ鉄板で、外（5・6号艇）にプラス要素が1つもないレース（ピックアップ用。予想の確率には入れない）
+// プラス要素＝印（◎○▲△）・緑のチップ（実力・気配◎／気配で浮上・外から絡む・本番で踏み込む・ST速い・ST安定・当地巧者・今節好調）・スリットアラート
+// ST攻め・展開のアラートは見ない（2〜10月、あってもなくても5・6号艇の3着以内は同じくらい。スリットアラートは45%対39%で少し来る）
+// 2〜10月（鉄板60%）：1日6レースほど。1号艇の1着74%（鉄板全体72%）・5・6号艇の3着以内36%（53%）・1-23-234の的中36%（30%）・回収率79%（アプリの上位4点78%）
+function outerBuffs(f, alerts){
+  const out = [];
+  if (f.markIdx <= 3 && f.mark) out.push(f.mark);
+  if (f.tag && f.tag.c === "up") out.push(f.tag.t);
+  (f.traits || []).filter(t => t.c === "up" && t.k !== "inStrong").forEach(t => out.push(t.t));
+  if (f.form && f.form.n >= 3 && f.form.avg <= 2.5) out.push("今節好調");
+  if ((alerts || []).some(a => a.type === "nobi" && a.boat === f.b.no)) out.push("スリットアラート");
+  return out;
+}
+function calmOf(pr, s, alerts){
+  const t = pr.top;
+  if (!t || t.b.no !== 1 || t.course !== 1 || t.p1 * 100 < s.honmei) return false;
+  return [5, 6].every(no => { const f = pr.F.find(g => g.b.no === no); return f && !outerBuffs(f, alerts).length; });
+}
+
 function analyze(r, s){
   if (!r.form && STATS) r.form = formFor(r, STATS, state.races);
   const alerts = slitAlerts(r, s);
@@ -1703,6 +1726,7 @@ function analyze(r, s){
     isSlit: alerts.some(a => a.type === "nobi"),
     slitLevel: alerts.filter(a => a.type === "nobi").reduce((m, a) => Math.max(m, a.level), 0),
     isHonmei: pr.top.p1 * 100 >= s.honmei,
+    isCalm: calmOf(pr, s, alerts),
     isAna: pr.c1.p1 * 100 <= s.ana,
     isValue: value.length > 0,
     isCand: cand
@@ -1781,7 +1805,7 @@ function tune(data, s, stats){
 /* ---------- 状態 ---------- */
 const settings = loadSettings();
 // アプリの版（アップロードしたものに切り替わったかを見分ける用。直すたびに変える）
-const APP_VER = "10/29⑦版";
+const APP_VER = "11/3①版";
 const state = {mode: "loading", date: jstNowDate(), races: [], updatedAt: null, tab: "value", stadium: 0, upcoming: true, open: new Set(), note: "", manual: {}, pick: new Map(), triCut: new Map(), ai: new Map()};
 const bt = {status: "idle", days: 0, data: [], res: null, tuned: null, prevW: null, msg: "", stats: null, long: null, longTried: false, paper: null, paperTried: false};
 function updateStatsInfo(){
@@ -1792,6 +1816,7 @@ function updateStatsInfo(){
     : "コース別成績の集計データがまだありません。GitHubの自動集計を一度動かすと使えるようになります。";
 }
 try { const t = localStorage.getItem("slitradar.tab2"); if (t) state.tab = t; } catch (e) {}
+try { state.calm = localStorage.getItem("slitradar.calm") === "1"; } catch (e) { state.calm = false; }
 
 /* ---------- 描画 ---------- */
 function slitSVG(an){
@@ -1852,6 +1877,7 @@ function badgeHTML(r, an){
   if (!r.hasPreview) r.boats.forEach(b => { const z = maezukeOf(b); if (z && z.label) out.push(`<span class="bdg mz">${bn(b.no)}${z.label}<span class="num">${Math.round(z.p * 100)}%</span></span>`); });
   if (an.isValue) out.push(`<span class="bdg val">期待値 ${an.value.map(x => bn(x.c[0])).join("")}単勝</span>`);
   if (an.isHonmei) out.push(`<span class="bdg solid">鉄板 ${bn(an.top.b.no)}<span class="num">${pct(an.top.p1)}%</span></span>`);
+  if (an.isCalm) out.push(`<span class="bdg calm">外バフなし ${bn(5)}${bn(6)}${r.hasPreview ? "" : "<small>展示前・仮</small>"}</span>`);
   if (an.isAna) out.push(`<span class="bdg ana">穴 1コース<span class="num">${pct(an.c1.p1)}%</span></span>`);
   if (r.result){
     const hit = r.result.order[0] === an.top.b.no;
@@ -2934,12 +2960,16 @@ function render(){
 
   const stds = [...new Set(state.races.map(r => r.stadium))].sort((a, b) => a - b);
   if (state.stadium && !stds.includes(state.stadium)) state.stadium = 0;
+  // 鉄板タブだけ：「外バフなし」で、イン逃げ鉄板かつ5・6号艇にプラス要素がないレースに絞る
+  const calmOn = state.tab === "honmei" && state.calm;
+  const calmN = pool.filter(x => x.an.isHonmei && x.an.isCalm).length;
   $("filters").innerHTML =
+    (state.tab === "honmei" ? `<button class="chip" type="button" data-calm aria-pressed="${calmOn}">外バフなし ${calmN}</button><span class="sep"></span>` : "") +
     `<button class="chip" type="button" data-upcoming aria-pressed="${useUpcoming}"${isToday ? "" : " disabled"}>締切前のみ</button><span class="sep"></span>` +
     `<button class="chip" type="button" data-std="0" aria-pressed="${!state.stadium}">全場</button>` +
     stds.map(s => `<button class="chip${ORIG_VENUES[s] ? " og" : ""}" type="button" data-std="${s}" aria-pressed="${state.stadium === s}">${esc(STADIUMS[s] || s)}${ORIG_VENUES[s] ? `<i class="ogm">オ</i>` : ""}</button>`).join("");
 
-  const list = pool.filter(pass[state.tab]).sort((a, b) => a.r.closedAt - b.r.closedAt || a.r.stadium - b.r.stadium);
+  const list = pool.filter(pass[state.tab]).filter(x => !calmOn || x.an.isCalm).sort((a, b) => a.r.closedAt - b.r.closedAt || a.r.stadium - b.r.stadium);
   const anyOdds = state.races.some(r => r.odds);
 
   let html;
@@ -2949,7 +2979,7 @@ function render(){
     const msg = {
       cand: "◎単勝候補のレースはありません。信頼度「低」（◎の1着率35〜50%）で自信が「かたい」レースに、展示のあとで出ます（1日6レースほど）。そのうち◎の今節の展示が速いもの（買いの目安）は塗りつぶしで出ます。",
       alert: "スリットアラート（一つ内側の艇より展示タイムが速い艇）が出ているレースはありません。展示航走が終わったレースから順に判定します。",
-      honmei: "鉄板のレースはありません。設定で「鉄板」のしきい値を下げると増えます。",
+      honmei: calmOn ? "今は「外バフなし」の鉄板レースはありません。もう一度「外バフなし」を押すと、鉄板のレースが全部出ます。" : "鉄板のレースはありません。設定で「鉄板」のしきい値を下げると増えます。",
       ana: "穴のレースはありません。設定で「穴」のしきい値を上げると増えます。",
       value: anyOdds
         ? "今のオッズでは、期待値が条件を超える艇はありません。（締切前の単勝オッズは当てにならないので参考です）"
@@ -2961,6 +2991,7 @@ function render(){
     html = `<div class="empty">${msg}${useUpcoming && state.tab !== "value" ? "<br>「締切前のみ」を外すと締切済みのレースも見られます。" : ""}</div>`;
   } else html = list.map(x => cardHTML(x.r, x.an, now)).join("");
   if (state.tab === "value" && state.mode !== "loading") html = condHTML() + oddsStatusHTML() + html;
+  if (calmOn && state.mode !== "loading") html = calmNoteHTML() + html;
   $("feed").innerHTML = html;
 
   $("d-label").textContent = mdw(state.date);
@@ -2972,6 +3003,11 @@ function render(){
   else st.innerHTML = `<span class="dot"></span>読み込み中`;
 }
 const safeRender = () => { if (!typing()) render(); };
+
+// 「外バフなし」の説明（数字は2〜10月・鉄板60%のとき）
+function calmNoteHTML(){
+  return `<p class="calmnote"><b>外バフなし</b>：1号艇が1コースで◎（1着率${settings.honmei}%以上）、5・6号艇に印（◎○▲△）も緑のチップ（実力・気配◎・気配で浮上・外から絡む・本番で踏み込む・ST速い・ST安定・当地巧者・今節好調）もスリットアラートも1つもないレース。2〜10月（鉄板60%のとき）は1日6レースほど。1号艇の1着は74%（鉄板全体72%）とあまり変わりませんが、5・6号艇が3着以内に来るのは36%（鉄板全体53%）に減り、1-23-234の的中は36%（30%）でした。回収率は79%で、アプリの上位4点（78%）と同じくらい。当たりやすさの目安で、もうけが増えるわけではありません。ST攻め・展開のアラートは、あってもなくても5・6号艇の来やすさが変わらなかったので見ていません。展示の前は仮です。</p>`;
+}
 
 // 信頼度ごとの成績の表（回収率と、小さく点数・的中率）
 function confRows(list, cols){
@@ -3290,6 +3326,7 @@ document.addEventListener("click", e => {
   const std = e.target.closest("[data-std]");
   if (std){ state.stadium = +std.dataset.std; render(); return; }
   if (e.target.closest("[data-upcoming]")){ state.upcoming = !state.upcoming; render(); return; }
+  if (e.target.closest("[data-calm]")){ state.calm = !state.calm; try { localStorage.setItem("slitradar.calm", state.calm ? "1" : "0"); } catch (_) {} render(); return; }
   const b = e.target.closest("[data-bt]");
   if (b && bt.status !== "loading"){ runBacktest(+b.dataset.bt); return; }
   if (e.target.closest("#bt-tune") && bt.status !== "loading"){ runTune(); return; }
