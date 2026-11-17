@@ -1,8 +1,8 @@
 {
- "built": "2026-11-17T03:15:02.827Z",
+ "built": "2026-11-17T05:06:09.366Z",
  "base": "https://funanote-k7q2xm.pages.dev",
- "minutes": 5.7,
- "fetchedThisRun": 343,
+ "minutes": 0.5,
+ "fetchedThisRun": 31,
  "total": 282,
  "notYet": 0,
  "byKind": {
@@ -20,7 +20,7 @@
  "cards": {
   "ver": "20261114",
   "key": "mod64",
-  "fetched": 128,
+  "fetched": 0,
   "have": {
    "p": 1636,
    "h2h": 1636
