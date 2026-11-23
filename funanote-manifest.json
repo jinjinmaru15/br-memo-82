@@ -1,18 +1,19 @@
 {
- "built": "2026-11-23T01:11:22.699Z",
+ "built": "2026-11-23T03:43:55.912Z",
  "base": "https://funanote-k7q2xm.pages.dev",
- "minutes": 3.7,
- "fetchedThisRun": 220,
+ "minutes": 0.5,
+ "fetchedThisRun": 32,
  "total": 287,
  "notYet": 0,
  "byKind": {
-  "html": 103,
+  "html": 90,
   "js": 26,
   "json": 88,
   "image/png": 2,
   "image/vnd.microsoft.icon": 1,
   "text/css": 25,
   "image/jpeg": 34,
+  "text/plain": 13,
   "csv": 3,
   "font/woff2": 1,
   "image/webp": 4
@@ -505,9 +506,9 @@
   },
   {
    "path": "/in/c/menu/",
-   "status": 404,
-   "kind": "html",
-   "bytes": 1297
+   "status": 403,
+   "kind": "text/plain",
+   "bytes": 9
   },
   {
    "path": "/choukan/?d=",
@@ -1595,9 +1596,9 @@
   },
   {
    "path": "/.json?_=",
-   "status": 404,
+   "status": 403,
    "kind": "json",
-   "bytes": 1297
+   "bytes": 9
   },
   {
    "path": "/data/updates.json",
@@ -4260,9 +4261,9 @@
   },
   {
    "path": "/racers/.json?_=",
-   "status": 404,
+   "status": 403,
    "kind": "json",
-   "bytes": 1297
+   "bytes": 9
   },
   {
    "path": "/data/courseLast10.json",
@@ -7933,9 +7934,9 @@
   },
   {
    "path": "/highlights/$%7Besc(u)%7D",
-   "status": 404,
-   "kind": "html",
-   "bytes": 1297
+   "status": 403,
+   "kind": "text/plain",
+   "bytes": 9
   },
   {
    "path": "/players/?toban=${tb}",
@@ -11648,9 +11649,9 @@
   },
   {
    "path": "/highlights/.json?_=",
-   "status": 404,
+   "status": 403,
    "kind": "json",
-   "bytes": 1297
+   "bytes": 9
   },
   {
    "path": "/assets/kata/results.css?v=889667cd",
@@ -12036,9 +12037,9 @@
   },
   {
    "path": "/results/.json",
-   "status": 404,
+   "status": 403,
    "kind": "json",
-   "bytes": 1297
+   "bytes": 9
   },
   {
    "path": "/results/data/index.json",
@@ -12121,15 +12122,15 @@
   },
   {
    "path": "/results/data/",
-   "status": 404,
-   "kind": "html",
-   "bytes": 1297
+   "status": 403,
+   "kind": "text/plain",
+   "bytes": 9
   },
   {
    "path": "/results/data/hit/",
-   "status": 404,
-   "kind": "html",
-   "bytes": 1297
+   "status": 403,
+   "kind": "text/plain",
+   "bytes": 9
   },
   {
    "path": "/assets/react.production.min.js",
@@ -12198,9 +12199,9 @@
   },
   {
    "path": "/players/$%7Bst.url%7D",
-   "status": 404,
-   "kind": "html",
-   "bytes": 1297
+   "status": 403,
+   "kind": "text/plain",
+   "bytes": 9
   },
   {
    "path": "/players/card/h2h/meta.json",
@@ -17459,9 +17460,9 @@
   },
   {
    "path": "/announcers/$%7Ba.source%7D",
-   "status": 404,
-   "kind": "html",
-   "bytes": 1297
+   "status": 403,
+   "kind": "text/plain",
+   "bytes": 9
   },
   {
    "path": "/players/?toban=${encodeURIComponent(p.no)}",
@@ -18334,9 +18335,9 @@
   },
   {
    "path": "/ichimark/.json",
-   "status": 404,
+   "status": 403,
    "kind": "json",
-   "bytes": 1297
+   "bytes": 9
   },
   {
    "path": "/ichimark/kotaeawase.json",
@@ -18683,9 +18684,9 @@
   },
   {
    "path": "/note/.json",
-   "status": 404,
+   "status": 403,
    "kind": "json",
-   "bytes": 1297
+   "bytes": 9
   },
   {
    "path": "/choukan/",
@@ -18702,9 +18703,9 @@
   },
   {
    "path": "/choukan/.json?_=",
-   "status": 404,
+   "status": 403,
    "kind": "json",
-   "bytes": 1297
+   "bytes": 9
   },
   {
    "path": "/results/data/now.json?_=",
@@ -22872,9 +22873,9 @@
   },
   {
    "path": "/kensho/players/?toban=3779",
-   "status": 404,
-   "kind": "html",
-   "bytes": 1297
+   "status": 403,
+   "kind": "text/plain",
+   "bytes": 9
   },
   {
    "path": "/glossary/?q=%E6%96%A1%E6%97%8B",
@@ -22934,39 +22935,39 @@
   },
   {
    "path": "/kensho/players/?toban=5392",
-   "status": 404,
-   "kind": "html",
-   "bytes": 1297
+   "status": 403,
+   "kind": "text/plain",
+   "bytes": 9
   },
   {
    "path": "/kensho/players/?toban=3975",
-   "status": 404,
-   "kind": "html",
-   "bytes": 1297
+   "status": 403,
+   "kind": "text/plain",
+   "bytes": 9
   },
   {
    "path": "/kensho/players/?toban=4976",
-   "status": 404,
-   "kind": "html",
-   "bytes": 1297
+   "status": 403,
+   "kind": "text/plain",
+   "bytes": 9
   },
   {
    "path": "/kensho/players/?toban=3775",
-   "status": 404,
-   "kind": "html",
-   "bytes": 1297
+   "status": 403,
+   "kind": "text/plain",
+   "bytes": 9
   },
   {
    "path": "/kensho/players/?toban=4592",
-   "status": 404,
-   "kind": "html",
-   "bytes": 1297
+   "status": 403,
+   "kind": "text/plain",
+   "bytes": 9
   },
   {
    "path": "/kensho/players/?toban=3901",
-   "status": 404,
-   "kind": "html",
-   "bytes": 1297
+   "status": 403,
+   "kind": "text/plain",
+   "bytes": 9
   },
   {
    "path": "/glossary/?q=%E5%BD%93%E5%9C%B0%E5%8B%9D%E7%8E%87",
@@ -23856,9 +23857,9 @@
   },
   {
    "path": "/data/docs/data/racerStats.json",
-   "status": 404,
+   "status": 403,
    "kind": "json",
-   "bytes": 1297
+   "bytes": 9
   }
  ]
 }
